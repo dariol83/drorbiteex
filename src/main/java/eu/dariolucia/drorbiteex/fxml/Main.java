@@ -98,6 +98,7 @@ public class Main implements Initializable {
 
         // Handle ground station list
         groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStation::visibleProperty));
+        orbitList.setCellFactory(CheckBoxListCell.forListView(Orbit::visibleProperty));
 
         // Load old configuration if available
         String configLocation = System.getProperty(CONFIG_FOLDER_LOCATION_KEY);

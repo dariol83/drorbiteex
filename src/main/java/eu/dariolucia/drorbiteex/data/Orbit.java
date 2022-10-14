@@ -6,31 +6,22 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
-import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
-import org.orekit.bodies.CelestialBody;
-import org.orekit.bodies.CelestialBodyFactory;
 import org.orekit.frames.FramesFactory;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
-import org.orekit.propagation.conversion.TLEPropagatorBuilder;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.time.TimeScale;
-import org.orekit.time.TimeScales;
 import org.orekit.time.TimeScalesFactory;
-import org.orekit.utils.AbsolutePVCoordinates;
 import org.orekit.utils.IERSConventions;
-import org.orekit.utils.PVCoordinates;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
-import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,10 +32,10 @@ public class Orbit {
 
     private String code;
     private String name;
-    private String tle;
-
     private String color;
     private final SimpleBooleanProperty visibleProperty = new SimpleBooleanProperty(false);
+
+    private String tle;
 
     private transient Group graphicItem;
     private transient Text textItem;
@@ -136,26 +127,23 @@ public class Orbit {
         this.scItem.setTranslateZ(scLocation.getZ());
 
         this.textItem = new Text(0, 0, this.code);
-        Transform result = new Translate(scLocation.getX() * 1.1, scLocation.getY() * 1.1, scLocation.getZ() * 1.1);
+        Transform result = new Translate(scLocation.getX() * 1.05, scLocation.getY() * 1.05, scLocation.getZ() * 1.05);
         this.textItem.getTransforms().clear();
         this.textItem.getTransforms().add(result);
 
         updateGraphicParameters();
-        this.graphicItem.visibleProperty().bind(this.visibleProperty);
-        this.textItem.visibleProperty().bind(this.visibleProperty);
         this.groupItem = new Group(graphicItem, scItem, textItem);
+        this.groupItem.visibleProperty().bind(this.visibleProperty);
         return this.groupItem;
     }
 
     private Point3D transform(SpacecraftState ss) {
-        // Vector3D position = ss.getPVCoordinates().getPosition();
         Vector3D position =
                 ss.getPVCoordinates(FramesFactory.getITRF(IERSConventions.IERS_2010, true)).getPosition();
         // ECEF to screen
-        Point3D toReturn = new Point3D(position.getY() * Utils.EARTH_SCALE_FACTOR,
+        return new Point3D(position.getY() * Utils.EARTH_SCALE_FACTOR,
                 - position.getZ() * Utils.EARTH_SCALE_FACTOR,
                 - position.getX() * Utils.EARTH_SCALE_FACTOR);
-        return toReturn;
     }
 
     public Group getGraphicItem() {
@@ -173,9 +161,9 @@ public class Orbit {
     public void update(Orbit gs) {
         this.code = gs.getCode();
         this.name = gs.getName();
-        this.tle = gs.getTle();
         this.color = gs.getColor();
 
+        this.tle = gs.getTle();
         if(this.graphicItem != null) {
             updateGraphicParameters();
         }

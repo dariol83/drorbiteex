@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 
@@ -155,6 +156,8 @@ public class GroundStation {
 
         Point3D locationText = Utils.latLonToScreenPoint(latitude, longitude, Utils.EARTH_RADIUS + 10);
         Transform result = new Translate(locationText.getX(), locationText.getY(), locationText.getZ());
+        // Rotate depending on longitude, to have a nice rendering
+        result = result.createConcatenation(new Rotate(this.longitude, new Point3D(0, -1, 0)));
         this.textItem.getTransforms().clear();
         this.textItem.getTransforms().add(result);
     }
