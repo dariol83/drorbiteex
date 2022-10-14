@@ -4,10 +4,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,14 +46,16 @@ public class Configuration {
         this.groundStations = groundStations;
     }
 
-    private List<Orbit> orbits;
+    private List<AbstractOrbit> orbits;
 
-    @XmlElement(name = "orbit")
-    public List<Orbit> getOrbits() {
+    @XmlElements({
+        @XmlElement(name="tle-orbit",type=TleOrbit.class)
+    })
+    public List<AbstractOrbit> getOrbits() {
         return orbits;
     }
 
-    public void setOrbits(List<Orbit> orbits) {
+    public void setOrbits(List<AbstractOrbit> orbits) {
         this.orbits = orbits;
     }
 }

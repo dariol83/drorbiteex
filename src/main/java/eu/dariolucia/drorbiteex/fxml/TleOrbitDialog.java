@@ -1,6 +1,6 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.Orbit;
+import eu.dariolucia.drorbiteex.data.TleOrbit;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
@@ -15,7 +15,7 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-public class OrbitDialog implements Initializable {
+public class TleOrbitDialog implements Initializable {
     public TextField codeText;
     public TextField nameText;
     public TextArea tleTextArea;
@@ -55,15 +55,15 @@ public class OrbitDialog implements Initializable {
     }
 
 
-    private void setOriginalOrbit(Orbit gs) {
+    private void setOriginalOrbit(TleOrbit gs) {
         codeText.setText(gs.getCode());
         nameText.setText(gs.getName());
         tleTextArea.setText(gs.getTle());
         colorPicker.setValue(Color.valueOf(gs.getColor()));
     }
 
-    public Orbit getResult() {
-        Orbit gs = new Orbit();
+    public TleOrbit getResult() {
+        TleOrbit gs = new TleOrbit();
         gs.setCode(codeText.getText());
         gs.setName(nameText.getText());
         gs.setTle(tleTextArea.getText());
@@ -72,7 +72,7 @@ public class OrbitDialog implements Initializable {
         return gs;
     }
 
-    public static Orbit openDialog(Window owner) {
+    public static TleOrbit openDialog(Window owner) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -81,10 +81,10 @@ public class OrbitDialog implements Initializable {
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = OrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/OrbitDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TleOrbitDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
-            OrbitDialog controller = loader.getController();
+            TleOrbitDialog controller = loader.getController();
 
             d.getDialogPane().setContent(root);
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
@@ -101,7 +101,7 @@ public class OrbitDialog implements Initializable {
         }
     }
 
-    public static Orbit openDialog(Window owner, Orbit gs) {
+    public static TleOrbit openDialog(Window owner, TleOrbit gs) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -110,10 +110,10 @@ public class OrbitDialog implements Initializable {
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = OrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/GroundStationDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/GroundStationDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
-            OrbitDialog controller = loader.getController();
+            TleOrbitDialog controller = loader.getController();
             controller.setOriginalOrbit(gs);
 
             d.getDialogPane().setContent(root);

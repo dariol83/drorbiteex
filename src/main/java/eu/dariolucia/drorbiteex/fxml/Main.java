@@ -1,9 +1,6 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.Configuration;
-import eu.dariolucia.drorbiteex.data.GroundStation;
-import eu.dariolucia.drorbiteex.data.Orbit;
-import eu.dariolucia.drorbiteex.data.Utils;
+import eu.dariolucia.drorbiteex.data.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
@@ -70,7 +67,7 @@ public class Main implements Initializable {
     private Group groundStationGroup;
 
     // Orbits
-    public ListView<Orbit> orbitList;
+    public ListView<AbstractOrbit> orbitList;
     private Group orbitGroup;
 
     @Override
@@ -98,7 +95,7 @@ public class Main implements Initializable {
 
         // Handle ground station list
         groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStation::visibleProperty));
-        orbitList.setCellFactory(CheckBoxListCell.forListView(Orbit::visibleProperty));
+        orbitList.setCellFactory(CheckBoxListCell.forListView(AbstractOrbit::visibleProperty));
 
         // Load old configuration if available
         String configLocation = System.getProperty(CONFIG_FOLDER_LOCATION_KEY);
@@ -123,7 +120,7 @@ public class Main implements Initializable {
             for (GroundStation gs : c.getGroundStations()) {
                 initialiseGroundStation(gs);
             }
-            for(Orbit gs : c.getOrbits()) {
+            for(AbstractOrbit gs : c.getOrbits()) {
                 initialiseOrbit(gs);
             }
         } catch (Exception e) {
@@ -145,7 +142,7 @@ public class Main implements Initializable {
             c.getGroundStations().add(gs);
         }
         c.setOrbits(new ArrayList<>());
-        for(Orbit gs : orbitList.getItems()) {
+        for(AbstractOrbit gs : orbitList.getItems()) {
             c.getOrbits().add(gs);
         }
         try {
@@ -265,21 +262,21 @@ public class Main implements Initializable {
     }
 
     public void onNewOrbitAction(ActionEvent actionEvent) {
-        Orbit gs = OrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        TleOrbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
         if(gs != null) {
             initialiseOrbit(gs);
             saveConfigFile();
         }
     }
 
-    private void initialiseOrbit(Orbit gs) {
+    private void initialiseOrbit(AbstractOrbit gs) {
         orbitList.getItems().add(gs);
         Group s = gs.createGraphicItem();
         orbitGroup.getChildren().add(s);
     }
 
     public void onDeleteOrbitStation(ActionEvent actionEvent) {
-        Orbit gs = orbitList.getSelectionModel().getSelectedItem();
+        AbstractOrbit gs = orbitList.getSelectionModel().getSelectedItem();
         if(gs != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Delete Orbit");
