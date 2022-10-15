@@ -27,6 +27,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main implements Initializable {
 
@@ -71,6 +73,20 @@ public class Main implements Initializable {
     public TextField currentTimeText;
     private final Timer tracker = new Timer();
     private TimerTask timerTask = null;
+
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "Dr. Orbiteex - Background Thread");
+        t.setDaemon(true);
+        return t;
+    });
+
+    public static void runLater(Runnable r) {
+        executorService.execute(r);
+    }
+
+    public static void dismiss() {
+        executorService.shutdownNow();
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -343,6 +359,14 @@ public class Main implements Initializable {
         this.currentTimeText.setText(now.toString());
         for(AbstractOrbit ao : this.orbitList.getItems()) {
             ao.updateOrbitTime(now);
+        }
+    }
+
+    public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
+        List<CelestrakTleOrbit> gs = CelestrakDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        if(gs != null) {
+            gs.forEach(this::initialiseOrbit);
+            saveConfigFile();
         }
     }
 }

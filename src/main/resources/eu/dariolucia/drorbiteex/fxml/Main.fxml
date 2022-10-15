@@ -101,6 +101,18 @@
                                                           <Tooltip text="New TLE Orbit..." />
                                                       </tooltip>
                                                   </Button>
+                                                  <Button mnemonicParsing="false" onAction="#onNewCelestrakOrbitAction">
+                                                      <graphic>
+                                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                                              <image>
+                                                                  <Image url="@/plus-circle-outline.png" />
+                                                              </image>
+                                                          </ImageView>
+                                                      </graphic>
+                                                      <tooltip>
+                                                          <Tooltip text="New Celestrak Orbit..." />
+                                                      </tooltip>
+                                                  </Button>
                                                   <Button mnemonicParsing="false" onAction="#onDeleteOrbitStation">
                                                       <graphic>
                                                           <ImageView pickOnBounds="true" preserveRatio="true">

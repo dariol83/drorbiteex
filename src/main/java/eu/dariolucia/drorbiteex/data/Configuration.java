@@ -49,7 +49,8 @@ public class Configuration {
     private List<AbstractOrbit> orbits;
 
     @XmlElements({
-        @XmlElement(name="tle-orbit",type=TleOrbit.class)
+        @XmlElement(name="tle-orbit",type=TleOrbit.class),
+        @XmlElement(name="tle-celestrak-orbit",type=CelestrakTleOrbit.class)
     })
     public List<AbstractOrbit> getOrbits() {
         return orbits;
