@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
@@ -106,5 +107,5 @@ public abstract class AbstractOrbit {
 
     protected abstract void updateProperties(AbstractOrbit gs);
 
-    public abstract void updateOrbitTime(Instant time);
+    public abstract void updateOrbitTime(Date time);
 }

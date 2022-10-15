@@ -9,6 +9,16 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import org.hipparchus.geometry.euclidean.threed.Vector3D;
+import org.orekit.bodies.GeodeticPoint;
+import org.orekit.forces.gravity.potential.GravityFieldFactory;
+import org.orekit.forces.gravity.potential.NormalizedSphericalHarmonicsProvider;
+import org.orekit.frames.FactoryManagedFrame;
+import org.orekit.frames.FramesFactory;
+import org.orekit.models.earth.Geoid;
+import org.orekit.models.earth.ReferenceEllipsoid;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.IERSConventions;
 
 import java.util.List;
 
@@ -18,6 +28,7 @@ public class Utils {
     public static final int REAL_EARTH_RADIUS_METERS = 6371000;
     public static final double EARTH_SCALE_FACTOR = (double) EARTH_RADIUS / (double) REAL_EARTH_RADIUS_METERS;
 
+    /*
     public static Point3D latLonToScreenPoint(double lat, double lon, double radius) {
         lon = lon - 90;
         double x = radius * Math.cos(Math.toRadians(lat)) * Math.cos(Math.toRadians(lon));
@@ -25,14 +36,7 @@ public class Utils {
         double z = radius * Math.sin(Math.toRadians(lat));
         return new Point3D(x, -z, y);
     }
-
-    public static Point3D latLonToECEFPoint(double lat, double lon, double radius) {
-        double x = radius * Math.cos(Math.toRadians(lat)) * Math.cos(Math.toRadians(lon));
-        double y = radius * Math.cos(Math.toRadians(lat)) * Math.sin(Math.toRadians(lon));
-        double z = radius * Math.sin(Math.toRadians(lat));
-        return new Point3D(x, y, z);
-    }
-
+    */
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color) {
         Point3D yAxis = new Point3D(0, 1, 0);
         Point3D diff = target.subtract(origin);
@@ -149,6 +153,27 @@ public class Utils {
 
     private static Point3D computeNormal(Point3D p1, Point3D p2, Point3D p3) {
         return (p3.subtract(p1).normalize()).crossProduct(p2.subtract(p1).normalize()).normalize();
+    }
+
+    // Create geoid
+    public static FactoryManagedFrame ITRF = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
+    private static ReferenceEllipsoid referenceEllipsoid = ReferenceEllipsoid.getWgs84(ITRF);
+    private static NormalizedSphericalHarmonicsProvider gravity = GravityFieldFactory.getConstantNormalizedProvider(2,2);
+    //The above parameters are (degree,order). Arbitrary for now.
+    private static Geoid geoid = new Geoid(gravity, referenceEllipsoid);
+
+    public static GeodeticPoint cartesianToGeodetic(Vector3D cartesianPoint) {
+        return geoid.transform(cartesianPoint, ITRF, new AbsoluteDate());
+    }
+
+    public static Vector3D geodeticToCartesian(GeodeticPoint geodeticPoint) {
+        return geoid.transform(geodeticPoint);
+    }
+
+    public static Point3D latLonToScreenPoint(double lat, double lon, double radius) {
+        double scaleRatio = radius / REAL_EARTH_RADIUS_METERS;
+        Vector3D cartesian = geodeticToCartesian(new GeodeticPoint(Math.toRadians(lat), Math.toRadians(lon), 0));
+        return new Point3D(cartesian.getY() * scaleRatio, - cartesian.getZ() * scaleRatio, - cartesian.getX() * scaleRatio);
     }
 
 }

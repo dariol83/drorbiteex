@@ -73,32 +73,7 @@ public class TleOrbitDialog implements Initializable {
     }
 
     public static TleOrbit openDialog(Window owner) {
-        try {
-            // Create the popup
-            Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Orbit");
-            d.initModality(Modality.APPLICATION_MODAL);
-            d.initOwner(owner);
-            d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
-
-            URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TleOrbitDialog.fxml");
-            FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
-            AnchorPane root = loader.load();
-            TleOrbitDialog controller = loader.getController();
-
-            d.getDialogPane().setContent(root);
-            Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
-            ok.disableProperty().bind(controller.validData.not());
-            Optional<ButtonType> result = d.showAndWait();
-            if (result.isPresent() && result.get().equals(ButtonType.OK)) {
-                return controller.getResult();
-            } else {
-                return null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        return openDialog(owner, null);
     }
 
     public static TleOrbit openDialog(Window owner, TleOrbit gs) {
@@ -110,11 +85,13 @@ public class TleOrbitDialog implements Initializable {
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/GroundStationDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TleOrbitDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             TleOrbitDialog controller = loader.getController();
-            controller.setOriginalOrbit(gs);
+            if(gs != null) {
+                controller.setOriginalOrbit(gs);
+            }
 
             d.getDialogPane().setContent(root);
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);

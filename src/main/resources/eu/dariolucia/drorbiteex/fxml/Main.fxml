@@ -15,10 +15,14 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.TextField?>
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
+
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
          <children>
             <SplitPane dividerPositions="0.25, 0.75" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -94,7 +98,7 @@
                                                           </ImageView>
                                                       </graphic>
                                                       <tooltip>
-                                                          <Tooltip text="New Orbit..." />
+                                                          <Tooltip text="New TLE Orbit..." />
                                                       </tooltip>
                                                   </Button>
                                                   <Button mnemonicParsing="false" onAction="#onDeleteOrbitStation">
@@ -131,11 +135,6 @@
                                   </VBox>
                               </content>
                             </TitledPane>
-                            <TitledPane animated="false" text="Maps/Coverages">
-                              <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-                              </content>
-                            </TitledPane>
                           </panes>
                         </Accordion>
                      </children>
@@ -147,6 +146,24 @@
                                   <Region />
                               </root>
                           </SubScene>
+                          <ToolBar VBox.vgrow="ALWAYS">
+                              <items>
+                                  <Region HBox.hgrow="ALWAYS" />
+                                  <TextField fx:id="currentTimeText" editable="false" />
+                                  <ToggleButton mnemonicParsing="false" onAction="#onActivateTrackingAction" fx:id="timerTrackingButton">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/step-forward.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Activate current time tracking" />
+                                      </tooltip>
+                                  </ToggleButton>
+                              </items>
+                          </ToolBar>
                       </children>
                   </VBox>
               </items>

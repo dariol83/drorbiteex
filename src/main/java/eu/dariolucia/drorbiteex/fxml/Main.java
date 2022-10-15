@@ -1,6 +1,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.data.*;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
@@ -8,9 +9,7 @@ import javafx.scene.DepthTest;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SubScene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -27,9 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class Main implements Initializable {
 
@@ -37,7 +34,6 @@ public class Main implements Initializable {
     private static final String DEFAULT_CONFIG_FILE_NAME = "state.xml";
     private static final String DEFAULT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_CONFIG_FILE_NAME;
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
-
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
 
 
@@ -70,8 +66,27 @@ public class Main implements Initializable {
     public ListView<AbstractOrbit> orbitList;
     private Group orbitGroup;
 
+    // Time tracker
+    public ToggleButton timerTrackingButton;
+    public TextField currentTimeText;
+    private final Timer tracker = new Timer();
+    private TimerTask timerTask = null;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        // Load old configuration if available
+        String configLocation = System.getProperty(CONFIG_FOLDER_LOCATION_KEY);
+        File orekitData;
+        if(configLocation != null && !configLocation.isBlank()) {
+            configFile = new File(configLocation + File.separator + DEFAULT_CONFIG_FILE_NAME);
+            orekitData = new File(configLocation + File.separator + OREKIT_FOLDER_NAME);
+        } else {
+            configFile = new File(DEFAULT_CONFIG_LOCATION);
+            orekitData = new File(DEFAULT_CONFIG_FOLDER + File.separator + OREKIT_FOLDER_NAME);
+        }
+        DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
+        manager.addProvider(new DirectoryCrawler(orekitData));
+
         // Earth sphere object
         earth = Utils.createEarthSphere();
         groundStationGroup = new Group();
@@ -97,21 +112,12 @@ public class Main implements Initializable {
         groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStation::visibleProperty));
         orbitList.setCellFactory(CheckBoxListCell.forListView(AbstractOrbit::visibleProperty));
 
-        // Load old configuration if available
-        String configLocation = System.getProperty(CONFIG_FOLDER_LOCATION_KEY);
-        File orekitData;
-        if(configLocation != null && !configLocation.isBlank()) {
-            configFile = new File(configLocation + File.separator + DEFAULT_CONFIG_FILE_NAME);
-            orekitData = new File(configLocation + File.separator + OREKIT_FOLDER_NAME);
-        } else {
-            configFile = new File(DEFAULT_CONFIG_LOCATION);
-            orekitData = new File(DEFAULT_CONFIG_FOLDER + File.separator + OREKIT_FOLDER_NAME);
-        }
-        DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
-        manager.addProvider(new DirectoryCrawler(orekitData));
         if(configFile.exists()) {
             loadConfigFile();
         }
+        // Activate satellite tracking
+        timerTrackingButton.setSelected(true);
+        onActivateTrackingAction(null);
     }
 
     private void loadConfigFile() {
@@ -295,8 +301,48 @@ public class Main implements Initializable {
     }
 
     public void onEditOrbitAction(ActionEvent actionEvent) {
+        editOrbit();
     }
 
     public void onOrbitSelectionClick(MouseEvent mouseEvent) {
+        if(mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
+            editOrbit();
+        }
+    }
+
+    private void editOrbit() {
+        AbstractOrbit originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        if(originalOrbit != null) {
+            if(originalOrbit instanceof TleOrbit) {
+                TleOrbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), (TleOrbit) originalOrbit);
+                if (gs != null) {
+                    originalOrbit.update(gs);
+                    saveConfigFile();
+                    orbitList.refresh();
+                }
+            }
+        }
+    }
+
+    public void onActivateTrackingAction(ActionEvent actionEvent) {
+        if(this.timerTrackingButton.isSelected() && this.timerTask == null) {
+            this.timerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    Platform.runLater(() -> timerTick(new Date()));
+                }
+            };
+            this.tracker.schedule(timerTask, 0, 10000);
+        } else if(!this.timerTrackingButton.isSelected() && this.timerTask != null){
+            this.timerTask.cancel();
+            this.timerTask = null;
+        }
+    }
+
+    private void timerTick(Date now) {
+        this.currentTimeText.setText(now.toString());
+        for(AbstractOrbit ao : this.orbitList.getItems()) {
+            ao.updateOrbitTime(now);
+        }
     }
 }

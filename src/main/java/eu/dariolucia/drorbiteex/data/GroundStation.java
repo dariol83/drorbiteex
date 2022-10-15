@@ -141,9 +141,7 @@ public class GroundStation {
     }
 
     private void updateGraphicParameters() {
-        PhongMaterial m = new PhongMaterial();
-        m.setDiffuseColor(Color.valueOf(this.color));
-        m.setSpecularColor(Color.valueOf(this.color));
+        PhongMaterial m = new PhongMaterial(Color.valueOf(this.color));
         this.graphicItem.setMaterial(m);
         // Compute the absolute position of the sphere in the space
         Point3D location = Utils.latLonToScreenPoint(latitude, longitude, Utils.EARTH_RADIUS);

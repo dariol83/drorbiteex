@@ -78,32 +78,7 @@ public class GroundStationDialog implements Initializable {
     }
 
     public static GroundStation openDialog(Window owner) {
-        try {
-            // Create the popup
-            Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Ground Station");
-            d.initModality(Modality.APPLICATION_MODAL);
-            d.initOwner(owner);
-            d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
-
-            URL dataSelectionDialogFxmlUrl = GroundStationDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/GroundStationDialog.fxml");
-            FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
-            AnchorPane root = loader.load();
-            GroundStationDialog controller = loader.getController();
-
-            d.getDialogPane().setContent(root);
-            Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
-            ok.disableProperty().bind(controller.validData.not());
-            Optional<ButtonType> result = d.showAndWait();
-            if (result.isPresent() && result.get().equals(ButtonType.OK)) {
-                return controller.getResult();
-            } else {
-                return null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        return openDialog(owner, null);
     }
 
     public static GroundStation openDialog(Window owner, GroundStation gs) {
@@ -119,7 +94,9 @@ public class GroundStationDialog implements Initializable {
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             GroundStationDialog controller = loader.getController();
-            controller.setOriginalGroundStation(gs);
+            if(gs != null) {
+                controller.setOriginalGroundStation(gs);
+            }
 
             d.getDialogPane().setContent(root);
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
