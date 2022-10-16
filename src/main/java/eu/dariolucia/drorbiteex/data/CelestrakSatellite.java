@@ -82,8 +82,11 @@ public class CelestrakSatellite {
     }
 
     public static String retrieveUpdatedTle(String group, String name) {
-        // TODO: connect to https://celestrak.org/NORAD/elements/gp.php?GROUP=<group>&FORMAT=tle
-        // TODO: parse the result and look for satellite name == name
-        return null;
+        List<CelestrakSatellite> sats = retrieveSpacecraftList(group);
+        if(sats != null) {
+            return sats.stream().filter(o -> o.getName().equals(name)).map(CelestrakSatellite::getTle).findFirst().orElse(null);
+        } else {
+            return null;
+        }
     }
 }

@@ -70,7 +70,7 @@ public class Main implements Initializable {
 
     // Time tracker
     public ToggleButton timerTrackingButton;
-    public TextField currentTimeText;
+    public Label currentTimeLabel;
     private final Timer tracker = new Timer();
     private TimerTask timerTask = null;
 
@@ -356,7 +356,7 @@ public class Main implements Initializable {
     }
 
     private void timerTick(Date now) {
-        this.currentTimeText.setText(now.toString());
+        this.currentTimeLabel.setText(now.toString());
         for(AbstractOrbit ao : this.orbitList.getItems()) {
             ao.updateOrbitTime(now);
         }

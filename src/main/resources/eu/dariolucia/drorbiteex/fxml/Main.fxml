@@ -20,6 +20,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Label?>
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
 
@@ -161,7 +162,7 @@
                           <ToolBar VBox.vgrow="ALWAYS">
                               <items>
                                   <Region HBox.hgrow="ALWAYS" />
-                                  <TextField fx:id="currentTimeText" editable="false" />
+                                  <Label fx:id="currentTimeLabel" />
                                   <ToggleButton mnemonicParsing="false" onAction="#onActivateTrackingAction" fx:id="timerTrackingButton">
                                       <graphic>
                                           <ImageView pickOnBounds="true" preserveRatio="true">

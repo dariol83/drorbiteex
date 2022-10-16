@@ -21,9 +21,9 @@ import java.util.ResourceBundle;
 
 public class CelestrakDialog implements Initializable {
 
-
     public ComboBox<String> groupCombo;
     public ListView<CelestrakSatellite> satelliteList;
+    public ProgressIndicator progressIndicator;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -52,6 +52,7 @@ public class CelestrakDialog implements Initializable {
         String group = this.groupCombo.getSelectionModel().getSelectedItem();
         if(group != null) {
             satelliteList.setDisable(true);
+            progressIndicator.setVisible(true);
             Main.runLater(() -> {
                 List<CelestrakSatellite> sats = CelestrakSatellite.retrieveSpacecraftList(group);
                 Platform.runLater(() -> {
@@ -61,17 +62,17 @@ public class CelestrakDialog implements Initializable {
                         satelliteList.refresh();
                     }
                     satelliteList.setDisable(false);
+                    progressIndicator.setVisible(false);
                 });
             });
         }
     }
 
-
     public static List<CelestrakTleOrbit> openDialog(Window owner) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Ground Station");
+            d.setTitle("Celestrak Orbit Selection");
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
