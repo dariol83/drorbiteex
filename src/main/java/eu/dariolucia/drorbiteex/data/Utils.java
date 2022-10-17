@@ -176,4 +176,10 @@ public class Utils {
         return new Point3D(cartesian.getY() * scaleRatio, - cartesian.getZ() * scaleRatio, - cartesian.getX() * scaleRatio);
     }
 
+    public static double[] toXY(double latitude, double longitude, double width, double height) {
+        // From LAT-LON to x,y:
+        // x (lon): -180: 0 +180: w
+        // y (lat): 90: 0 -90: h
+        return new double[] { ((longitude + 180) / 360) * width,  ((90 - latitude) / 180) * height };
+    }
 }

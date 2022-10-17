@@ -165,14 +165,10 @@ public class GroundStation {
 
     public void draw(GraphicsContext gc, double w, double h) {
         if(isVisible()) {
-            // From LAT-LON to x,y:
-            // x (lon): -180: 0 +180: w
-            // y (lat): 90: 0 -90: h
-            double x = ((longitude + 180) / 360) * w;
-            double y = ((90 - latitude) / 180) * h;
+            double[] xy = Utils.toXY(latitude, longitude, w, h);
             gc.setFill(Color.valueOf(getColor()));
-            gc.fillOval(x - 2, y - 2, 4, 4);
-            gc.fillText(getCode(), x, y - 5);
+            gc.fillOval(xy[0] - 2, xy[1] - 2, 4, 4);
+            gc.fillText(getCode(), xy[0], xy[1] - 5);
         }
     }
 }

@@ -161,7 +161,7 @@ public class Main implements Initializable {
             gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
         }
         for(AbstractOrbit gs : orbitList.getItems()) {
-            // gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
+            gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
         }
         // Done
     }
@@ -330,6 +330,7 @@ public class Main implements Initializable {
         orbitList.getItems().add(gs);
         Group s = gs.createGraphicItem();
         orbitGroup.getChildren().add(s);
+        gs.visibleProperty().addListener(this.groundStationVisibilityUpdate);
     }
 
     public void onDeleteOrbitStation(ActionEvent actionEvent) {
@@ -347,6 +348,7 @@ public class Main implements Initializable {
                 gs.dispose();
                 saveConfigFile();
                 orbitList.refresh();
+                update2Dscene();
             }
         }
     }
@@ -379,6 +381,7 @@ public class Main implements Initializable {
                     orbitList.refresh();
                 }
             }
+            update2Dscene();
         }
     }
 
@@ -432,6 +435,7 @@ public class Main implements Initializable {
                             theOrbit.update(gs);
                             saveConfigFile();
                             orbitList.refresh();
+                            update2Dscene();
                         });
                     }
                 });

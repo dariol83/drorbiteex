@@ -3,6 +3,8 @@ package eu.dariolucia.drorbiteex.data;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -109,4 +111,21 @@ public abstract class AbstractOrbit {
     protected abstract void updateProperties(AbstractOrbit gs);
 
     public abstract void updateOrbitTime(Date time);
+
+    public void draw(GraphicsContext gc, double width, double height) {
+        List<double[]> latLonPoints = getLatLonPoints();
+        gc.setStroke(Color.valueOf(getColor()));
+        if(!latLonPoints.isEmpty()) {
+            double[] point = latLonPoints.get(0);
+            double[] start = Utils.toXY(point[0], point[1], width, height);
+            gc.moveTo(start[0], start[1]);
+            for (int i = 1; i < latLonPoints.size(); ++i) {
+                double[] nextPoint = latLonPoints.get(i);
+                double[] p2 = Utils.toXY(nextPoint[0], nextPoint[1], width, height);
+                gc.lineTo(p2[0], p2[1]);
+            }
+        }
+    }
+
+    protected abstract List<double[]> getLatLonPoints();
 }

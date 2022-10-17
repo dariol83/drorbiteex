@@ -27,10 +27,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
@@ -45,6 +42,8 @@ public class TleOrbit extends AbstractOrbit {
     private transient Text textItem;
     private transient Box scItem;
     private transient TLEPropagator extrapolator;
+
+    private transient volatile List<double[]> latLonPoints = new ArrayList<>();
 
     @XmlElement
     public String getTle() {
@@ -109,6 +108,11 @@ public class TleOrbit extends AbstractOrbit {
         computeTLEpropagation(time);
     }
 
+    @Override
+    protected List<double[]> getLatLonPoints() {
+        return this.latLonPoints;
+    }
+
     private void computeTLEpropagation(Date time) {
         boolean recomputeTle = this.lastTleRenderingTime == null || time.getTime() - this.lastTleRenderingTime.getTime() > 1800000;
         this.lastTleRenderingTime = time;
@@ -130,6 +134,9 @@ public class TleOrbit extends AbstractOrbit {
             this.graphicItem.getChildren().clear();
             this.graphicItem.getChildren().add(Utils.createLine(scPoints, Color.valueOf(getColor())));
             this.tleModifiedSinceLastRendering = false;
+
+            // Transform all points to lat-lon points
+            this.latLonPoints = scStates.stream().map(this::toLatLonArray).collect(Collectors.toCollection(ArrayList::new));
         } else {
             // Change only the colour
             Material newMaterial = new PhongMaterial(Color.valueOf(getColor()));
@@ -159,5 +166,10 @@ public class TleOrbit extends AbstractOrbit {
         this.textItem.setText(getCode());
         this.textItem.setFill(Color.WHITE);
         this.textItem.setStroke(Color.valueOf(getColor()));
+    }
+
+    private double[] toLatLonArray(SpacecraftState spacecraftState) {
+        GeodeticPoint gp = toLatLon(spacecraftState);
+        return new double[] { gp.getLatitude(), gp.getLongitude() };
     }
 }
