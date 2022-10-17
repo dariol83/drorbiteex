@@ -115,6 +115,7 @@ public class TleOrbit extends AbstractOrbit {
         AbsoluteDate ad = new AbsoluteDate(time, TimeScalesFactory.getUTC());
         // Determine the orbit points
         if(recomputeTle || this.tleModifiedSinceLastRendering) {
+            System.out.println("Recomputing orbit for satellite " + getName());
             TLE tleObject = new TLE(this.tle.substring(0, this.tle.indexOf("\n")).trim(), this.tle.substring(this.tle.indexOf("\n")).trim());
             this.extrapolator = TLEPropagator.selectExtrapolator(tleObject);
             List<SpacecraftState> scStates = new LinkedList<>();
@@ -145,7 +146,6 @@ public class TleOrbit extends AbstractOrbit {
         // Set spacecraft where it is now
         SpacecraftState currentLocation = extrapolator.propagate(ad);
         Point3D scLocation = transform(currentLocation);
-        System.out.println("Location of " + getCode() + ": " + scLocation);
         this.scItem.setMaterial(new PhongMaterial(Color.valueOf(getColor())));
         this.scItem.getTransforms().clear();
         this.scItem.getTransforms().add(new Translate(scLocation.getX(), scLocation.getY(), scLocation.getZ()));

@@ -92,6 +92,7 @@ public abstract class AbstractOrbit {
     protected abstract void disposeGraphicItems();
 
     public final void update(AbstractOrbit gs) {
+        System.out.println("Updating orbit of " + getName());
         this.code = gs.getCode();
         this.name = gs.getName();
         this.color = gs.getColor();

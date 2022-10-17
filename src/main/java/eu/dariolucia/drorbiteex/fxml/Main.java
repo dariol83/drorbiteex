@@ -2,6 +2,8 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.data.*;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
@@ -9,8 +11,11 @@ import javafx.scene.DepthTest;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SubScene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
@@ -37,7 +42,6 @@ public class Main implements Initializable {
     private static final String DEFAULT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_CONFIG_FILE_NAME;
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
-
 
     private File configFile;
 
@@ -74,11 +78,18 @@ public class Main implements Initializable {
     private final Timer tracker = new Timer();
     private TimerTask timerTask = null;
 
+    // 2D scene
+    public Canvas scene2d;
+    private Image scene2dImage;
+
+    private ChangeListener<Boolean> groundStationVisibilityUpdate = (observableValue, aBoolean, t1) -> update2Dscene();
+
     private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Dr. Orbiteex - Background Thread");
         t.setDaemon(true);
         return t;
     });
+
 
     public static void runLater(Runnable r) {
         executorService.execute(r);
@@ -115,8 +126,8 @@ public class Main implements Initializable {
         scene3d.setDepthTest(DepthTest.ENABLE);
         scene3d.setManaged(false);
         scene3d.setCamera(new PerspectiveCamera());
-        scene3d.heightProperty().bind(((VBox)scene3d.getParent()).heightProperty());
-        scene3d.widthProperty().bind(((VBox)scene3d.getParent()).widthProperty());
+        scene3d.heightProperty().bind(((VBox)scene3d.getParent().getParent()).heightProperty());
+        scene3d.widthProperty().bind(((VBox)scene3d.getParent().getParent()).widthProperty());
         scene3d.heightProperty().addListener((a,b,c) -> group.setTranslateY(c.floatValue()/2));
         scene3d.widthProperty().addListener((a,b,c) -> group.setTranslateX(c.floatValue()/2));
         scene3d.getParent().addEventHandler(ScrollEvent.SCROLL, this::onScrollOnScene);
@@ -124,16 +135,35 @@ public class Main implements Initializable {
         scene3d.getParent().addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
         scene3d.getParent().addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
 
-        // Handle ground station list
+        // Handle ground station and orbit lists
         groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStation::visibleProperty));
         orbitList.setCellFactory(CheckBoxListCell.forListView(AbstractOrbit::visibleProperty));
 
+        // Load configuration file
         if(configFile.exists()) {
             loadConfigFile();
         }
+
+        // Update 2D view
+        this.scene2dImage = new Image(this.getClass().getResourceAsStream("/images/earth.jpg"));
+        update2Dscene();
+
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
+    }
+
+    private void update2Dscene() {
+        // Handle 2D view
+        GraphicsContext gc = scene2d.getGraphicsContext2D();
+        gc.drawImage(this.scene2dImage, 0, 0, scene2d.getWidth(), scene2d.getHeight());
+        for(GroundStation gs : groundStationList.getItems()) {
+            gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
+        }
+        for(AbstractOrbit gs : orbitList.getItems()) {
+            // gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
+        }
+        // Done
     }
 
     private void loadConfigFile() {
@@ -155,6 +185,7 @@ public class Main implements Initializable {
         groundStationList.getItems().add(gs);
         Group s = gs.createGraphicItem();
         groundStationGroup.getChildren().add(s);
+        gs.visibleProperty().addListener(this.groundStationVisibilityUpdate);
     }
 
     private void saveConfigFile() {
@@ -238,6 +269,7 @@ public class Main implements Initializable {
         if(gs != null) {
             initialiseGroundStation(gs);
             saveConfigFile();
+            update2Dscene();
         }
     }
 
@@ -258,9 +290,11 @@ public class Main implements Initializable {
             if (result.get() == ButtonType.OK){
                 groundStationList.getItems().remove(gs);
                 groundStationGroup.getChildren().remove(gs.getGraphicItem());
+                gs.visibleProperty().removeListener(this.groundStationVisibilityUpdate);
                 gs.dispose();
                 saveConfigFile();
                 groundStationList.refresh();
+                update2Dscene();
             }
         }
     }
@@ -279,6 +313,7 @@ public class Main implements Initializable {
                 originalGs.update(gs, Utils.EARTH_RADIUS);
                 saveConfigFile();
                 groundStationList.refresh();
+                update2Dscene();
             }
         }
     }
@@ -329,7 +364,14 @@ public class Main implements Initializable {
     private void editOrbit() {
         AbstractOrbit originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
-            if(originalOrbit instanceof TleOrbit) {
+            if(originalOrbit instanceof CelestrakTleOrbit) {
+                CelestrakTleOrbit gs = CelestrakTleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), (CelestrakTleOrbit) originalOrbit);
+                if (gs != null) {
+                    originalOrbit.update(gs);
+                    saveConfigFile();
+                    orbitList.refresh();
+                }
+            } else if(originalOrbit instanceof TleOrbit) {
                 TleOrbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), (TleOrbit) originalOrbit);
                 if (gs != null) {
                     originalOrbit.update(gs);
@@ -360,6 +402,7 @@ public class Main implements Initializable {
         for(AbstractOrbit ao : this.orbitList.getItems()) {
             ao.updateOrbitTime(now);
         }
+        update2Dscene();
     }
 
     public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
@@ -367,6 +410,32 @@ public class Main implements Initializable {
         if(gs != null) {
             gs.forEach(this::initialiseOrbit);
             saveConfigFile();
+        }
+    }
+
+    public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
+        //
+        for(AbstractOrbit ao : orbitList.getItems()) {
+            if (ao instanceof CelestrakTleOrbit) {
+                final CelestrakTleOrbit theOrbit = (CelestrakTleOrbit) ao;
+                Main.runLater(() -> {
+                    String newTle = CelestrakSatellite.retrieveUpdatedTle(theOrbit.getGroup(), theOrbit.getName());
+                    if(newTle != null) {
+                        final CelestrakTleOrbit gs = new CelestrakTleOrbit();
+                        gs.setCode(theOrbit.getCode());
+                        gs.setName(theOrbit.getName());
+                        gs.setGroup(theOrbit.getGroup());
+                        gs.setTle(newTle);
+                        gs.setColor(theOrbit.getColor());
+                        gs.setVisible(theOrbit.isVisible());
+                        Platform.runLater(() -> {
+                            theOrbit.update(gs);
+                            saveConfigFile();
+                            orbitList.refresh();
+                        });
+                    }
+                });
+            }
         }
     }
 }

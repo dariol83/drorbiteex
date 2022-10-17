@@ -1,8 +1,12 @@
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.data.CelestrakSatellite;
+import eu.dariolucia.drorbiteex.data.CelestrakTleOrbit;
 import eu.dariolucia.drorbiteex.data.TleOrbit;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -12,24 +16,27 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-public class TleOrbitDialog implements Initializable {
+public class CelestrakTleOrbitDialog implements Initializable {
     public TextField codeText;
     public TextField nameText;
+    public TextField groupText;
     public TextArea tleTextArea;
 
     public ColorPicker colorPicker;
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
+    public Button tleReloadButton;
+    public ProgressIndicator tleProgress;
 
     private String error;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         codeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        nameText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         tleTextArea.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
@@ -39,9 +46,6 @@ public class TleOrbitDialog implements Initializable {
         try {
             if(codeText.getText().isBlank()) {
                 throw new IllegalStateException("Code field is blank");
-            }
-            if(nameText.getText().isBlank()) {
-                throw new IllegalStateException("Name field is blank");
             }
             if(tleTextArea.getText().isBlank()) {
                 throw new IllegalStateException("TLE field is blank");
@@ -55,17 +59,19 @@ public class TleOrbitDialog implements Initializable {
     }
 
 
-    private void setOriginalOrbit(TleOrbit gs) {
+    private void setOriginalOrbit(CelestrakTleOrbit gs) {
         codeText.setText(gs.getCode());
+        groupText.setText(gs.getGroup());
         nameText.setText(gs.getName());
         tleTextArea.setText(gs.getTle());
         colorPicker.setValue(Color.valueOf(gs.getColor()));
     }
 
-    public TleOrbit getResult() {
-        TleOrbit gs = new TleOrbit();
+    public CelestrakTleOrbit getResult() {
+        CelestrakTleOrbit gs = new CelestrakTleOrbit();
         gs.setCode(codeText.getText());
         gs.setName(nameText.getText());
+        gs.setGroup(groupText.getText());
         gs.setTle(tleTextArea.getText());
         gs.setColor(colorPicker.getValue().toString());
         gs.setVisible(true);
@@ -76,19 +82,19 @@ public class TleOrbitDialog implements Initializable {
         return openDialog(owner, null);
     }
 
-    public static TleOrbit openDialog(Window owner, TleOrbit gs) {
+    public static CelestrakTleOrbit openDialog(Window owner, CelestrakTleOrbit gs) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("TLE Orbit");
+            d.setTitle("Celestrak TLE Orbit");
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TleOrbitDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = CelestrakTleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/CelestrakTleOrbitDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
-            TleOrbitDialog controller = loader.getController();
+            CelestrakTleOrbitDialog controller = loader.getController();
             if(gs != null) {
                 controller.setOriginalOrbit(gs);
             }
@@ -106,5 +112,24 @@ public class TleOrbitDialog implements Initializable {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public void onReloadTleAction(ActionEvent actionEvent) {
+        tleReloadButton.setDisable(true);
+        tleTextArea.setDisable(true);
+        tleProgress.setVisible(true);
+        final String group = groupText.getText();
+        final String name = nameText.getText();
+        Main.runLater(() -> {
+            String newTle = CelestrakSatellite.retrieveUpdatedTle(group, name);
+            Platform.runLater(() -> {
+                if(newTle != null) {
+                    tleTextArea.setText(newTle);
+                }
+                tleReloadButton.setDisable(false);
+                tleTextArea.setDisable(false);
+                tleProgress.setVisible(false);
+            });
+        });
     }
 }

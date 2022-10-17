@@ -3,6 +3,7 @@ package eu.dariolucia.drorbiteex.data;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
@@ -17,6 +18,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class GroundStation {
+
+    private static final int GS_RADIUS = 1;
 
     private String code;
     private String name;
@@ -106,7 +109,7 @@ public class GroundStation {
         if(this.groupItem != null) {
             return groupItem;
         }
-        this.graphicItem = new Sphere(2);
+        this.graphicItem = new Sphere(GS_RADIUS);
         this.textItem = new Text(0, 0, this.code);
         updateGraphicParameters();
         this.graphicItem.visibleProperty().bind(this.visibleProperty);
@@ -158,5 +161,18 @@ public class GroundStation {
         result = result.createConcatenation(new Rotate(this.longitude, new Point3D(0, -1, 0)));
         this.textItem.getTransforms().clear();
         this.textItem.getTransforms().add(result);
+    }
+
+    public void draw(GraphicsContext gc, double w, double h) {
+        if(isVisible()) {
+            // From LAT-LON to x,y:
+            // x (lon): -180: 0 +180: w
+            // y (lat): 90: 0 -90: h
+            double x = ((longitude + 180) / 360) * w;
+            double y = ((90 - latitude) / 180) * h;
+            gc.setFill(Color.valueOf(getColor()));
+            gc.fillOval(x - 2, y - 2, 4, 4);
+            gc.fillText(getCode(), x, y - 5);
+        }
     }
 }
