@@ -10,7 +10,9 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
+import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
+import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.forces.gravity.potential.NormalizedSphericalHarmonicsProvider;
 import org.orekit.frames.FactoryManagedFrame;
@@ -18,6 +20,7 @@ import org.orekit.frames.FramesFactory;
 import org.orekit.models.earth.Geoid;
 import org.orekit.models.earth.ReferenceEllipsoid;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 
 import java.util.List;
@@ -28,15 +31,6 @@ public class Utils {
     public static final int REAL_EARTH_RADIUS_METERS = 6371000;
     public static final double EARTH_SCALE_FACTOR = (double) EARTH_RADIUS / (double) REAL_EARTH_RADIUS_METERS;
 
-    /*
-    public static Point3D latLonToScreenPoint(double lat, double lon, double radius) {
-        lon = lon - 90;
-        double x = radius * Math.cos(Math.toRadians(lat)) * Math.cos(Math.toRadians(lon));
-        double y = radius * Math.cos(Math.toRadians(lat)) * Math.sin(Math.toRadians(lon));
-        double z = radius * Math.sin(Math.toRadians(lat));
-        return new Point3D(x, -z, y);
-    }
-    */
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color) {
         Point3D yAxis = new Point3D(0, 1, 0);
         Point3D diff = target.subtract(origin);
@@ -161,6 +155,14 @@ public class Utils {
     private static NormalizedSphericalHarmonicsProvider gravity = GravityFieldFactory.getConstantNormalizedProvider(2,2);
     //The above parameters are (degree,order). Arbitrary for now.
     private static Geoid geoid = new Geoid(gravity, referenceEllipsoid);
+
+    private static BodyShape earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+            Constants.WGS84_EARTH_FLATTENING,
+            ITRF);
+
+    public static BodyShape getEarthShape() {
+        return earthShape;
+    }
 
     public static GeodeticPoint cartesianToGeodetic(Vector3D cartesianPoint) {
         return geoid.transform(cartesianPoint, ITRF, new AbsoluteDate());

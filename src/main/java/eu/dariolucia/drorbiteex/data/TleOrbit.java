@@ -14,24 +14,23 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.bodies.GeodeticPoint;
-import org.orekit.frames.FramesFactory;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
-import org.orekit.utils.IERSConventions;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class TleOrbit extends AbstractOrbit {
+
+    public static final int PROPAGATION_STEPS = 100;
+    public static final double PROPAGATION_STEP_DURATION = 60.0;
 
     private String tle;
 
@@ -44,6 +43,7 @@ public class TleOrbit extends AbstractOrbit {
     private transient TLEPropagator extrapolator;
 
     private transient volatile List<double[]> latLonPoints = new ArrayList<>();
+    private transient volatile double[] scLatLonPoint = null;
 
     @XmlElement
     public String getTle() {
@@ -113,6 +113,10 @@ public class TleOrbit extends AbstractOrbit {
         return this.latLonPoints;
     }
 
+    protected double[] getSpacecraftCurrentLatLon() {
+        return this.scLatLonPoint;
+    }
+
     private void computeTLEpropagation(Date time) {
         boolean recomputeTle = this.lastTleRenderingTime == null || time.getTime() - this.lastTleRenderingTime.getTime() > 1800000;
         this.lastTleRenderingTime = time;
@@ -123,10 +127,9 @@ public class TleOrbit extends AbstractOrbit {
             TLE tleObject = new TLE(this.tle.substring(0, this.tle.indexOf("\n")).trim(), this.tle.substring(this.tle.indexOf("\n")).trim());
             this.extrapolator = TLEPropagator.selectExtrapolator(tleObject);
             List<SpacecraftState> scStates = new LinkedList<>();
-
-            for (int i = -100; i < 100; ++i) {
-                // Propagate for 400 minutes (1 point every 2 minute - 200 points)
-                SpacecraftState next = extrapolator.propagate(ad.shiftedBy(120.0 * i));
+            for (int i = -PROPAGATION_STEPS; i < PROPAGATION_STEPS; ++i) {
+                // Propagate for 200 minutes (1 point every 1 minute - 200 points)
+                SpacecraftState next = extrapolator.propagate(ad.shiftedBy(PROPAGATION_STEP_DURATION * i));
                 scStates.add(next);
             }
             // Transform all points to line
@@ -150,26 +153,40 @@ public class TleOrbit extends AbstractOrbit {
                 }
             }
         }
+
         // Set spacecraft where it is now
         SpacecraftState currentLocation = extrapolator.propagate(ad);
         Point3D scLocation = transform(currentLocation);
         this.scItem.setMaterial(new PhongMaterial(Color.valueOf(getColor())));
         this.scItem.getTransforms().clear();
         this.scItem.getTransforms().add(new Translate(scLocation.getX(), scLocation.getY(), scLocation.getZ()));
-
+        this.scLatLonPoint = toLatLonArray(currentLocation);
         // Set spacecraft text where it is now
         Transform result = new Translate(scLocation.getX() * 1.05, scLocation.getY() * 1.05, scLocation.getZ() * 1.05);
         result = result.createConcatenation(new Rotate(Math.toDegrees(toLatLon(currentLocation).getLongitude()), new Point3D(0, -1, 0)));
         this.textItem.getTransforms().clear();
         this.textItem.getTransforms().add(result);
-
         this.textItem.setText(getCode());
         this.textItem.setFill(Color.WHITE);
         this.textItem.setStroke(Color.valueOf(getColor()));
+
+        // Compute visibility from now until 2xPROPAGATION
+        List<GroundStation> gsList = getGroundStations();
+        if(!gsList.isEmpty()) {
+            System.out.println("Recomputing visibility for satellite " + getName() + " at time " + time);
+            // extrapolator.propagate(ad); // No need to reset the propagation at 'ad' time
+            gsList.forEach(o -> {
+                extrapolator.addEventDetector(o.getEventDetector());
+                o.initVisibilityComputation(getCode());
+            });
+            extrapolator.propagate(ad.shiftedBy(2 * PROPAGATION_STEP_DURATION * PROPAGATION_STEPS));
+            extrapolator.clearEventsDetectors();
+            gsList.forEach(o -> o.endVisibilityComputation(getCode()));
+        }
     }
 
     private double[] toLatLonArray(SpacecraftState spacecraftState) {
         GeodeticPoint gp = toLatLon(spacecraftState);
-        return new double[] { gp.getLatitude(), gp.getLongitude() };
+        return new double[] { Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()) };
     }
 }

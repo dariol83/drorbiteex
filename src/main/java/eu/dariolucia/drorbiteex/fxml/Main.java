@@ -2,8 +2,8 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.data.*;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
@@ -43,6 +43,7 @@ public class Main implements Initializable {
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
 
+
     private File configFile;
 
     public SubScene scene3d;
@@ -78,11 +79,19 @@ public class Main implements Initializable {
     private final Timer tracker = new Timer();
     private TimerTask timerTask = null;
 
-    // 2D scene
+    // 2D scene (minimap)
     public Canvas scene2d;
     private Image scene2dImage;
+    public ToggleButton minimapButton;
 
-    private ChangeListener<Boolean> groundStationVisibilityUpdate = (observableValue, aBoolean, t1) -> update2Dscene();
+    // Pass table
+    public TableView<VisibilityWindow> passTable;
+    public TableColumn<VisibilityWindow, String> satelliteColumn;
+    public TableColumn<VisibilityWindow, String> orbitColumn;
+    public TableColumn<VisibilityWindow, String> aosColumn;
+    public TableColumn<VisibilityWindow, String> losColumn;
+
+    private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Dr. Orbiteex - Background Thread");
@@ -147,6 +156,21 @@ public class Main implements Initializable {
         // Update 2D view
         this.scene2dImage = new Image(this.getClass().getResourceAsStream("/images/earth.jpg"));
         update2Dscene();
+        this.scene2d.visibleProperty().bind(this.minimapButton.selectedProperty());
+
+        // Configure pass table
+        satelliteColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getSatellite()));
+        orbitColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(String.valueOf(o.getValue().getOrbitNumber())));
+        aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(Objects.toString(o.getValue().getAos(), "---")));
+        losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(Objects.toString(o.getValue().getLos(), "---")));
+        groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> {
+            Map<String, List<VisibilityWindow>> windows = b.getVisibilityWindows();
+            List<VisibilityWindow> vw = new LinkedList<>();
+            windows.values().forEach(vw::addAll);
+            Collections.sort(vw);
+            passTable.getItems().clear();
+            passTable.getItems().addAll(vw);
+        });
 
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
@@ -179,13 +203,6 @@ public class Main implements Initializable {
             e.printStackTrace();
             // Ignore
         }
-    }
-
-    private void initialiseGroundStation(GroundStation gs) {
-        groundStationList.getItems().add(gs);
-        Group s = gs.createGraphicItem();
-        groundStationGroup.getChildren().add(s);
-        gs.visibleProperty().addListener(this.groundStationVisibilityUpdate);
     }
 
     private void saveConfigFile() {
@@ -273,12 +290,18 @@ public class Main implements Initializable {
         }
     }
 
+    private void initialiseGroundStation(GroundStation gs) {
+        groundStationList.getItems().add(gs);
+        Group s = gs.createGraphicItem();
+        groundStationGroup.getChildren().add(s);
+        gs.visibleProperty().addListener(this.visibilityUpdateListener);
+    }
+
     public void onEditGroundStationAction(ActionEvent mouseEvent) {
         editGroundStation();
     }
 
-
-    public void onDeleteGroundStation(ActionEvent actionEvent) {
+    public void onDeleteGroundStationAction(ActionEvent actionEvent) {
         GroundStation gs = groundStationList.getSelectionModel().getSelectedItem();
         if(gs != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -290,7 +313,7 @@ public class Main implements Initializable {
             if (result.get() == ButtonType.OK){
                 groundStationList.getItems().remove(gs);
                 groundStationGroup.getChildren().remove(gs.getGraphicItem());
-                gs.visibleProperty().removeListener(this.groundStationVisibilityUpdate);
+                gs.visibleProperty().removeListener(this.visibilityUpdateListener);
                 gs.dispose();
                 saveConfigFile();
                 groundStationList.refresh();
@@ -310,7 +333,7 @@ public class Main implements Initializable {
         if(originalGs != null) {
             GroundStation gs = GroundStationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalGs);
             if (gs != null) {
-                originalGs.update(gs, Utils.EARTH_RADIUS);
+                originalGs.update(gs);
                 saveConfigFile();
                 groundStationList.refresh();
                 update2Dscene();
@@ -327,13 +350,18 @@ public class Main implements Initializable {
     }
 
     private void initialiseOrbit(AbstractOrbit gs) {
+        gs.setGroundStationProvider(this::getGroundStations);
         orbitList.getItems().add(gs);
         Group s = gs.createGraphicItem();
         orbitGroup.getChildren().add(s);
-        gs.visibleProperty().addListener(this.groundStationVisibilityUpdate);
+        gs.visibleProperty().addListener(this.visibilityUpdateListener);
     }
 
-    public void onDeleteOrbitStation(ActionEvent actionEvent) {
+    private List<GroundStation> getGroundStations() {
+        return List.copyOf(this.groundStationList.getItems());
+    }
+
+    public void onDeleteOrbitAction(ActionEvent actionEvent) {
         AbstractOrbit gs = orbitList.getSelectionModel().getSelectedItem();
         if(gs != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -390,7 +418,10 @@ public class Main implements Initializable {
             this.timerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    Platform.runLater(() -> timerTick(new Date()));
+                    Platform.runLater(() -> {
+                        Date d = new Date();
+                        timerTick(d);
+                    });
                 }
             };
             this.tracker.schedule(timerTask, 0, 10000);

@@ -14,6 +14,7 @@ open module eu.dariolucia.drorbiteex {
 
     requires org.orekit;
     requires hipparchus.geometry;
+    requires hipparchus.ode;
 
     exports eu.dariolucia.drorbiteex.fxml;
     exports eu.dariolucia.drorbiteex.application;

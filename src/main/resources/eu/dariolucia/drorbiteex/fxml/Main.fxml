@@ -1,39 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.SubScene?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
-
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.layout.VBox?>
+
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
-
+       <ToolBar VBox.vgrow="ALWAYS">
+           <items>
+               <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/image-plus-outline.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle minimap" />
+                   </tooltip>
+               </ToggleButton>
+               <Region HBox.hgrow="ALWAYS" />
+               <Label fx:id="currentTimeLabel" />
+               <ToggleButton fx:id="timerTrackingButton" mnemonicParsing="false" onAction="#onActivateTrackingAction">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/step-forward.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle current time tracking" />
+                   </tooltip>
+               </ToggleButton>
+           </items>
+       </ToolBar>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
          <children>
-            <SplitPane dividerPositions="0.25, 0.75" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <SplitPane dividerPositions="0.25" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
               <items>
                 <AnchorPane fx:id="leftPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                      <children>
-                        <Accordion AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" expandedPane="$groundStationPane">
+                        <Accordion AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                           <panes>
-                            <TitledPane animated="false" text="Ground Stations" fx:id="groundStationPane">
+                            <TitledPane fx:id="groundStationPane" animated="false" text="Ground Stations">
                               <content>
-                                <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5">
                                        <children>
                                            <ToolBar prefHeight="32.0" prefWidth="200.0" VBox.vgrow="NEVER">
                                                <items>
@@ -49,7 +80,7 @@
                                                            <Tooltip text="New Ground Station..." />
                                                        </tooltip>
                                                    </Button>
-                                                   <Button mnemonicParsing="false" onAction="#onDeleteGroundStation">
+                                                   <Button mnemonicParsing="false" onAction="#onDeleteGroundStationAction">
                                                        <graphic>
                                                            <ImageView pickOnBounds="true" preserveRatio="true">
                                                                <image>
@@ -76,16 +107,25 @@
                                                </items>
                                            </ToolBar>
                                           <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" />
+                                           <Label text="Upcoming passes" />
+                                           <TableView fx:id="passTable" VBox.vgrow="ALWAYS">
+                                             <columns>
+                                                <TableColumn prefWidth="75.0" text="Satellite" fx:id="satelliteColumn"/>
+                                                <TableColumn prefWidth="75.0" text="Orbit" fx:id="orbitColumn"/>
+                                                <TableColumn prefWidth="75.0" text="AOS" fx:id="aosColumn"/>
+                                                <TableColumn prefWidth="75.0" text="LOS" fx:id="losColumn"/>
+                                             </columns>
+                                           </TableView>
                                        </children>
                                     <padding>
-                                        <Insets top="0" right="0" left="0" bottom="0"/>
+                                        <Insets bottom="0" left="0" right="0" top="0" />
                                     </padding>
                                 </VBox>
                               </content>
                             </TitledPane>
                             <TitledPane animated="false" text="Orbits">
                               <content>
-                                  <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                  <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5">
                                       <children>
                                           <ToolBar prefHeight="32.0" prefWidth="200.0" VBox.vgrow="NEVER">
                                               <items>
@@ -125,7 +165,7 @@
                                                           <Tooltip text="Refresh Celestrak Orbits" />
                                                       </tooltip>
                                                   </Button>
-                                                  <Button mnemonicParsing="false" onAction="#onDeleteOrbitStation">
+                                                  <Button mnemonicParsing="false" onAction="#onDeleteOrbitAction">
                                                       <graphic>
                                                           <ImageView pickOnBounds="true" preserveRatio="true">
                                                               <image>
@@ -154,7 +194,7 @@
                                           <ListView fx:id="orbitList" onMouseClicked="#onOrbitSelectionClick" VBox.vgrow="ALWAYS" />
                                       </children>
                                       <padding>
-                                          <Insets top="0" right="0" left="0" bottom="0"/>
+                                          <Insets bottom="0" left="0" right="0" top="0" />
                                       </padding>
                                   </VBox>
                               </content>
@@ -165,24 +205,6 @@
                   </AnchorPane>
                   <VBox>
                       <children>
-                          <ToolBar VBox.vgrow="ALWAYS">
-                              <items>
-                                  <Region HBox.hgrow="ALWAYS" />
-                                  <Label fx:id="currentTimeLabel" />
-                                  <ToggleButton mnemonicParsing="false" onAction="#onActivateTrackingAction" fx:id="timerTrackingButton">
-                                      <graphic>
-                                          <ImageView pickOnBounds="true" preserveRatio="true">
-                                              <image>
-                                                  <Image url="@/step-forward.png" />
-                                              </image>
-                                          </ImageView>
-                                      </graphic>
-                                      <tooltip>
-                                          <Tooltip text="Activate current time tracking" />
-                                      </tooltip>
-                                  </ToggleButton>
-                              </items>
-                          </ToolBar>
                           <StackPane VBox.vgrow="ALWAYS">
                               <children>
                                   <SubScene fx:id="scene3d" depthBuffer="true">
@@ -190,7 +212,7 @@
                                           <Region />
                                       </root>
                                   </SubScene>
-                                  <Canvas fx:id="scene2d" pickOnBounds="true" width="600" height="300" StackPane.alignment="BOTTOM_RIGHT">
+                                  <Canvas fx:id="scene2d" height="300" pickOnBounds="true" width="600" StackPane.alignment="BOTTOM_RIGHT">
                                   </Canvas>
                               </children>
                           </StackPane>

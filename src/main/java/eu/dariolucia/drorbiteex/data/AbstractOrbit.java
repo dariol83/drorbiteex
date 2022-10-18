@@ -10,8 +10,10 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public abstract class AbstractOrbit {
@@ -22,6 +24,19 @@ public abstract class AbstractOrbit {
     private final SimpleBooleanProperty visibleProperty = new SimpleBooleanProperty(false);
 
     private transient Group groupItem;
+    private transient Supplier<List<GroundStation>> groundStationProvider;
+
+    public void setGroundStationProvider(Supplier<List<GroundStation>> groundStationProvider) {
+        this.groundStationProvider = groundStationProvider;
+    }
+
+    protected List<GroundStation> getGroundStations() {
+        if(this.groundStationProvider == null) {
+            return Collections.emptyList();
+        } else {
+            return this.groundStationProvider.get();
+        }
+    }
 
     @XmlAttribute
     public String getCode() {
@@ -113,19 +128,41 @@ public abstract class AbstractOrbit {
     public abstract void updateOrbitTime(Date time);
 
     public void draw(GraphicsContext gc, double width, double height) {
-        List<double[]> latLonPoints = getLatLonPoints();
-        gc.setStroke(Color.valueOf(getColor()));
-        if(!latLonPoints.isEmpty()) {
-            double[] point = latLonPoints.get(0);
-            double[] start = Utils.toXY(point[0], point[1], width, height);
-            gc.moveTo(start[0], start[1]);
-            for (int i = 1; i < latLonPoints.size(); ++i) {
-                double[] nextPoint = latLonPoints.get(i);
-                double[] p2 = Utils.toXY(nextPoint[0], nextPoint[1], width, height);
-                gc.lineTo(p2[0], p2[1]);
+        if(isVisible()) {
+            List<double[]> latLonPoints = getLatLonPoints();
+            gc.setStroke(Color.valueOf(getColor()));
+            gc.setFill(Color.valueOf(getColor()));
+            gc.setLineWidth(1.5);
+            if (!latLonPoints.isEmpty()) {
+                double[] previousPoint = latLonPoints.get(0);
+                double[] start = Utils.toXY(previousPoint[0], previousPoint[1], width, height);
+                gc.beginPath();
+                gc.moveTo(start[0], start[1]);
+                for (int i = 1; i < latLonPoints.size(); ++i) {
+                    double[] nextPoint = latLonPoints.get(i);
+                    double[] p2 = Utils.toXY(nextPoint[0], nextPoint[1], width, height);
+                    // If there is a longitude sign swap with large distance, moveTo instead of lineTo
+                    boolean swap = Math.abs(nextPoint[1] - previousPoint[1]) > 45; // ((nextPoint[1] < 0 && previousPoint[1] > 0) || (nextPoint[1] > 0 && previousPoint[1] < 0)) &&
+                    if(swap) {
+                        gc.moveTo(p2[0], p2[1]);
+                    } else {
+                        gc.lineTo(p2[0], p2[1]);
+                    }
+                    previousPoint = nextPoint;
+                }
+                gc.stroke();
+                gc.closePath();
+            }
+            double[] scLatLon = getSpacecraftCurrentLatLon();
+            if (scLatLon != null) {
+                double[] scCenter = Utils.toXY(scLatLon[0], scLatLon[1], width, height);
+                gc.fillRect(scCenter[0] - 2, scCenter[1] - 2, 4, 4);
+                gc.fillText(getCode(), scCenter[0], scCenter[1] - 5);
             }
         }
     }
 
     protected abstract List<double[]> getLatLonPoints();
+
+    protected abstract double[] getSpacecraftCurrentLatLon();
 }
