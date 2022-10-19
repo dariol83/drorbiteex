@@ -13,6 +13,7 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.hipparchus.ode.events.Action;
 import org.orekit.bodies.GeodeticPoint;
+import org.orekit.errors.OrekitException;
 import org.orekit.frames.TopocentricFrame;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.ElevationDetector;
@@ -20,14 +21,13 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.events.handlers.EventHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
+import org.orekit.utils.Constants;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class GroundStation implements EventHandler<ElevationDetector> {
@@ -54,6 +54,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     private static final double elevation = Math.toRadians(5.0);
 
     private transient EventDetector eventDetector;
+
 
     @XmlAttribute
     public String getCode() {
@@ -195,7 +196,79 @@ public class GroundStation implements EventHandler<ElevationDetector> {
             gc.setFill(Color.valueOf(getColor()));
             gc.fillOval(xy[0] - 2, xy[1] - 2, 4, 4);
             gc.fillText(getCode(), xy[0], xy[1] - 5);
+            // Ground track
+            gc.setStroke(Color.valueOf(getColor()));
+            Color originalFill = Color.valueOf(getColor());
+            gc.setFill(new Color(originalFill.getRed(), originalFill.getGreen(), originalFill.getBlue(), originalFill.getOpacity()/3));
+            gc.setLineWidth(1.0);
+            if(!visibilityCircle.isEmpty()) {
+                // Pretest: if the longitude distance between two consecutive points is > Math.PI, then we are closing to the poles
+                // Solution: order the points according to longitude, draw them, then close the line with the two corners (check latitude)
+                // TODO: can be computed already when the visibility circle is computed
+                if(wideCircle(visibilityCircle)) {
+                    Comparator<double[]> comparator = (a,b) -> {
+                        if(a[0] == b[0]) {
+                            return Double.compare(a[1], b[1]);
+                        } else {
+                            return Double.compare(a[0], b[0]);
+                        }
+                    };
+                    List<double[]> toRender = visibilityCircle.stream().map(gp -> Utils.toXY(Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()), w, h)).collect(Collectors.toCollection(ArrayList::new));
+                    toRender.sort(comparator);
+
+                    gc.beginPath();
+                    double[] p0 = toRender.get(0);
+                    // Render from right to left
+                    gc.moveTo(p0[0], p0[1]);
+                    for (int i = 1; i < toRender.size(); ++i) {
+                        double[] pi = toRender.get(i);
+                        gc.lineTo(pi[0], pi[1]);
+                    }
+                    // Now the main line is draw: we have to close it with two corner points
+                    if(getLatitude() > 0) {
+                        gc.lineTo(w, 0); // top right
+                        gc.lineTo(0, 0); // top left
+                    } else {
+                        gc.lineTo(w, h); // bottom right
+                        gc.lineTo(0, h); // bottom left
+                    }
+                    gc.lineTo(p0[0], p0[1]);
+                    gc.stroke();
+                    gc.fill();
+                    gc.closePath();
+                } else {
+                    GeodeticPoint gp0 = visibilityCircle.get(0);
+                    double[] p0 = Utils.toXY(Math.toDegrees(gp0.getLatitude()), Math.toDegrees(gp0.getLongitude()), w, h);
+                    gc.beginPath();
+                    gc.moveTo(p0[0], p0[1]);
+                    for (int i = 1; i < visibilityCircle.size(); ++i) {
+                        GeodeticPoint gpi = visibilityCircle.get(i);
+                        double[] pi = Utils.toXY(Math.toDegrees(gpi.getLatitude()), Math.toDegrees(gpi.getLongitude()), w, h);
+                        gc.lineTo(pi[0], pi[1]);
+                    }
+                    gc.lineTo(p0[0], p0[1]);
+                    gc.stroke();
+                    gc.fill();
+                    gc.closePath();
+                }
+            }
+
         }
+    }
+
+    private boolean wideCircle(List<GeodeticPoint> visibilityCircle) {
+        for(int i = 0; i < visibilityCircle.size(); ++i) {
+            if(i < visibilityCircle.size() - 1) {
+                if(Math.abs(visibilityCircle.get(i).getLongitude() - visibilityCircle.get(i + 1).getLongitude()) > Math.PI + 0.1) {
+                    return true;
+                }
+            } else {
+                if(Math.abs(visibilityCircle.get(i).getLongitude() - visibilityCircle.get(0).getLongitude()) > Math.PI + 0.1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private transient Map<String, List<VisibilityWindow>> visibilityWindows = new TreeMap<>();
@@ -251,12 +324,36 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     }
 
     public void endVisibilityComputation(String spacecraftId) {
-        VisibilityWindow.TemporaryPoint tp = this.temporaryPointMap.remove(spacecraftId);
-        if(tp != null) {
-            // open AOS
-            VisibilityWindow vw = new VisibilityWindow(spacecraftId, 0, tp.getTime(), null, this);
-            visibilityWindows.computeIfAbsent(spacecraftId, o -> new ArrayList<>()).add(vw);
-        }
+        this.temporaryPointMap.remove(spacecraftId);
+        // Ignore last pass if it remains open
         this.currentSpacecraft = null;
+    }
+
+    private transient String currentGroundTrackSelection = null;
+    private transient double currentGroundTrackSpacecraftHeight = 0;
+    private transient List<GeodeticPoint> visibilityCircle = new LinkedList<>();
+
+    public void setSpacecraftGroundTrack(String spacecraft, double[] latLonAltitude) {
+        if(spacecraft != null) {
+            this.currentGroundTrackSelection = spacecraft;
+            this.currentGroundTrackSpacecraftHeight = latLonAltitude[2];
+            computeCircle(Constants.WGS84_EARTH_EQUATORIAL_RADIUS + this.currentGroundTrackSpacecraftHeight);
+        } else {
+            this.currentGroundTrackSelection = null;
+            this.currentGroundTrackSpacecraftHeight = 0;
+            visibilityCircle.clear();
+        }
+    }
+
+    private void computeCircle(double radius)
+            throws OrekitException {
+        // define an array of ground stations
+        TopocentricFrame station = this.stationFrame;
+        // compute the visibility circle
+        visibilityCircle.clear();
+        for (int i = 0; i < 180; ++i) {
+            double azimuth = i * (2.0 * Math.PI / 180);
+            visibilityCircle.add(station.computeLimitVisibilityPoint(radius, azimuth, 0));
+        }
     }
 }

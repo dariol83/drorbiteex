@@ -22,15 +22,24 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ComboBox?>
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
            <items>
+               <Region HBox.hgrow="ALWAYS" />
+
+               <Separator orientation="VERTICAL" />
+               <Label text="Ground Track" />
+               <ComboBox fx:id="groundTrackCombo" onAction="#onGroundTrackComboSelected">
+               </ComboBox>
+               <Separator orientation="VERTICAL" />
                <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
                            <image>
-                               <Image url="@/image-plus-outline.png" />
+                               <Image url="@/picture-in-picture-bottom-right.png" />
                            </image>
                        </ImageView>
                    </graphic>
@@ -38,7 +47,7 @@
                        <Tooltip text="Toggle minimap" />
                    </tooltip>
                </ToggleButton>
-               <Region HBox.hgrow="ALWAYS" />
+               <Separator orientation="VERTICAL" />
                <Label fx:id="currentTimeLabel" />
                <ToggleButton fx:id="timerTrackingButton" mnemonicParsing="false" onAction="#onActivateTrackingAction">
                    <graphic>
@@ -133,7 +142,7 @@
                                                       <graphic>
                                                           <ImageView pickOnBounds="true" preserveRatio="true">
                                                               <image>
-                                                                  <Image url="@/plus-circle-outline.png" />
+                                                                  <Image url="@/plus-circle-outline-tle.png" />
                                                               </image>
                                                           </ImageView>
                                                       </graphic>
@@ -145,7 +154,7 @@
                                                       <graphic>
                                                           <ImageView pickOnBounds="true" preserveRatio="true">
                                                               <image>
-                                                                  <Image url="@/plus-circle-outline.png" />
+                                                                  <Image url="@/plus-circle-outline-celestrak.png" />
                                                               </image>
                                                           </ImageView>
                                                       </graphic>

@@ -23,7 +23,10 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 public class Utils {
 
@@ -183,5 +186,12 @@ public class Utils {
         // x (lon): -180: 0 +180: w
         // y (lat): 90: 0 -90: h
         return new double[] { ((longitude + 180) / 360) * width,  ((90 - latitude) / 180) * height };
+    }
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+
+    public static String formatDate(Date d) {
+        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return DATE_FORMAT.format(d);
     }
 }

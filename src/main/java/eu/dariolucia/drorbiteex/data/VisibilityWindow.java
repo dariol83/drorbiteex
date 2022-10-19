@@ -64,6 +64,22 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         }
     }
 
+    public String getAosString() {
+        if(this.aos == null) {
+            return "---";
+        } else {
+            return Utils.formatDate(this.aos);
+        }
+    }
+
+    public String getLosString() {
+        if(this.los == null) {
+            return "---";
+        } else {
+            return Utils.formatDate(this.los);
+        }
+    }
+
     public static class TemporaryPoint {
         private final String satellite;
         private final int orbitNumber;

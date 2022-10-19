@@ -58,6 +58,7 @@ public class TleOrbitDialog implements Initializable {
     private void setOriginalOrbit(TleOrbit gs) {
         codeText.setText(gs.getCode());
         nameText.setText(gs.getName());
+        nameText.setDisable(true); // Let's avoid mess with change of names... only code is displayed anyway
         tleTextArea.setText(gs.getTle());
         colorPicker.setValue(Color.valueOf(gs.getColor()));
     }

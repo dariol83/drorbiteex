@@ -4,6 +4,8 @@ import eu.dariolucia.drorbiteex.data.*;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ListChangeListener;
+import javafx.collections.WeakListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
@@ -23,6 +25,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
+import javafx.util.StringConverter;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
@@ -42,7 +45,7 @@ public class Main implements Initializable {
     private static final String DEFAULT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_CONFIG_FILE_NAME;
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
-
+    private static final String NO_GROUND_TRACK = "             ";
 
     private File configFile;
 
@@ -91,6 +94,8 @@ public class Main implements Initializable {
     public TableColumn<VisibilityWindow, String> aosColumn;
     public TableColumn<VisibilityWindow, String> losColumn;
 
+    // Ground track combo selection
+    public ComboBox<Object> groundTrackCombo;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
@@ -98,7 +103,6 @@ public class Main implements Initializable {
         t.setDaemon(true);
         return t;
     });
-
 
     public static void runLater(Runnable r) {
         executorService.execute(r);
@@ -148,6 +152,46 @@ public class Main implements Initializable {
         groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStation::visibleProperty));
         orbitList.setCellFactory(CheckBoxListCell.forListView(AbstractOrbit::visibleProperty));
 
+        // Handle ground track list
+        groundTrackCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Object o) {
+                if (o.equals(NO_GROUND_TRACK)) {
+                    return NO_GROUND_TRACK;
+                } else if (o instanceof AbstractOrbit) {
+                    return ((AbstractOrbit) o).getName();
+                } else {
+                    throw new IllegalStateException("Wrong conversion object: " + o);
+                }
+            }
+
+            @Override
+            public Object fromString(String s) {
+                if (s.equals(NO_GROUND_TRACK)) {
+                    return NO_GROUND_TRACK;
+                } else {
+                    for (AbstractOrbit ao : orbitList.getItems()) {
+                        if (ao.getName().equals(s)) {
+                            return ao;
+                        }
+                    }
+                    throw new IllegalStateException("Wrong conversion string: " + s);
+                }
+            }
+        });
+        groundTrackCombo.getItems().add(NO_GROUND_TRACK);
+        orbitList.getItems().addListener((ListChangeListener<AbstractOrbit>) c -> {
+            while (c.next()) {
+                for (AbstractOrbit remitem : c.getRemoved()) {
+                    groundTrackCombo.getItems().remove(remitem);
+                }
+                for (AbstractOrbit additem : c.getAddedSubList()) {
+                    groundTrackCombo.getItems().add(additem);
+                }
+            }
+        });
+        groundTrackCombo.getSelectionModel().select(0);
+
         // Load configuration file
         if(configFile.exists()) {
             loadConfigFile();
@@ -161,8 +205,8 @@ public class Main implements Initializable {
         // Configure pass table
         satelliteColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getSatellite()));
         orbitColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(String.valueOf(o.getValue().getOrbitNumber())));
-        aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(Objects.toString(o.getValue().getAos(), "---")));
-        losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(Objects.toString(o.getValue().getLos(), "---")));
+        aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getAosString()));
+        losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getLosString()));
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> {
             Map<String, List<VisibilityWindow>> windows = b.getVisibilityWindows();
             List<VisibilityWindow> vw = new LinkedList<>();
@@ -432,7 +476,7 @@ public class Main implements Initializable {
     }
 
     private void timerTick(Date now) {
-        this.currentTimeLabel.setText(now.toString());
+        this.currentTimeLabel.setText(Utils.formatDate(now));
         for(AbstractOrbit ao : this.orbitList.getItems()) {
             ao.updateOrbitTime(now);
         }
@@ -472,5 +516,17 @@ public class Main implements Initializable {
                 });
             }
         }
+    }
+
+    public void onGroundTrackComboSelected(ActionEvent actionEvent) {
+        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
+        if(selectedSc.equals(NO_GROUND_TRACK)) {
+            // Stop rendering ground tracks
+            groundStationList.getItems().forEach(o -> o.setSpacecraftGroundTrack(null, null));
+        } else {
+            // Enable ground track computation and rendering for the specific satellite
+            groundStationList.getItems().forEach(o -> o.setSpacecraftGroundTrack(((AbstractOrbit) selectedSc).getName(), ((AbstractOrbit) selectedSc).getSpacecraftCurrentLatLon()));
+        }
+        update2Dscene();
     }
 }

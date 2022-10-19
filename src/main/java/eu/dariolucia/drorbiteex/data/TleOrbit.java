@@ -109,11 +109,11 @@ public class TleOrbit extends AbstractOrbit {
     }
 
     @Override
-    protected List<double[]> getLatLonPoints() {
+    public List<double[]> getLatLonPoints() {
         return this.latLonPoints;
     }
 
-    protected double[] getSpacecraftCurrentLatLon() {
+    public double[] getSpacecraftCurrentLatLon() {
         return this.scLatLonPoint;
     }
 
@@ -187,6 +187,6 @@ public class TleOrbit extends AbstractOrbit {
 
     private double[] toLatLonArray(SpacecraftState spacecraftState) {
         GeodeticPoint gp = toLatLon(spacecraftState);
-        return new double[] { Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()) };
+        return new double[] { Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()), gp.getAltitude() };
     }
 }

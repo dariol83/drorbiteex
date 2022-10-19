@@ -162,7 +162,7 @@ public abstract class AbstractOrbit {
         }
     }
 
-    protected abstract List<double[]> getLatLonPoints();
+    public abstract List<double[]> getLatLonPoints();
 
-    protected abstract double[] getSpacecraftCurrentLatLon();
+    public abstract double[] getSpacecraftCurrentLatLon();
 }
