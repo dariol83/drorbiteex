@@ -353,7 +353,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         visibilityCircle.clear();
         for (int i = 0; i < 180; ++i) {
             double azimuth = i * (2.0 * Math.PI / 180);
-            visibilityCircle.add(station.computeLimitVisibilityPoint(radius, azimuth, 0));
+            visibilityCircle.add(station.computeLimitVisibilityPoint(radius, azimuth, Math.toRadians(5.0)));
         }
     }
 }
