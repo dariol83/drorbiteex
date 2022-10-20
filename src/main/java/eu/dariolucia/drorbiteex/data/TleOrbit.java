@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class TleOrbit extends AbstractOrbit {
 
-    public static final int PROPAGATION_STEPS = 100;
-    public static final double PROPAGATION_STEP_DURATION = 60.0;
+    private static final int PROPAGATION_STEPS = 100;
+    private static final double PROPAGATION_STEP_DURATION = 60.0;
 
     private String tle;
 
@@ -99,13 +99,13 @@ public class TleOrbit extends AbstractOrbit {
         if(this.lastTleRenderingTime == null) {
             this.lastTleRenderingTime = new Date();
         }
-        updateOrbitTime(this.lastTleRenderingTime);
+        updateOrbitTime(this.lastTleRenderingTime, false);
     }
 
     @Override
-    public void updateOrbitTime(Date time) {
+    public void updateOrbitTime(Date time, boolean refreshPasses) {
         // Compute and render the TLE propagation when needed
-        computeTLEpropagation(time);
+        computeTLEpropagation(time, refreshPasses);
     }
 
     @Override
@@ -117,7 +117,7 @@ public class TleOrbit extends AbstractOrbit {
         return this.scLatLonPoint;
     }
 
-    private void computeTLEpropagation(Date time) {
+    private void computeTLEpropagation(Date time, boolean refreshPasses) {
         boolean recomputeTle = this.lastTleRenderingTime == null || time.getTime() - this.lastTleRenderingTime.getTime() > 1800000;
         this.lastTleRenderingTime = time;
         AbsoluteDate ad = new AbsoluteDate(time, TimeScalesFactory.getUTC());
@@ -136,7 +136,6 @@ public class TleOrbit extends AbstractOrbit {
             List<Point3D> scPoints = scStates.stream().map(this::transform).collect(Collectors.toList());
             this.graphicItem.getChildren().clear();
             this.graphicItem.getChildren().add(Utils.createLine(scPoints, Color.valueOf(getColor())));
-            this.tleModifiedSinceLastRendering = false;
 
             // Transform all points to lat-lon points
             this.latLonPoints = scStates.stream().map(this::toLatLonArray).collect(Collectors.toCollection(ArrayList::new));
@@ -172,7 +171,7 @@ public class TleOrbit extends AbstractOrbit {
 
         // Compute visibility from now until 2xPROPAGATION
         List<GroundStation> gsList = getGroundStations();
-        if(!gsList.isEmpty()) {
+        if(!gsList.isEmpty() && (refreshPasses || recomputeTle || this.tleModifiedSinceLastRendering)) {
             System.out.println("Recomputing visibility for satellite " + getName() + " at time " + time);
             // extrapolator.propagate(ad); // No need to reset the propagation at 'ad' time
             gsList.forEach(o -> {
@@ -181,8 +180,10 @@ public class TleOrbit extends AbstractOrbit {
             });
             extrapolator.propagate(ad.shiftedBy(2 * PROPAGATION_STEP_DURATION * PROPAGATION_STEPS));
             extrapolator.clearEventsDetectors();
-            gsList.forEach(o -> o.endVisibilityComputation(getCode()));
+            gsList.forEach(o -> o.endVisibilityComputation(getCode(), currentLocation));
         }
+
+        this.tleModifiedSinceLastRendering = false;
     }
 
     private double[] toLatLonArray(SpacecraftState spacecraftState) {

@@ -119,10 +119,10 @@
                                            <Label text="Upcoming passes" />
                                            <TableView fx:id="passTable" VBox.vgrow="ALWAYS">
                                              <columns>
-                                                <TableColumn prefWidth="75.0" text="Satellite" fx:id="satelliteColumn"/>
-                                                <TableColumn prefWidth="75.0" text="Orbit" fx:id="orbitColumn"/>
-                                                <TableColumn prefWidth="75.0" text="AOS" fx:id="aosColumn"/>
-                                                <TableColumn prefWidth="75.0" text="LOS" fx:id="losColumn"/>
+                                                <TableColumn prefWidth="100.0" text="Satellite" fx:id="satelliteColumn"/>
+                                                <TableColumn prefWidth="50.0" text="Orbit" fx:id="orbitColumn"/>
+                                                <TableColumn prefWidth="150.0" text="AOS" fx:id="aosColumn"/>
+                                                <TableColumn prefWidth="150.0" text="LOS" fx:id="losColumn"/>
                                              </columns>
                                            </TableView>
                                        </children>
@@ -224,6 +224,9 @@
                                   <Canvas fx:id="scene2d" height="300" pickOnBounds="true" width="600" StackPane.alignment="BOTTOM_RIGHT">
                                   </Canvas>
                               </children>
+                              <padding>
+                                  <Insets bottom="5" left="5" right="5" top="5" />
+                              </padding>
                           </StackPane>
                       </children>
                   </VBox>

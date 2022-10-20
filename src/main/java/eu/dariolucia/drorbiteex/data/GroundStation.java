@@ -6,11 +6,13 @@ import javafx.scene.Group;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
+import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.ode.events.Action;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
@@ -22,6 +24,7 @@ import org.orekit.propagation.events.handlers.EventHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
+import org.orekit.utils.PVCoordinates;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -33,25 +36,26 @@ import java.util.stream.Collectors;
 public class GroundStation implements EventHandler<ElevationDetector> {
 
     private static final int GS_RADIUS = 1;
+    private static final double MAX_CHECK = 60.0;
+    private static final double THRESHOLD =  0.001;
+    private static final double GS_ELEVATION = Math.toRadians(0);
 
     private String code;
     private String name;
     private String description;
     private double latitude;
     private double longitude;
+    private double height;
     private String color;
     private final SimpleBooleanProperty visibleProperty = new SimpleBooleanProperty(false);
 
     private transient Sphere graphicItem;
+    private transient Group visibilityItem;
     private transient Text textItem;
     private transient Group groupItem;
 
     private transient GeodeticPoint geodeticPoint;
     private transient TopocentricFrame stationFrame;
-
-    private static final double maxcheck  = 60.0;
-    private static final double threshold =  0.001;
-    private static final double elevation = Math.toRadians(5.0);
 
     private transient EventDetector eventDetector;
 
@@ -93,6 +97,15 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     }
 
     @XmlAttribute
+    public double getHeight() {
+        return height;
+    }
+
+    public void setHeight(double height) {
+        this.height = height;
+    }
+
+    @XmlAttribute
     public double getLongitude() {
         return longitude;
     }
@@ -100,6 +113,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
+
 
     @XmlAttribute
     public String getColor() {
@@ -134,10 +148,12 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         }
         this.graphicItem = new Sphere(GS_RADIUS);
         this.textItem = new Text(0, 0, this.code);
+        this.visibilityItem = new Group();
         updateGraphicParameters();
         this.graphicItem.visibleProperty().bind(this.visibleProperty);
         this.textItem.visibleProperty().bind(this.visibleProperty);
-        this.groupItem = new Group(graphicItem, textItem);
+        this.visibilityItem.visibleProperty().bind(this.visibleProperty);
+        this.groupItem = new Group(graphicItem, textItem, visibilityItem);
         return this.groupItem;
     }
 
@@ -167,12 +183,16 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     }
 
     private void updateGraphicParameters() {
-        this.geodeticPoint = new GeodeticPoint(Math.toRadians(latitude), Math.toRadians(longitude), 0);
+        this.geodeticPoint = new GeodeticPoint(Math.toRadians(latitude), Math.toRadians(longitude), getHeight());
         this.stationFrame = new TopocentricFrame(Utils.getEarthShape(), geodeticPoint, getCode());
-        this.eventDetector = new ElevationDetector(maxcheck, threshold, this.stationFrame).withConstantElevation(elevation).withHandler(this);
+        this.eventDetector = new ElevationDetector(MAX_CHECK, THRESHOLD, this.stationFrame).withConstantElevation(GS_ELEVATION).withHandler(this);
 
         PhongMaterial m = new PhongMaterial(Color.valueOf(this.color));
         this.graphicItem.setMaterial(m);
+        if(!this.visibilityItem.getChildren().isEmpty()) {
+            Color originalFill = Color.valueOf(getColor());
+            ((MeshView) this.visibilityItem.getChildren().get(0)).setMaterial(new PhongMaterial(new Color(originalFill.getRed(), originalFill.getGreen(), originalFill.getBlue(), originalFill.getOpacity()/3)));
+        }
         // Compute the absolute position of the sphere in the space
         Point3D location = Utils.latLonToScreenPoint(latitude, longitude, Utils.EARTH_RADIUS);
         this.graphicItem.setTranslateX(location.getX());
@@ -201,21 +221,10 @@ public class GroundStation implements EventHandler<ElevationDetector> {
             Color originalFill = Color.valueOf(getColor());
             gc.setFill(new Color(originalFill.getRed(), originalFill.getGreen(), originalFill.getBlue(), originalFill.getOpacity()/3));
             gc.setLineWidth(1.0);
-            if(!visibilityCircle.isEmpty()) {
-                // Pretest: if the longitude distance between two consecutive points is > Math.PI, then we are closing to the poles
-                // Solution: order the points according to longitude, draw them, then close the line with the two corners (check latitude)
-                // TODO: can be computed already when the visibility circle is computed
-                if(wideCircle(visibilityCircle)) {
-                    Comparator<double[]> comparator = (a,b) -> {
-                        if(a[0] == b[0]) {
-                            return Double.compare(a[1], b[1]);
-                        } else {
-                            return Double.compare(a[0], b[0]);
-                        }
-                    };
-                    List<double[]> toRender = visibilityCircle.stream().map(gp -> Utils.toXY(Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()), w, h)).collect(Collectors.toCollection(ArrayList::new));
-                    toRender.sort(comparator);
-
+            if(!this.visibilityCircle.isEmpty()) {
+                List<double[]> toRender = this.visibilityCircleSortedLatLon.stream().map(gp -> Utils.toXY(gp[0], gp[1], w, h)).collect(Collectors.toCollection(ArrayList::new));
+                if(this.polarVisibilityCircle) {
+                    // Solution: points ordered according to longitude, draw them, then close the line with the two corners (check latitude)
                     gc.beginPath();
                     double[] p0 = toRender.get(0);
                     // Render from right to left
@@ -237,13 +246,11 @@ public class GroundStation implements EventHandler<ElevationDetector> {
                     gc.fill();
                     gc.closePath();
                 } else {
-                    GeodeticPoint gp0 = visibilityCircle.get(0);
-                    double[] p0 = Utils.toXY(Math.toDegrees(gp0.getLatitude()), Math.toDegrees(gp0.getLongitude()), w, h);
+                    double[] p0 = toRender.get(0);
                     gc.beginPath();
                     gc.moveTo(p0[0], p0[1]);
-                    for (int i = 1; i < visibilityCircle.size(); ++i) {
-                        GeodeticPoint gpi = visibilityCircle.get(i);
-                        double[] pi = Utils.toXY(Math.toDegrees(gpi.getLatitude()), Math.toDegrees(gpi.getLongitude()), w, h);
+                    for (int i = 1; i < toRender.size(); ++i) {
+                        double[] pi = toRender.get(i);
                         gc.lineTo(pi[0], pi[1]);
                     }
                     gc.lineTo(p0[0], p0[1]);
@@ -256,24 +263,10 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         }
     }
 
-    private boolean wideCircle(List<GeodeticPoint> visibilityCircle) {
-        for(int i = 0; i < visibilityCircle.size(); ++i) {
-            if(i < visibilityCircle.size() - 1) {
-                if(Math.abs(visibilityCircle.get(i).getLongitude() - visibilityCircle.get(i + 1).getLongitude()) > Math.PI + 0.1) {
-                    return true;
-                }
-            } else {
-                if(Math.abs(visibilityCircle.get(i).getLongitude() - visibilityCircle.get(0).getLongitude()) > Math.PI + 0.1) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private transient Map<String, List<VisibilityWindow>> visibilityWindows = new TreeMap<>();
     private transient Map<String, VisibilityWindow.TemporaryPoint> temporaryPointMap = new TreeMap<>();
     private transient String currentSpacecraft;
+    private transient boolean eventRaised;
 
     @Override
     public void init(SpacecraftState initialState, AbsoluteDate target, ElevationDetector detector) {
@@ -282,6 +275,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
 
     @Override
     public Action eventOccurred(SpacecraftState s, ElevationDetector detector, boolean increasing) {
+        this.eventRaised = true;
         if (increasing) {
             System.out.println("\tVisibility on " + detector.getTopocentricFrame().getName() + " of " + currentSpacecraft
                     + " begins at " + s.getDate());
@@ -299,6 +293,10 @@ public class GroundStation implements EventHandler<ElevationDetector> {
             if(temporaryPointMap.containsKey(currentSpacecraft)) {
                 VisibilityWindow.TemporaryPoint p = temporaryPointMap.remove(currentSpacecraft);
                 VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, p.getTime(), s.getDate().toDate(TimeScalesFactory.getUTC()), this);
+                visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
+            } else {
+                // End of pass but no start: pass in progress
+                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, s.getDate().toDate(TimeScalesFactory.getUTC()), this);
                 visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
             }
             return Action.CONTINUE;
@@ -321,17 +319,54 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     public void initVisibilityComputation(String spacecraftId) {
         this.currentSpacecraft = spacecraftId;
         this.visibilityWindows.remove(spacecraftId);
+        this.eventRaised = false;
     }
 
-    public void endVisibilityComputation(String spacecraftId) {
-        this.temporaryPointMap.remove(spacecraftId);
-        // Ignore last pass if it remains open
+    public void endVisibilityComputation(String spacecraftId, SpacecraftState currentSpacecraftLocation) {
+        VisibilityWindow.TemporaryPoint tp = this.temporaryPointMap.remove(spacecraftId);
+        // Pass start but not complete: null end date
+        if(tp != null) {
+            VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, tp.getTime(), null, this);
+            visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
+        }
+        // Check if at least one event was raised: if not, verify current visibility.
+        if(!eventRaised) {
+            // As from https://www.orekit.org/mailing-list-archives/orekit-users/msg00625.html
+            PVCoordinates pv = currentSpacecraftLocation.getFrame().getTransformTo(this.stationFrame, currentSpacecraftLocation.getDate()).transformPVCoordinates(currentSpacecraftLocation.getPVCoordinates());
+            Vector3D p = pv.getPosition();
+            // Vector3D v = pv.getVelocity();
+            // double azimuth   = p.getAlpha();
+            // double elevation = p.getDelta();
+            // double doppler   = p.normalize().dotProduct(v);
+            if(p.getDelta() > GS_ELEVATION) {
+                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, null, this);
+                visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
+            }
+            // TODO: this approach can be used to compute the pass profile from a given ground station of a given spacecraft
+        }
         this.currentSpacecraft = null;
+    }
+
+    public void removeVisibilityOf(String spacecraftId) {
+        this.visibilityWindows.remove(spacecraftId);
+    }
+
+    public boolean isAnyPassInThePast(Date d) {
+        for(List<VisibilityWindow> vwList : this.visibilityWindows.values()) {
+            for(VisibilityWindow vw : vwList) {
+                if(vw.isInThePast(d)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private transient String currentGroundTrackSelection = null;
     private transient double currentGroundTrackSpacecraftHeight = 0;
     private transient List<GeodeticPoint> visibilityCircle = new LinkedList<>();
+    private transient List<double[]> visibilityCircleSortedLatLon = new LinkedList<>();
+    private transient boolean polarVisibilityCircle = false;
 
     public void setSpacecraftGroundTrack(String spacecraft, double[] latLonAltitude) {
         if(spacecraft != null) {
@@ -341,7 +376,8 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         } else {
             this.currentGroundTrackSelection = null;
             this.currentGroundTrackSpacecraftHeight = 0;
-            visibilityCircle.clear();
+            this.visibilityCircle.clear();
+            this.visibilityItem.getChildren().clear();
         }
     }
 
@@ -353,7 +389,45 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         visibilityCircle.clear();
         for (int i = 0; i < 180; ++i) {
             double azimuth = i * (2.0 * Math.PI / 180);
-            visibilityCircle.add(station.computeLimitVisibilityPoint(radius, azimuth, Math.toRadians(5.0)));
+            visibilityCircle.add(station.computeLimitVisibilityPoint(radius, azimuth, GS_ELEVATION));
         }
+
+        this.visibilityCircleSortedLatLon = visibilityCircle.stream().map(gp -> new double[] { Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()) }).collect(Collectors.toCollection(ArrayList::new));
+        // Create mesh for 3D map:
+        this.visibilityItem.getChildren().clear();
+        MeshView visibility = Utils.createVisibilityMesh(getLatitude(), getLongitude(), this.visibilityCircleSortedLatLon, this.currentGroundTrackSpacecraftHeight);
+        Color originalFill = Color.valueOf(getColor());
+        visibility.setMaterial(new PhongMaterial(new Color(originalFill.getRed(), originalFill.getGreen(), originalFill.getBlue(), originalFill.getOpacity()/3)));
+        this.visibilityItem.getChildren().add(visibility);
+        // Now check for the 2D map: perform the necessary conversions
+        // Pre-test: if the longitude distance between two consecutive points is > Math.PI, then we are closing to the poles
+        if(isPolarVisibilityCircle(this.visibilityCircle)) {
+            this.polarVisibilityCircle = true;
+            Comparator<double[]> comparator = (a,b) -> {
+                if(a[1] == b[1]) {
+                    return Double.compare(a[0], b[0]);
+                } else {
+                    return Double.compare(a[1], b[1]);
+                }
+            };
+            this.visibilityCircleSortedLatLon.sort(comparator);
+        } else {
+            this.polarVisibilityCircle = false;
+        }
+    }
+
+    private boolean isPolarVisibilityCircle(List<GeodeticPoint> visibilityCircle) {
+        for(int i = 0; i < visibilityCircle.size(); ++i) {
+            if(i < visibilityCircle.size() - 1) {
+                if(Math.abs(visibilityCircle.get(i).getLongitude() - visibilityCircle.get(i + 1).getLongitude()) > Math.PI + 0.1) {
+                    return true;
+                }
+            } else {
+                if(Math.abs(visibilityCircle.get(i).getLongitude() - visibilityCircle.get(0).getLongitude()) > Math.PI + 0.1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

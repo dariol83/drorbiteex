@@ -46,7 +46,7 @@ public class Utils {
         double angle = Math.acos(diff.normalize().dotProduct(yAxis));
         Rotate rotateAroundCenter = new Rotate(-Math.toDegrees(angle), axisOfRotation);
 
-        Cylinder line = new Cylinder(1, height);
+        Cylinder line = new Cylinder(1, height, 8);
         line.setMaterial(new PhongMaterial(color));
         line.getTransforms().addAll(moveToMidpoint, rotateAroundCenter);
 
@@ -193,5 +193,42 @@ public class Utils {
     public static String formatDate(Date d) {
         DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
         return DATE_FORMAT.format(d);
+    }
+
+    public static MeshView createVisibilityMesh(double latitude, double longitude, List<double[]> visibilityCircleSortedLatLon, double scHeight) {
+        TriangleMesh mesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
+        float radius = Utils.EARTH_RADIUS + (float) (scHeight * EARTH_SCALE_FACTOR);
+        // Point3D gsPoint = Utils.latLonToScreenPoint(latitude, longitude, radius);
+        Point3D gsPoint = Utils.latLonToScreenPoint(latitude, longitude, 0);
+        mesh.getPoints().addAll((float) gsPoint.getX(), (float) gsPoint.getY(), (float) gsPoint.getZ()); // Center (0)
+        // The normal is the normalisation of the point
+        Point3D gsNormal = gsPoint.normalize();
+        mesh.getNormals().addAll((float) gsNormal.getX(), (float) gsNormal.getY(), (float) gsNormal.getZ()); // Center (0)
+        mesh.getTexCoords().addAll(0,0);
+        for(int i = 0; i < visibilityCircleSortedLatLon.size() - 1; ++i) {
+            double[] latLon1 = visibilityCircleSortedLatLon.get(i);
+            double[] latLon2 = visibilityCircleSortedLatLon.get(i + 1);
+            // Make a triangle
+            Point3D p1 = Utils.latLonToScreenPoint(latLon1[0], latLon1[1], radius);
+            Point3D p2 = Utils.latLonToScreenPoint(latLon2[0], latLon2[1], radius);
+            mesh.getPoints().addAll((float) p1.getX(), (float) p1.getY(), (float) p1.getZ()); // P1 (i * 0 + 1)
+            mesh.getPoints().addAll((float) p2.getX(), (float) p2.getY(), (float) p2.getZ()); // P2 (i * 0 + 2)
+            Point3D pn1 = computeNormal(p1, p2, gsPoint); // 1
+            Point3D pn2 = computeNormal(p2, gsPoint, p1); // 2
+            mesh.getNormals().addAll((float) pn1.getX(), (float) pn1.getY(), (float) pn1.getZ()); // P1
+            mesh.getNormals().addAll((float) pn2.getX(), (float) pn2.getY(), (float) pn2.getZ()); // P2
+
+            mesh.getFaces().addAll(0, 0, 0,
+                    (i * 2 + 1), (i * 2 + 1), 0,
+                    (i * 2 + 2), (i * 2 + 2), 0);
+        }
+        // Last face to close the base
+        mesh.getFaces().addAll(0, 0, 0,
+                mesh.getPoints().size()/3 - 1, mesh.getNormals().size()/3 - 1, 0,
+                1, 1, 0);
+
+        MeshView meshView = new MeshView(mesh);
+        meshView.setCullFace(CullFace.NONE);
+        return meshView;
     }
 }

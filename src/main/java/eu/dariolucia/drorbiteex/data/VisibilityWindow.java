@@ -80,6 +80,21 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         }
     }
 
+    public boolean isInThePast(Date d) {
+        if(this.aos == null && this.los == null) {
+            return false;
+        } else if(this.aos == null) {
+            // los is not null
+            return this.los.before(d);
+        } else if(this.los == null) {
+            // aos is not null, pass end unknown
+            return false;
+        } else {
+            // aos and los are not null
+            return this.los.before(d);
+        }
+    }
+
     public static class TemporaryPoint {
         private final String satellite;
         private final int orbitNumber;

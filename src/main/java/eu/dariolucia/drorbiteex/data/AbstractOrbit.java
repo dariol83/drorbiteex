@@ -125,7 +125,7 @@ public abstract class AbstractOrbit {
 
     protected abstract void updateProperties(AbstractOrbit gs);
 
-    public abstract void updateOrbitTime(Date time);
+    public abstract void updateOrbitTime(Date time, boolean refreshPasses);
 
     public void draw(GraphicsContext gc, double width, double height) {
         if(isVisible()) {

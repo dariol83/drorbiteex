@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
-import javafx.collections.WeakListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
@@ -208,17 +207,23 @@ public class Main implements Initializable {
         aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getAosString()));
         losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getLosString()));
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> {
-            Map<String, List<VisibilityWindow>> windows = b.getVisibilityWindows();
-            List<VisibilityWindow> vw = new LinkedList<>();
-            windows.values().forEach(vw::addAll);
-            Collections.sort(vw);
-            passTable.getItems().clear();
-            passTable.getItems().addAll(vw);
+            updatePassTableSelection(b);
         });
 
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
+    }
+
+    private void updatePassTableSelection(GroundStation b) {
+        passTable.getItems().clear();
+        if(b != null) {
+            Map<String, List<VisibilityWindow>> windows = b.getVisibilityWindows();
+            List<VisibilityWindow> vw = new LinkedList<>();
+            windows.values().forEach(vw::addAll);
+            Collections.sort(vw);
+            passTable.getItems().addAll(vw);
+        }
     }
 
     private void update2Dscene() {
@@ -354,7 +359,7 @@ public class Main implements Initializable {
             alert.setContentText("Do you want to delete ground station " + gs.getName() + "?");
 
             Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == ButtonType.OK){
+            if (result.isPresent() && result.get() == ButtonType.OK){
                 groundStationList.getItems().remove(gs);
                 groundStationGroup.getChildren().remove(gs.getGraphicItem());
                 gs.visibleProperty().removeListener(this.visibilityUpdateListener);
@@ -414,13 +419,15 @@ public class Main implements Initializable {
             alert.setContentText("Do you want to delete orbit for " + gs.getName() + "?");
 
             Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == ButtonType.OK){
+            if (result.isPresent() && result.get() == ButtonType.OK){
                 orbitList.getItems().remove(gs);
                 orbitGroup.getChildren().remove(gs.getGraphicItem());
                 gs.dispose();
                 saveConfigFile();
                 orbitList.refresh();
                 update2Dscene();
+                groundStationList.getItems().forEach(o -> o.removeVisibilityOf(gs.getName()));
+                updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
             }
         }
     }
@@ -464,23 +471,33 @@ public class Main implements Initializable {
                 public void run() {
                     Platform.runLater(() -> {
                         Date d = new Date();
-                        timerTick(d);
+                        boolean refreshPasses = false;
+                        for(GroundStation gs : groundStationList.getItems()) {
+                            if(gs.isAnyPassInThePast(d)) {
+                                refreshPasses = true;
+                                break;
+                            }
+                        }
+                        timerTick(d, refreshPasses);
                     });
                 }
             };
-            this.tracker.schedule(timerTask, 0, 10000);
+            this.tracker.schedule(timerTask, 0, 5000);
         } else if(!this.timerTrackingButton.isSelected() && this.timerTask != null){
             this.timerTask.cancel();
             this.timerTask = null;
         }
     }
 
-    private void timerTick(Date now) {
+    private void timerTick(Date now, boolean refreshPasses) {
         this.currentTimeLabel.setText(Utils.formatDate(now));
         for(AbstractOrbit ao : this.orbitList.getItems()) {
-            ao.updateOrbitTime(now);
+            ao.updateOrbitTime(now, refreshPasses);
         }
         update2Dscene();
+        if(refreshPasses) {
+            updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
+        }
     }
 
     public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {

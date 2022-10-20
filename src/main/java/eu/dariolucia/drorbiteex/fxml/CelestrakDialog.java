@@ -28,7 +28,7 @@ public class CelestrakDialog implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         satelliteList.setCellFactory(CheckBoxListCell.forListView(CelestrakSatellite::selectedProperty));
-        groupCombo.getItems().addAll("weather", "noaa", "resource", "gps-ops", "galileo", "geo");
+        groupCombo.getItems().addAll("weather", "noaa", "resource", "gps-ops", "galileo", "geo", "active");
     }
 
     private List<CelestrakTleOrbit> getResult() {
@@ -41,11 +41,15 @@ public class CelestrakDialog implements Initializable {
                 orb.setGroup(cs.getGroup());
                 orb.setVisible(true);
                 orb.setTle(cs.getTle());
-                orb.setColor(Color.CYAN.toString()); // TODO: random color
+                orb.setColor(randomColor());
                 orbits.add(orb);
             }
         }
         return orbits;
+    }
+
+    private String randomColor() {
+        return new Color(Math.random(), Math.random(), Math.random(), 1.0).toString();
     }
 
     public void onGroupSelection(ActionEvent actionEvent) {
