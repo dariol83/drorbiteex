@@ -97,6 +97,9 @@ public class Main implements Initializable {
     public ComboBox<Object> groundTrackCombo;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
+    // Polar plot
+    public PolarPlot polarPlotController;
+
     private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Dr. Orbiteex - Background Thread");
         t.setDaemon(true);

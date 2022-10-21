@@ -119,12 +119,14 @@
                                            <Label text="Upcoming passes" />
                                            <TableView fx:id="passTable" VBox.vgrow="ALWAYS">
                                              <columns>
-                                                <TableColumn prefWidth="100.0" text="Satellite" fx:id="satelliteColumn"/>
+                                                <TableColumn prefWidth="120.0" text="Satellite" fx:id="satelliteColumn"/>
                                                 <TableColumn prefWidth="50.0" text="Orbit" fx:id="orbitColumn"/>
-                                                <TableColumn prefWidth="150.0" text="AOS" fx:id="aosColumn"/>
-                                                <TableColumn prefWidth="150.0" text="LOS" fx:id="losColumn"/>
+                                                <TableColumn prefWidth="120.0" text="AOS" fx:id="aosColumn"/>
+                                                <TableColumn prefWidth="120.0" text="LOS" fx:id="losColumn"/>
                                              </columns>
                                            </TableView>
+                                           <Label text="Pass plot" />
+                                           <fx:include source="PolarPlot.fxml" fx:id="polarPlot"/>
                                        </children>
                                     <padding>
                                         <Insets bottom="0" left="0" right="0" top="0" />
