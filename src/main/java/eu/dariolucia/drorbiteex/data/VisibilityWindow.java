@@ -1,6 +1,15 @@
 package eu.dariolucia.drorbiteex.data;
 
+import javafx.geometry.Point2D;
+import org.orekit.frames.TopocentricFrame;
+import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
+
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
@@ -9,13 +18,17 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
     private final Date aos;
     private final Date los;
     private final GroundStation station;
+    private final AbstractOrbit orbit;
 
-    public VisibilityWindow(String satellite, int orbitNumber, Date aos, Date los, GroundStation station) {
+    private volatile List<SpacecraftTrackPoint> azimuthElevationTrack = null;
+
+    public VisibilityWindow(String satellite, int orbitNumber, Date aos, Date los, GroundStation station, AbstractOrbit orbit) {
         this.satellite = satellite;
         this.orbitNumber = orbitNumber;
         this.aos = aos;
         this.los = los;
         this.station = station;
+        this.orbit = orbit;
     }
 
     public String getSatellite() {
@@ -36,6 +49,10 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
     public GroundStation getStation() {
         return station;
+    }
+
+    public AbstractOrbit getOrbit() {
+        return orbit;
     }
 
     @Override
@@ -92,6 +109,77 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         } else {
             // aos and los are not null
             return this.los.before(d);
+        }
+    }
+
+    public List<SpacecraftTrackPoint> getAzimuthElevationTrack() {
+        if(this.azimuthElevationTrack == null) {
+            Propagator p = this.orbit.getPropagator();
+            TopocentricFrame stationFrame = this.station.getStationFrame();
+            if(p != null) {
+                this.azimuthElevationTrack = new LinkedList<>();
+                Date currentDate = this.aos;
+                // If you don't have AOS, then use the current time
+                if(currentDate == null) {
+                    currentDate = new Date();
+                }
+                Date endDate = this.los;
+                // If you don't have LOS, then use currentDate + 20 minutes
+                if(endDate == null) {
+                    endDate = new Date(currentDate.getTime() + 20 * 60 * 1000);
+                }
+                // Start propagation from currentDate to endDate: 10 seconds interval
+                while(currentDate.before(endDate)) {
+                    SpacecraftState next = p.propagate(new AbsoluteDate(currentDate, TimeScalesFactory.getUTC()));
+                    // Convert spacecraft point to azimuth/elevation
+                    Point2D azElPoint = GroundStation.convertToAzimuthElevation(stationFrame, next);
+                    // Adjust
+                    azElPoint = Utils.adjustAzimuthElevationPoint(azElPoint);
+                    this.azimuthElevationTrack.add(new SpacecraftTrackPoint(currentDate, azElPoint, this));
+                    // Next point, 10 seconds after
+                    currentDate = new Date(currentDate.getTime() + 10000);
+                }
+                // End date
+                SpacecraftState next = p.propagate(new AbsoluteDate(endDate, TimeScalesFactory.getUTC()));
+                // Convert spacecraft point to azimuth/elevation
+                Point2D azElPoint = GroundStation.convertToAzimuthElevation(stationFrame, next);
+                // Adjust
+                azElPoint = Utils.adjustAzimuthElevationPoint(azElPoint);
+                //
+                this.azimuthElevationTrack.add(new SpacecraftTrackPoint(currentDate, azElPoint, this));
+            }
+        }
+        return this.azimuthElevationTrack;
+    }
+
+    public Point2D convertToAzimuthElevation(SpacecraftState currentLocation) {
+        TopocentricFrame stationFrame = this.station.getStationFrame();
+        Point2D azElPoint = GroundStation.convertToAzimuthElevation(stationFrame, currentLocation);
+        azElPoint = Utils.adjustAzimuthElevationPoint(azElPoint);
+        return azElPoint;
+    }
+
+    public static class SpacecraftTrackPoint {
+        private final Date time;
+        private final Point2D azimuthElevation;
+        private final VisibilityWindow visibilityWindow;
+
+        public SpacecraftTrackPoint(Date time, Point2D azimuthElevation, VisibilityWindow visibilityWindow) {
+            this.time = time;
+            this.azimuthElevation = azimuthElevation;
+            this.visibilityWindow = visibilityWindow;
+        }
+
+        public Date getTime() {
+            return time;
+        }
+
+        public Point2D getAzimuthElevation() {
+            return azimuthElevation;
+        }
+
+        public VisibilityWindow getVisibilityWindow() {
+            return visibilityWindow;
         }
     }
 

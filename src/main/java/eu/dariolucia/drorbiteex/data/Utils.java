@@ -1,6 +1,7 @@
 package eu.dariolucia.drorbiteex.data;
 
 import eu.dariolucia.drorbiteex.fxml.Main;
+import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
@@ -230,5 +231,16 @@ public class Utils {
         MeshView meshView = new MeshView(mesh);
         meshView.setCullFace(CullFace.NONE);
         return meshView;
+    }
+
+    public static Point2D adjustAzimuthElevationPoint(Point2D azElPoint) {
+        // adjust azimuth: remove 90 degrees, then flip angle
+        double azimuth = azElPoint.getX() - 90.0;
+        azimuth = -azimuth;
+        if(azimuth < 0) {
+            azimuth += 360;
+        }
+        azElPoint = new Point2D(azimuth, azElPoint.getY());
+        return azElPoint;
     }
 }

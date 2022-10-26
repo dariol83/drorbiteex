@@ -28,6 +28,7 @@ import javafx.util.StringConverter;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
+import org.orekit.propagation.SpacecraftState;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,6 +46,7 @@ public class Main implements Initializable {
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
     private static final String NO_GROUND_TRACK = "             ";
+
 
     private File configFile;
 
@@ -99,6 +101,7 @@ public class Main implements Initializable {
 
     // Polar plot
     public PolarPlot polarPlotController;
+    public ProgressIndicator polarPlotProgress;
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Dr. Orbiteex - Background Thread");
@@ -194,6 +197,10 @@ public class Main implements Initializable {
         });
         groundTrackCombo.getSelectionModel().select(0);
 
+        // Polar plot color configuration
+        polarPlotController.setForegroundColor(Color.LIMEGREEN);
+        polarPlotController.setBackgroundColor(Color.BLACK);
+
         // Load configuration file
         if(configFile.exists()) {
             loadConfigFile();
@@ -212,7 +219,7 @@ public class Main implements Initializable {
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> {
             updatePassTableSelection(b);
         });
-
+        passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
@@ -495,12 +502,14 @@ public class Main implements Initializable {
     private void timerTick(Date now, boolean refreshPasses) {
         this.currentTimeLabel.setText(Utils.formatDate(now));
         for(AbstractOrbit ao : this.orbitList.getItems()) {
-            ao.updateOrbitTime(now, refreshPasses);
+            SpacecraftState currentLocation = ao.updateOrbitTime(now, refreshPasses);
+            polarPlotController.newSpacecraftPosition(ao.getName(), currentLocation, now);
         }
         update2Dscene();
         if(refreshPasses) {
             updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
         }
+        //
     }
 
     public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
@@ -548,5 +557,25 @@ public class Main implements Initializable {
             groundStationList.getItems().forEach(o -> o.setSpacecraftGroundTrack(((AbstractOrbit) selectedSc).getName(), ((AbstractOrbit) selectedSc).getSpacecraftCurrentLatLon()));
         }
         update2Dscene();
+    }
+
+    private void updatePolarPlotSelection(VisibilityWindow c) {
+        if(c == null) {
+            this.polarPlotController.clear();
+        } else {
+            this.polarPlotProgress.setVisible(true);
+            this.polarPlotController.setDisable(true);
+            Main.runLater(() -> {
+                List<VisibilityWindow.SpacecraftTrackPoint> track = c.getAzimuthElevationTrack();
+                Platform.runLater(() -> {
+                    polarPlotController.setSpacecraftTrack(c.getSatellite(), track);
+                    Color trackColor = Color.valueOf(c.getOrbit().getColor());
+                    polarPlotController.setTrackColor(trackColor);
+                    polarPlotController.setSpacecraftColor(trackColor);
+                    polarPlotProgress.setVisible(false);
+                    polarPlotController.setDisable(false);
+                });
+            });
+        }
     }
 }

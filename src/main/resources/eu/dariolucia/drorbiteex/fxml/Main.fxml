@@ -24,6 +24,7 @@
 
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.ProgressIndicator?>
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
@@ -126,7 +127,13 @@
                                              </columns>
                                            </TableView>
                                            <Label text="Pass plot" />
-                                           <fx:include source="PolarPlot.fxml" fx:id="polarPlot"/>
+                                           <StackPane>
+                                               <children>
+                                                   <fx:include source="PolarPlot.fxml" fx:id="polarPlot"/>
+                                                   <ProgressIndicator visible="false" fx:id="polarPlotProgress"/>
+                                               </children>
+                                           </StackPane>
+
                                        </children>
                                     <padding>
                                         <Insets bottom="0" left="0" right="0" top="0" />

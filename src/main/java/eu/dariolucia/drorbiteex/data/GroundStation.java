@@ -1,6 +1,7 @@
 package eu.dariolucia.drorbiteex.data;
 
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.canvas.GraphicsContext;
@@ -54,8 +55,8 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     private transient Text textItem;
     private transient Group groupItem;
 
-    private transient GeodeticPoint geodeticPoint;
-    private transient TopocentricFrame stationFrame;
+    private transient volatile GeodeticPoint geodeticPoint;
+    private transient volatile TopocentricFrame stationFrame;
 
     private transient EventDetector eventDetector;
 
@@ -182,6 +183,10 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         }
     }
 
+    public TopocentricFrame getStationFrame() {
+        return this.stationFrame;
+    }
+
     private void updateGraphicParameters() {
         this.geodeticPoint = new GeodeticPoint(Math.toRadians(latitude), Math.toRadians(longitude), getHeight());
         this.stationFrame = new TopocentricFrame(Utils.getEarthShape(), geodeticPoint, getCode());
@@ -266,6 +271,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
     private transient Map<String, List<VisibilityWindow>> visibilityWindows = new TreeMap<>();
     private transient Map<String, VisibilityWindow.TemporaryPoint> temporaryPointMap = new TreeMap<>();
     private transient String currentSpacecraft;
+    private transient AbstractOrbit currentOrbit;
     private transient boolean eventRaised;
 
     @Override
@@ -281,7 +287,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
                     + " begins at " + s.getDate());
             if(temporaryPointMap.containsKey(currentSpacecraft)) {
                 VisibilityWindow.TemporaryPoint p = temporaryPointMap.remove(currentSpacecraft);
-                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, p.getTime(), this);
+                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, p.getTime(), this, currentOrbit);
                 visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
             }
             VisibilityWindow.TemporaryPoint p = new VisibilityWindow.TemporaryPoint(currentSpacecraft, 0, s.getDate().toDate(TimeScalesFactory.getUTC()), true);
@@ -292,11 +298,11 @@ public class GroundStation implements EventHandler<ElevationDetector> {
                     + " ends at " + s.getDate());
             if(temporaryPointMap.containsKey(currentSpacecraft)) {
                 VisibilityWindow.TemporaryPoint p = temporaryPointMap.remove(currentSpacecraft);
-                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, p.getTime(), s.getDate().toDate(TimeScalesFactory.getUTC()), this);
+                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, p.getTime(), s.getDate().toDate(TimeScalesFactory.getUTC()), this, currentOrbit);
                 visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
             } else {
                 // End of pass but no start: pass in progress
-                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, s.getDate().toDate(TimeScalesFactory.getUTC()), this);
+                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, s.getDate().toDate(TimeScalesFactory.getUTC()), this, currentOrbit);
                 visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
             }
             return Action.CONTINUE;
@@ -316,9 +322,10 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         return this.eventDetector;
     }
 
-    public void initVisibilityComputation(String spacecraftId) {
-        this.currentSpacecraft = spacecraftId;
-        this.visibilityWindows.remove(spacecraftId);
+    public void initVisibilityComputation(AbstractOrbit orbit) {
+        this.currentSpacecraft = orbit.getName();
+        this.visibilityWindows.remove(orbit.getName());
+        this.currentOrbit = orbit;
         this.eventRaised = false;
     }
 
@@ -326,7 +333,7 @@ public class GroundStation implements EventHandler<ElevationDetector> {
         VisibilityWindow.TemporaryPoint tp = this.temporaryPointMap.remove(spacecraftId);
         // Pass start but not complete: null end date
         if(tp != null) {
-            VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, tp.getTime(), null, this);
+            VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, tp.getTime(), null, this, currentOrbit);
             visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
         }
         // Check if at least one event was raised: if not, verify current visibility.
@@ -339,12 +346,24 @@ public class GroundStation implements EventHandler<ElevationDetector> {
             // double elevation = p.getDelta();
             // double doppler   = p.normalize().dotProduct(v);
             if(p.getDelta() > GS_ELEVATION) {
-                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, null, this);
+                VisibilityWindow vw = new VisibilityWindow(currentSpacecraft, 0, null, null, this, currentOrbit);
                 visibilityWindows.computeIfAbsent(currentSpacecraft, o -> new ArrayList<>()).add(vw);
             }
             // TODO: this approach can be used to compute the pass profile from a given ground station of a given spacecraft
         }
         this.currentSpacecraft = null;
+        this.currentOrbit = null;
+    }
+
+    public static Point2D convertToAzimuthElevation(TopocentricFrame stationFrame, SpacecraftState ss) {
+        PVCoordinates pv = ss.getFrame().getTransformTo(stationFrame, ss.getDate()).transformPVCoordinates(ss.getPVCoordinates());
+        Vector3D p = pv.getPosition();
+        double azimuth   = Math.toDegrees(p.getAlpha());
+        if(azimuth < 0) {
+            azimuth += 360.0;
+        }
+        double elevation = p.getDelta();
+        return new Point2D(azimuth, Math.toDegrees(elevation));
     }
 
     public void removeVisibilityOf(String spacecraftId) {

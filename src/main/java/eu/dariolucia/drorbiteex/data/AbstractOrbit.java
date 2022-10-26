@@ -1,15 +1,18 @@
 package eu.dariolucia.drorbiteex.data;
 
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import org.orekit.bodies.GeodeticPoint;
+import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -125,7 +128,7 @@ public abstract class AbstractOrbit {
 
     protected abstract void updateProperties(AbstractOrbit gs);
 
-    public abstract void updateOrbitTime(Date time, boolean refreshPasses);
+    public abstract SpacecraftState updateOrbitTime(Date time, boolean refreshPasses);
 
     public void draw(GraphicsContext gc, double width, double height) {
         if(isVisible()) {
@@ -165,4 +168,6 @@ public abstract class AbstractOrbit {
     public abstract List<double[]> getLatLonPoints();
 
     public abstract double[] getSpacecraftCurrentLatLon();
+
+    public abstract Propagator getPropagator();
 }

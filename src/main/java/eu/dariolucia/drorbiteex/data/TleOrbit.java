@@ -14,6 +14,7 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.bodies.GeodeticPoint;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
@@ -103,9 +104,9 @@ public class TleOrbit extends AbstractOrbit {
     }
 
     @Override
-    public void updateOrbitTime(Date time, boolean refreshPasses) {
+    public SpacecraftState updateOrbitTime(Date time, boolean refreshPasses) {
         // Compute and render the TLE propagation when needed
-        computeTLEpropagation(time, refreshPasses);
+        return computeTLEpropagation(time, refreshPasses);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class TleOrbit extends AbstractOrbit {
         return this.scLatLonPoint;
     }
 
-    private void computeTLEpropagation(Date time, boolean refreshPasses) {
+    private SpacecraftState computeTLEpropagation(Date time, boolean refreshPasses) {
         boolean recomputeTle = this.lastTleRenderingTime == null || time.getTime() - this.lastTleRenderingTime.getTime() > 1800000;
         this.lastTleRenderingTime = time;
         AbsoluteDate ad = new AbsoluteDate(time, TimeScalesFactory.getUTC());
@@ -176,7 +177,7 @@ public class TleOrbit extends AbstractOrbit {
             // extrapolator.propagate(ad); // No need to reset the propagation at 'ad' time
             gsList.forEach(o -> {
                 extrapolator.addEventDetector(o.getEventDetector());
-                o.initVisibilityComputation(getCode());
+                o.initVisibilityComputation(this);
             });
             extrapolator.propagate(ad.shiftedBy(2 * PROPAGATION_STEP_DURATION * PROPAGATION_STEPS));
             extrapolator.clearEventsDetectors();
@@ -184,10 +185,16 @@ public class TleOrbit extends AbstractOrbit {
         }
 
         this.tleModifiedSinceLastRendering = false;
+        return currentLocation;
     }
 
     private double[] toLatLonArray(SpacecraftState spacecraftState) {
         GeodeticPoint gp = toLatLon(spacecraftState);
         return new double[] { Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude()), gp.getAltitude() };
+    }
+
+    @Override
+    public Propagator getPropagator() {
+        return this.extrapolator;
     }
 }
