@@ -21,6 +21,7 @@ import org.orekit.frames.FramesFactory;
 import org.orekit.models.earth.Geoid;
 import org.orekit.models.earth.ReferenceEllipsoid;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 
@@ -34,6 +35,10 @@ public class Utils {
     public static final int EARTH_RADIUS = 200;
     public static final int REAL_EARTH_RADIUS_METERS = 6371000;
     public static final double EARTH_SCALE_FACTOR = (double) EARTH_RADIUS / (double) REAL_EARTH_RADIUS_METERS;
+
+    public static AbsoluteDate toAbsoluteDate(Date time) {
+        return new AbsoluteDate(time, TimeScalesFactory.getUTC());
+    }
 
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color) {
         Point3D yAxis = new Point3D(0, 1, 0);
@@ -168,6 +173,9 @@ public class Utils {
         return earthShape;
     }
 
+    public static GeodeticPoint cartesianToGeodetic(Vector3D cartesianPoint, AbsoluteDate date) {
+        return geoid.transform(cartesianPoint, ITRF, date);
+    }
     public static GeodeticPoint cartesianToGeodetic(Vector3D cartesianPoint) {
         return geoid.transform(cartesianPoint, ITRF, new AbsoluteDate());
     }
