@@ -1,17 +1,21 @@
 package eu.dariolucia.drorbiteex.model;
 
 import eu.dariolucia.drorbiteex.data.Utils;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 
 import java.util.Date;
 
 public final class SpacecraftPosition {
 
+    private final Date time;
+
     private final Orbit orbit;
+
+    private final int orbitNumber;
 
     private final SpacecraftState spacecraftState;
 
@@ -19,15 +23,21 @@ public final class SpacecraftPosition {
 
     private final GeodeticPoint latLonHeight;
 
-    public SpacecraftPosition(Orbit orbit, SpacecraftState spacecraftState) {
+    public SpacecraftPosition(Orbit orbit, int orbitNumber, SpacecraftState spacecraftState) {
         this.orbit = orbit;
+        this.orbitNumber = orbitNumber;
         this.spacecraftState = spacecraftState;
         this.positionVector = spacecraftState.getPVCoordinates(Utils.ITRF).getPosition();
         this.latLonHeight = Utils.cartesianToGeodetic(this.positionVector, this.spacecraftState.getDate());
+        this.time = spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
     }
 
     public Orbit getOrbit() {
         return orbit;
+    }
+
+    public int getOrbitNumber() {
+        return orbitNumber;
     }
 
     public SpacecraftState getSpacecraftState() {
@@ -43,6 +53,6 @@ public final class SpacecraftPosition {
     }
 
     public Date getTime() {
-        return spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
+        return time;
     }
 }

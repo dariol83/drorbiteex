@@ -1,8 +1,9 @@
-package eu.dariolucia.drorbiteex.model;
+package eu.dariolucia.drorbiteex.model.orbit;
 
+import eu.dariolucia.drorbiteex.data.CelestrakTleOrbit;
+import eu.dariolucia.drorbiteex.data.TleOrbit;
 import eu.dariolucia.drorbiteex.data.Utils;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
+import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
@@ -15,26 +16,28 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-@XmlRootElement(name = "orbit", namespace = "http://dariolucia.eu/drorbiteex/orbit")
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Orbit {
 
     private static final int PROPAGATION_STEPS = 100;
     private static final double PROPAGATION_STEP_DURATION = 60.0;
+
+    // Subject to serialisation
     private UUID id;
-    private final SimpleStringProperty code = new SimpleStringProperty("");
-    private final SimpleStringProperty name = new SimpleStringProperty("");
-    private final SimpleStringProperty color = new SimpleStringProperty("0xFFFFFF");
-    private final SimpleBooleanProperty visible = new SimpleBooleanProperty(false);
+    private String code = "";
+    private String name = "";
+    private String color = "0xFFFFFF";
+    private boolean visible = false;
     private IOrbitModel model;
 
+    // Transient state objects
     private transient List<WeakReference<IOrbitListener>> listeners = new CopyOnWriteArrayList<>();
     private transient List<SpacecraftPosition> spacecraftPositions = new ArrayList<>();
     private transient Propagator modelPropagator = null;
     private transient Date currentPositionTime = new Date();
     private transient SpacecraftPosition currentSpacecraftPosition = null;
 
-    public Orbit() {
+    private Orbit() {
         //
     }
 
@@ -43,81 +46,73 @@ public class Orbit {
             throw new NullPointerException("model cannot be null");
         }
         this.id = id;
-        this.code.set(code);
-        this.name.set(name);
-        this.color.set(color);
-        this.visible.set(visible);
+        this.code = code;
+        this.name = name;
+        this.color = color;
+        this.visible = visible;
         this.model = model;
 
         forceDataUpdate();
     }
 
     @XmlAttribute(required = true)
-    public UUID getId() {
+    public synchronized UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    private synchronized void setId(UUID id) {
         this.id = id;
     }
-    @XmlAttribute(required = true)
-    public String getCode() {
-        return code.get();
-    }
 
-    public SimpleStringProperty codeProperty() {
+    @XmlAttribute(required = true)
+    public synchronized String getCode() {
         return code;
     }
 
-    public void setCode(String code) {
-        this.code.set(code);
+    public synchronized void setCode(String code) {
+        this.code = code;
+        notifyDataUpdate();
     }
 
     @XmlAttribute(required = true)
-    public String getName() {
-        return name.get();
-    }
-
-    public SimpleStringProperty nameProperty() {
+    public synchronized String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name.set(name);
+    public synchronized void setName(String name) {
+        this.name = name;
+        notifyDataUpdate();
     }
 
     @XmlAttribute
-    public String getColor() {
-        return color.get();
-    }
-
-    public SimpleStringProperty colorProperty() {
+    public synchronized String getColor() {
         return color;
     }
 
-    public void setColor(String color) {
-        this.color.set(color);
+    public synchronized void setColor(String color) {
+        this.color = color;
+        notifyDataUpdate();
     }
 
     @XmlAttribute
-    public boolean isVisible() {
-        return visible.get();
+    public synchronized boolean isVisible() {
+        return visible;
     }
 
-    public void setVisible(boolean visible) {
-        this.visible.set(visible);
+    public synchronized void setVisible(boolean visible) {
+        this.visible = visible;
+        notifyDataUpdate();
     }
 
-    public SimpleBooleanProperty visibleProperty() {
-        return this.visible;
-    }
-
-    @XmlElement
-    public IOrbitModel getModel() {
+    @XmlElements({
+            @XmlElement(name="tle-model",type=TleOrbit.class),
+            @XmlElement(name="tle-celestrak-model",type=CelestrakTleOrbit.class)
+    })
+    public synchronized IOrbitModel getModel() {
         return model;
     }
 
-    public void setModel(IOrbitModel model) {
+    public synchronized void setModel(IOrbitModel model) {
         if(model == null) {
             throw new NullPointerException("model cannot be null");
         }
@@ -125,59 +120,95 @@ public class Orbit {
     }
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         return this.code + " - " + this.name;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Orbit orbit = (Orbit) o;
+        return Objects.equals(id, orbit.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
     public final void update(Orbit gs) {
-        setCode(gs.getCode());
-        setName(gs.getName());
-        setColor(gs.getColor());
-        setVisible(gs.isVisible());
+        this.code = gs.getCode();
+        this.name = gs.getName();
+        this.color = gs.getColor();
+        this.visible = gs.isVisible();
         boolean modelUpdated = getModel().updateModel(gs.getModel());
         // If information about the orbit propagation model is updated, the model data must be recomputed
         if(modelUpdated) {
             recomputeData(this.currentPositionTime);
+        } else {
+            notifyDataUpdate();
         }
     }
 
+    /**
+     * This method performs a full recomputation of the orbital parameters, including callbacks and listener-related
+     * processes.
+     *
+     * The referenceDate argument drives the propagation start time and end time, and it is used as current date to
+     * initialise the current spacecraft position.
+     *
+     * @param referenceDate the reference date to use
+     */
     private void recomputeData(Date referenceDate) {
-        this.modelPropagator = model.getPropagator();
+        this.modelPropagator = this.model.getPropagator();
         this.spacecraftPositions.clear();
         AbsoluteDate ad = Utils.toAbsoluteDate(Objects.requireNonNullElse(referenceDate, new Date()));
         // Propagate in 3 steps
         // Past
         for (int i = -PROPAGATION_STEPS; i < 0; ++i) {
             // Propagate for 100 minutes (1 point every 1 minute - 100 points) // TODO: refactor, make propagation time configurable
-            SpacecraftState next = this.modelPropagator.propagate(ad.shiftedBy(PROPAGATION_STEP_DURATION * i));
-            this.spacecraftPositions.add(new SpacecraftPosition(this, next));
+            AbsoluteDate newDate = ad.shiftedBy(PROPAGATION_STEP_DURATION * i);
+            int orbitNumber = computeOrbitNumberAt(newDate.toDate(TimeScalesFactory.getUTC()));
+            SpacecraftState next = this.modelPropagator.propagate(newDate);
+            this.spacecraftPositions.add(new SpacecraftPosition(this, orbitNumber, next));
         }
         // Recompute current spacecraft position
-        this.currentSpacecraftPosition = new SpacecraftPosition(this, getPropagator().propagate(ad));
+        int orbitNumber = computeOrbitNumberAt(ad.toDate(TimeScalesFactory.getUTC()));
+        this.currentSpacecraftPosition = new SpacecraftPosition(this, orbitNumber, this.modelPropagator.propagate(ad));
         // Future, register event detectors from listeners
-        List<IVisibilityDetector> detectors = this.listeners.stream().map(o -> {
+        List<IOrbitVisibilityProcessor> detectors = this.listeners.stream().map(o -> {
             IOrbitListener l = o.get();
-            if(l != null) {
-                return l.getEventDetector();
+            if(l instanceof IOrbitVisibilityProcessor) {
+                return (IOrbitVisibilityProcessor) l;
             } else {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
         // Add detectors
         detectors.forEach(o -> {
-            this.modelPropagator.addEventDetector(o);
+            this.modelPropagator.addEventDetector(o.getEventDetector());
             o.initVisibilityComputation(this, ad.toDate(TimeScalesFactory.getUTC()));
         });
         for (int i = 1; i < PROPAGATION_STEPS; ++i) {
             // Propagate for 100 minutes (1 point every 1 minute - 100 points) // TODO: refactor, make propagation time configurable
-            SpacecraftState next = this.modelPropagator.propagate(ad.shiftedBy(PROPAGATION_STEP_DURATION * i));
-            this.spacecraftPositions.add(new SpacecraftPosition(this, next));
+            AbsoluteDate newDate = ad.shiftedBy(PROPAGATION_STEP_DURATION * i);
+            orbitNumber = computeOrbitNumberAt(newDate.toDate(TimeScalesFactory.getUTC()));
+            SpacecraftState next = this.modelPropagator.propagate(newDate);
+            this.spacecraftPositions.add(new SpacecraftPosition(this, orbitNumber, next));
         }
         // Declare end for detectors, clear detectors
-        detectors.forEach(o -> {
-            o.endVisibilityComputation(this);
-        });
+        detectors.forEach(o -> o.finalizeVisibilityComputation(this, this.currentSpacecraftPosition));
         this.modelPropagator.clearEventsDetectors();
+        // Now: for every listener, move back the model propagation to the current date and offer the propagator to
+        // each listener for visibility use (GroundStation) or other use.
+
+        // Reset the propagator after every use
+        for(IOrbitVisibilityProcessor vd : detectors) {
+            this.modelPropagator.propagate(ad);
+            vd.propagationModelAvailable(this, referenceDate, this.modelPropagator);
+        }
+
         // Notify listeners
         notifyDataUpdate();
     }
@@ -192,7 +223,6 @@ public class Orbit {
         });
         this.listeners.removeIf(o -> o.get() == null);
     }
-
 
     private void notifySpacecraftPositionUpdate() {
         // Notify listeners
@@ -215,18 +245,19 @@ public class Orbit {
         });
     }
 
-    public void clearListeners(IOrbitListener l) {
+    public void clearListeners() {
         this.listeners.clear();
     }
 
-    public SpacecraftState updateOrbitTime(Date time) {
+    public synchronized SpacecraftState updateOrbitTime(Date time) {
         Date previousTime = this.currentPositionTime;
         this.currentPositionTime = time;
         if(Duration.between(previousTime.toInstant(), time.toInstant()).getSeconds() > 60 * 30) {
             recomputeData(this.currentPositionTime);
         } else {
             // Compute only the position of the spacecraft, notify listeners about new spacecraft position
-            this.currentSpacecraftPosition = new SpacecraftPosition(this, getPropagator().propagate(Utils.toAbsoluteDate(time)));
+            int orbitNumber = computeOrbitNumberAt(time);
+            this.currentSpacecraftPosition = new SpacecraftPosition(this, orbitNumber, this.modelPropagator.propagate(Utils.toAbsoluteDate(time)));
         }
         // Notify
         notifySpacecraftPositionUpdate();
@@ -234,11 +265,11 @@ public class Orbit {
         return this.currentSpacecraftPosition.getSpacecraftState();
     }
 
-    public void forceDataUpdate() {
+    public synchronized void forceDataUpdate() {
         recomputeData(this.currentPositionTime);
     }
 
-    public Propagator getPropagator() {
-        return this.modelPropagator;
+    public synchronized int computeOrbitNumberAt(Date time) {
+        return this.model.computeOrbitNumberAt(time);
     }
 }

@@ -242,13 +242,7 @@ public class Utils {
     }
 
     public static Point2D adjustAzimuthElevationPoint(Point2D azElPoint) {
-        // adjust azimuth: remove 90 degrees, then flip angle
-        double azimuth = azElPoint.getX() - 90.0;
-        azimuth = -azimuth;
-        if(azimuth < 0) {
-            azimuth += 360;
-        }
-        azElPoint = new Point2D(azimuth, azElPoint.getY());
+
         return azElPoint;
     }
 }

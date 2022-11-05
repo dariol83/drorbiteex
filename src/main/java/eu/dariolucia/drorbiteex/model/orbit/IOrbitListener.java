@@ -1,12 +1,14 @@
-package eu.dariolucia.drorbiteex.model;
+package eu.dariolucia.drorbiteex.model.orbit;
 
-import org.orekit.propagation.events.EventDetector;
+import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
 
 import java.util.List;
 
 public interface IOrbitListener {
 
-    IVisibilityDetector getEventDetector();
+    void orbitAdded(OrbitManager manager, Orbit orbit);
+
+    void orbitRemoved(OrbitManager manager, Orbit orbit);
 
     void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition);
 

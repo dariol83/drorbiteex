@@ -1,8 +1,10 @@
-package eu.dariolucia.drorbiteex.model;
+package eu.dariolucia.drorbiteex.model.orbit;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 
-
+@XmlAccessorType(XmlAccessType.PROPERTY)
 public class CelestrakTleOrbitModel extends TleOrbitModel {
 
     private String group;
@@ -17,11 +19,11 @@ public class CelestrakTleOrbitModel extends TleOrbitModel {
     }
 
     @XmlAttribute
-    public String getGroup() {
+    public synchronized String getGroup() {
         return group;
     }
 
-    public void setGroup(String group) {
+    private void setGroup(String group) {
         this.group = group;
     }
 
