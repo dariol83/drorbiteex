@@ -1,6 +1,9 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.VisibilityWindow;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.station.GroundStation;
+import eu.dariolucia.drorbiteex.model.station.TrackPoint;
+import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.Initializable;
@@ -8,7 +11,6 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import org.orekit.propagation.SpacecraftState;
 
 import java.net.URL;
 import java.util.Date;
@@ -98,11 +100,11 @@ public class PolarPlot implements Initializable {
         this.spacecraftColor.set(spacecraftColor);
     }
 
-    public void setSpacecraftTrack(String spacecraft, List<VisibilityWindow.SpacecraftTrackPoint> track) {
+    public void setSpacecraftTrack(VisibilityWindow track) {
         if(track != null) {
-            this.spacecraftTrack.set(new SpacecraftTrack(spacecraft, track.toArray(new VisibilityWindow.SpacecraftTrackPoint[0])));
+            this.spacecraftTrack.set(new SpacecraftTrack(track));
         } else {
-            this.spacecraftTrack.set(new SpacecraftTrack(spacecraft, new VisibilityWindow.SpacecraftTrackPoint[0]));
+            this.spacecraftTrack.set(null);
         }
         this.spacecraftPosition.set(null);
     }
@@ -122,7 +124,7 @@ public class PolarPlot implements Initializable {
         gc.setFill(trackColor.get());
         gc.setLineWidth(1.5);
         if(location != null && st != null) {
-            Point2D p1 = toXY(location);
+            Point2D p1 = toXY(location.getX(), location.getY());
             gc.fillOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
             gc.setFill(Color.WHITE);
             gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
@@ -138,42 +140,44 @@ public class PolarPlot implements Initializable {
     private void drawPass(GraphicsContext gc) {
         SpacecraftTrack st = this.spacecraftTrack.get();
         if(st != null) {
-            VisibilityWindow.SpacecraftTrackPoint maxElPoint = null;
+            TrackPoint maxElPoint = null;
             gc.setStroke(trackColor.get());
             gc.setFill(trackColor.get());
             gc.setLineWidth(1.5);
-            VisibilityWindow.SpacecraftTrackPoint[] track = st.getTrack();
-            for(int i = 0; i < track.length - 1; ++i) {
+            List<TrackPoint> track = st.getTrack();
+            for(int i = 0; i < track.size() - 1; ++i) {
                 // Draw line from point to point
-                Point2D p1 = toXY(track[i].getAzimuthElevation());
-                Point2D p2 = toXY(track[i + 1].getAzimuthElevation());
+                TrackPoint tp1 = track.get(i);
+                TrackPoint tp2 = track.get(i + 1);
+                Point2D p1 = toXY(tp1.getAzimuth(), tp1.getElevation());
+                Point2D p2 = toXY(tp2.getAzimuth(), tp2.getElevation());
                 if(p1.getY() < 0 || p2.getY() < 0) {
                     continue;
                 }
                 gc.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
                 if(i == 0) {
                     gc.fillRect(p1.getX() - 2, p1.getY() - 2, 4, 4);
-                } else if(i == track.length - 2) {
+                } else if(i == track.size() - 2) {
                     gc.strokeLine(p2.getX() - 3, p2.getY() - 3, p2.getX() + 3, p2.getY() + 3);
                     gc.strokeLine(p2.getX() - 3, p2.getY() + 3, p2.getX() + 3, p2.getY() - 3);
                 }
                 if(maxElPoint == null) {
-                    maxElPoint = track[i];
+                    maxElPoint = tp1;
                 } else {
-                    if(maxElPoint.getAzimuthElevation().getY() < track[i+1].getAzimuthElevation().getY()) {
-                        maxElPoint = track[i+1];
+                    if(maxElPoint.getElevation() < tp2.getElevation()) {
+                        maxElPoint = tp2;
                     }
                 }
             }
             // Text
             gc.setStroke(getForegroundColor());
             // BL: entry
-            gc.strokeText("Start\nAZ " + doublePrint(track[0].getAzimuthElevation().getX(), 4) + "\nEL " + doublePrint(track[0].getAzimuthElevation().getY(), 4), 2, canvas.getHeight() - 40);
+            gc.strokeText("Start\nAZ " + doublePrint(track.get(0).getAzimuth(), 4) + "\nEL " + doublePrint(track.get(0).getElevation(), 4), 2, canvas.getHeight() - 40);
             // BR: exit
-            gc.strokeText("End\nAZ " + doublePrint(track[track.length - 1].getAzimuthElevation().getX(), 4) + "\nEL " + doublePrint(track[track.length - 1].getAzimuthElevation().getY(), 4), canvas.getWidth() - 70, canvas.getHeight() - 40);
+            gc.strokeText("End\nAZ " + doublePrint(track.get(track.size() - 1).getAzimuth(), 4) + "\nEL " + doublePrint(track.get(track.size() - 1).getElevation(), 4), canvas.getWidth() - 70, canvas.getHeight() - 40);
             // TR: max elevation
             if(maxElPoint != null) {
-                gc.strokeText("Max EL\nAZ " + doublePrint(maxElPoint.getAzimuthElevation().getX(), 4) + "\nEL " + doublePrint(maxElPoint.getAzimuthElevation().getY(), 4), canvas.getWidth() - 70, 15);
+                gc.strokeText("Max EL\nAZ " + doublePrint(maxElPoint.getAzimuth(), 4) + "\nEL " + doublePrint(maxElPoint.getElevation(), 4), canvas.getWidth() - 70, 15);
             }
         }
     }
@@ -182,11 +186,11 @@ public class PolarPlot implements Initializable {
         return String.format("%." + places + "f", value);
     }
 
-    private Point2D toXY(Point2D azEl) {
+    private Point2D toXY(double az, double el) {
         // Elevation: radius length: 0 = radius; 90 = 0
-        double radius = (canvas.getWidth()/2 * MAX_RADIUS_FACTOR) * (90.0 - azEl.getY())/90.0;
-        double y = canvas.getHeight()/2 - radius * Math.cos(Math.toRadians(azEl.getX()));
-        double x = canvas.getWidth()/2 + radius * Math.sin(Math.toRadians(azEl.getX()));
+        double radius = (canvas.getWidth()/2 * MAX_RADIUS_FACTOR) * (90.0 - el)/90.0;
+        double y = canvas.getHeight()/2 - radius * Math.cos(Math.toRadians(az));
+        double x = canvas.getWidth()/2 + radius * Math.sin(Math.toRadians(az));
         return new Point2D(x, y);
     }
 
@@ -242,38 +246,67 @@ public class PolarPlot implements Initializable {
         this.spacecraftPosition.set(null);
     }
 
-    public void newSpacecraftPosition(String name, SpacecraftState currentLocation, Date now) {
+    public void setNewSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint currentLocation) {
         SpacecraftTrack currentTrack = spacecraftTrack.get();
-        if(currentTrack != null && currentTrack.getName().equals(name)) {
-            if(currentTrack.contains(now)) {
-                // set spacecraft position
-                Point2D currentScPos = currentTrack.getTrack()[0].getVisibilityWindow().convertToAzimuthElevation(currentLocation);
-                System.out.println("Spacecraft " + name + ", position AZ/EL" + currentScPos);
-                this.spacecraftPosition.set(currentScPos);
+        if(currentTrack != null &&
+            currentTrack.getWindow().getStation().equals(groundStation) &&
+            currentTrack.getWindow().getOrbit().equals(orbit)) {
+            // If the current location is null, the SC went out of visibility
+            if(currentLocation == null) {
+                this.spacecraftPosition.set(null);
+            } else {
+                if (currentTrack.getWindow().getOrbitNumber() == currentLocation.getOrbitNumber() &&
+                        currentTrack.contains(currentLocation.getTime())) {
+                    // set spacecraft position
+                    Point2D currentScPos = toXY(currentLocation.getAzimuth(), currentLocation.getElevation());
+                    System.out.println("Spacecraft " + orbit.getName() + ", position AZ/EL" + currentScPos);
+                    this.spacecraftPosition.set(currentScPos);
+                }
             }
         }
     }
 
-    public static class SpacecraftTrack {
-        private final String name;
-        private final VisibilityWindow.SpacecraftTrackPoint[] track;
+    public void updateCurrentData(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows) {
+        SpacecraftTrack currentTrack = spacecraftTrack.get();
+        if(currentTrack != null &&
+                currentTrack.getWindow().getStation().equals(groundStation) &&
+                currentTrack.getWindow().getOrbit().equals(orbit)) {
+            // There is a visibility window selected, replace it
+            for(VisibilityWindow vw : visibilityWindows) {
+                if(vw.getOrbitNumber() == currentTrack.getWindow().getOrbitNumber()) {
+                    // Found
+                    spacecraftTrack.set(new SpacecraftTrack(vw));
+                    return;
+                }
+            }
+            // At this stage, it means that the visibility window disappeared -> clear plot
+            clear();
+        }
+    }
 
-        public SpacecraftTrack(String name, VisibilityWindow.SpacecraftTrackPoint[] track) {
-            this.name = name;
-            this.track = track;
+    public static class SpacecraftTrack {
+
+        private final VisibilityWindow window;
+
+        public SpacecraftTrack(VisibilityWindow window) {
+            this.window = window;
+        }
+
+        public VisibilityWindow getWindow() {
+            return window;
         }
 
         public String getName() {
-            return name;
+            return window.getOrbit().getName();
         }
 
-        public VisibilityWindow.SpacecraftTrackPoint[] getTrack() {
-            return track;
+        public List<TrackPoint> getTrack() {
+            return window.getGroundTrack();
         }
 
         public boolean contains(Date now) {
-            VisibilityWindow.SpacecraftTrackPoint spt1 = track[0];
-            VisibilityWindow.SpacecraftTrackPoint spt2 = track[track.length - 1];
+            TrackPoint spt1 = getTrack().get(0);
+            TrackPoint spt2 = getTrack().get(getTrack().size() - 1);
             return now.after(spt1.getTime()) && now.before(spt2.getTime());
         }
     }

@@ -1,6 +1,5 @@
 package eu.dariolucia.drorbiteex.application;
 
-import eu.dariolucia.drorbiteex.fxml.Main;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -39,7 +38,6 @@ public class DrOrbiteex extends Application {
 
     public static void shutdown() {
         if (confirm("Exit " + APPLICATION_NAME, "Exit " + APPLICATION_NAME, "Do you want to close " + APPLICATION_NAME + "?")) {
-            Main.dismiss();
             Platform.exit();
             System.gc();
             System.exit(0);

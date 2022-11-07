@@ -1,7 +1,7 @@
 package eu.dariolucia.drorbiteex.model.station;
 
-import eu.dariolucia.drorbiteex.data.Utils;
-import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -48,7 +48,7 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
                     SpacecraftState next = propagator.propagate(new AbsoluteDate(currentDate, TimeScalesFactory.getUTC()));
                     // Convert spacecraft point to azimuth/elevation
                     double[] azElPoint = this.station.getAzimuthElevationOf(next);
-                    this.azimuthElevationTrack.add(new TrackPoint(currentDate, this.orbitNumber, new SpacecraftPosition(orbit, next), this.station, azElPoint[0], azElPoint[1]));
+                    this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
                     // Next point, 10 seconds after
                     currentDate = new Date(currentDate.getTime() + 10000);
                 }
@@ -57,7 +57,7 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
                 // Convert spacecraft point to azimuth/elevation
                 double[] azElPoint = this.station.getAzimuthElevationOf(next);
                 //
-                this.azimuthElevationTrack.add(new TrackPoint(currentDate, this.orbitNumber, new SpacecraftPosition(orbit, next), this.station, azElPoint[0], azElPoint[1]));
+                this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
             }
         }
     }
@@ -112,7 +112,7 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         if(this.aos == null) {
             return "---";
         } else {
-            return Utils.formatDate(this.aos);
+            return TimeUtils.formatDate(this.aos);
         }
     }
 
@@ -120,7 +120,7 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         if(this.los == null) {
             return "---";
         } else {
-            return Utils.formatDate(this.los);
+            return TimeUtils.formatDate(this.los);
         }
     }
 

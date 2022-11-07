@@ -1,7 +1,5 @@
 package eu.dariolucia.drorbiteex.model.orbit;
 
-import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
-
 import java.util.List;
 
 public interface IOrbitListener {

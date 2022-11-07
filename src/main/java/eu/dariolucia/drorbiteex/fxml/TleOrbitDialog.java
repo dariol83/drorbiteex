@@ -1,6 +1,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.TleOrbit;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +15,7 @@ import javafx.stage.Window;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 public class TleOrbitDialog implements Initializable {
     public TextField codeText;
@@ -55,29 +57,25 @@ public class TleOrbitDialog implements Initializable {
     }
 
 
-    private void setOriginalOrbit(TleOrbit gs) {
+    private void setOriginalOrbit(Orbit gs) {
         codeText.setText(gs.getCode());
         nameText.setText(gs.getName());
         nameText.setDisable(true); // Let's avoid mess with change of names... only code is displayed anyway
-        tleTextArea.setText(gs.getTle());
+        if(gs.getModel() instanceof TleOrbitModel) {
+            tleTextArea.setText(((TleOrbitModel) gs.getModel()).getTle());
+        }
         colorPicker.setValue(Color.valueOf(gs.getColor()));
     }
 
-    public TleOrbit getResult() {
-        TleOrbit gs = new TleOrbit();
-        gs.setCode(codeText.getText());
-        gs.setName(nameText.getText());
-        gs.setTle(tleTextArea.getText());
-        gs.setColor(colorPicker.getValue().toString());
-        gs.setVisible(true);
-        return gs;
+    public Orbit getResult() {
+        return new Orbit(UUID.randomUUID(), codeText.getText(), nameText.getText(), colorPicker.getValue().toString(), true, new TleOrbitModel(tleTextArea.getText()));
     }
 
-    public static TleOrbit openDialog(Window owner) {
+    public static Orbit openDialog(Window owner) {
         return openDialog(owner, null);
     }
 
-    public static TleOrbit openDialog(Window owner, TleOrbit gs) {
+    public static Orbit openDialog(Window owner, Orbit gs) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();

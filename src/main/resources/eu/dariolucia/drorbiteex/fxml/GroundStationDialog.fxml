@@ -33,15 +33,16 @@
             <HBox prefHeight="100.0" prefWidth="200.0">
                <children>
                   <Label minWidth="150.0" prefWidth="150.0" text="Description" />
-                  <TextArea fx:id="descriptionTextArea" minWidth="305.0" prefHeight="100.0" prefWidth="305.0" />
+                  <TextArea fx:id="descriptionTextArea" minWidth="455.0" prefHeight="100.0" prefWidth="455.0" />
                </children>
             </HBox>
             <Separator prefWidth="200.0" />
             <HBox spacing="5.0">
                <children>
-                  <Label minWidth="145.0" prefHeight="24.0" prefWidth="145.0" text="Coordinates (Lat/Lon)" />
+                  <Label minWidth="145.0" prefHeight="24.0" prefWidth="145.0" text="Coordinates (Lat/Lon/Alt)" />
                   <TextField fx:id="latitudeText" minWidth="150.0" prefWidth="150.0" />
                   <TextField fx:id="longitudeText" minWidth="150.0" prefWidth="150.0" />
+                  <TextField fx:id="altitudeText" minWidth="150.0" prefWidth="150.0" text="0"/>
                </children>
             </HBox>
             <HBox>

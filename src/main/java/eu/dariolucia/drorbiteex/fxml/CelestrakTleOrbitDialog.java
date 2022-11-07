@@ -1,8 +1,9 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.CelestrakSatellite;
-import eu.dariolucia.drorbiteex.data.CelestrakTleOrbit;
-import eu.dariolucia.drorbiteex.data.TleOrbit;
+import eu.dariolucia.drorbiteex.model.ModelManager;
+import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
+import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleOrbitModel;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -16,9 +17,9 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.net.URL;
-import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 public class CelestrakTleOrbitDialog implements Initializable {
     public TextField codeText;
@@ -59,30 +60,25 @@ public class CelestrakTleOrbitDialog implements Initializable {
     }
 
 
-    private void setOriginalOrbit(CelestrakTleOrbit gs) {
+    private void setOriginalOrbit(Orbit gs) {
         codeText.setText(gs.getCode());
-        groupText.setText(gs.getGroup());
         nameText.setText(gs.getName());
-        tleTextArea.setText(gs.getTle());
         colorPicker.setValue(Color.valueOf(gs.getColor()));
+        if(gs.getModel() instanceof CelestrakTleOrbitModel) {
+            groupText.setText(((CelestrakTleOrbitModel) gs.getModel()).getGroup());
+            tleTextArea.setText(((CelestrakTleOrbitModel) gs.getModel()).getTle());
+        }
     }
 
-    public CelestrakTleOrbit getResult() {
-        CelestrakTleOrbit gs = new CelestrakTleOrbit();
-        gs.setCode(codeText.getText());
-        gs.setName(nameText.getText());
-        gs.setGroup(groupText.getText());
-        gs.setTle(tleTextArea.getText());
-        gs.setColor(colorPicker.getValue().toString());
-        gs.setVisible(true);
-        return gs;
+    public Orbit getResult() {
+        return new Orbit(UUID.randomUUID(), codeText.getText(), nameText.getText(), colorPicker.getValue().toString(), true, new CelestrakTleOrbitModel(groupText.getText(), tleTextArea.getText()));
     }
 
-    public static TleOrbit openDialog(Window owner) {
+    public static Orbit openDialog(Window owner) {
         return openDialog(owner, null);
     }
 
-    public static CelestrakTleOrbit openDialog(Window owner, CelestrakTleOrbit gs) {
+    public static Orbit openDialog(Window owner, Orbit gs) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -120,8 +116,8 @@ public class CelestrakTleOrbitDialog implements Initializable {
         tleProgress.setVisible(true);
         final String group = groupText.getText();
         final String name = nameText.getText();
-        Main.runLater(() -> {
-            String newTle = CelestrakSatellite.retrieveUpdatedTle(group, name);
+        ModelManager.runLater(() -> {
+            String newTle = CelestrakTleData.retrieveUpdatedTle(group, name);
             Platform.runLater(() -> {
                 if(newTle != null) {
                     tleTextArea.setText(newTle);

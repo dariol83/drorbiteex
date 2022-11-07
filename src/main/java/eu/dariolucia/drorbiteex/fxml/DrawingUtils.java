@@ -1,7 +1,6 @@
-package eu.dariolucia.drorbiteex.data;
+package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.fxml.Main;
-import javafx.geometry.Point2D;
+import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
@@ -11,34 +10,16 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
-import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
-import org.orekit.bodies.OneAxisEllipsoid;
-import org.orekit.forces.gravity.potential.GravityFieldFactory;
-import org.orekit.forces.gravity.potential.NormalizedSphericalHarmonicsProvider;
-import org.orekit.frames.FactoryManagedFrame;
-import org.orekit.frames.FramesFactory;
-import org.orekit.models.earth.Geoid;
-import org.orekit.models.earth.ReferenceEllipsoid;
-import org.orekit.time.AbsoluteDate;
-import org.orekit.time.TimeScalesFactory;
-import org.orekit.utils.Constants;
-import org.orekit.utils.IERSConventions;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
-public class Utils {
+import static eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils.REAL_EARTH_RADIUS_METERS;
+
+public class DrawingUtils {
 
     public static final int EARTH_RADIUS = 200;
-    public static final int REAL_EARTH_RADIUS_METERS = 6371000;
     public static final double EARTH_SCALE_FACTOR = (double) EARTH_RADIUS / (double) REAL_EARTH_RADIUS_METERS;
-
-    public static AbsoluteDate toAbsoluteDate(Date time) {
-        return new AbsoluteDate(time, TimeScalesFactory.getUTC());
-    }
 
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color) {
         Point3D yAxis = new Point3D(0, 1, 0);
@@ -158,35 +139,9 @@ public class Utils {
         return (p3.subtract(p1).normalize()).crossProduct(p2.subtract(p1).normalize()).normalize();
     }
 
-    // Create geoid
-    public static FactoryManagedFrame ITRF = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
-    private static ReferenceEllipsoid referenceEllipsoid = ReferenceEllipsoid.getWgs84(ITRF);
-    private static NormalizedSphericalHarmonicsProvider gravity = GravityFieldFactory.getConstantNormalizedProvider(2,2);
-    //The above parameters are (degree,order). Arbitrary for now.
-    private static Geoid geoid = new Geoid(gravity, referenceEllipsoid);
-
-    private static BodyShape earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
-            Constants.WGS84_EARTH_FLATTENING,
-            ITRF);
-
-    public static BodyShape getEarthShape() {
-        return earthShape;
-    }
-
-    public static GeodeticPoint cartesianToGeodetic(Vector3D cartesianPoint, AbsoluteDate date) {
-        return geoid.transform(cartesianPoint, ITRF, date);
-    }
-    public static GeodeticPoint cartesianToGeodetic(Vector3D cartesianPoint) {
-        return geoid.transform(cartesianPoint, ITRF, new AbsoluteDate());
-    }
-
-    public static Vector3D geodeticToCartesian(GeodeticPoint geodeticPoint) {
-        return geoid.transform(geodeticPoint);
-    }
-
     public static Point3D latLonToScreenPoint(double lat, double lon, double radius) {
         double scaleRatio = radius / REAL_EARTH_RADIUS_METERS;
-        Vector3D cartesian = geodeticToCartesian(new GeodeticPoint(Math.toRadians(lat), Math.toRadians(lon), 0));
+        Vector3D cartesian = EarthReferenceUtils.geodeticToCartesian(new GeodeticPoint(Math.toRadians(lat), Math.toRadians(lon), 0));
         return new Point3D(cartesian.getY() * scaleRatio, - cartesian.getZ() * scaleRatio, - cartesian.getX() * scaleRatio);
     }
 
@@ -197,18 +152,11 @@ public class Utils {
         return new double[] { ((longitude + 180) / 360) * width,  ((90 - latitude) / 180) * height };
     }
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
-
-    public static String formatDate(Date d) {
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return DATE_FORMAT.format(d);
-    }
-
     public static MeshView createVisibilityMesh(double latitude, double longitude, List<double[]> visibilityCircleSortedLatLon, double scHeight) {
         TriangleMesh mesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-        float radius = Utils.EARTH_RADIUS + (float) (scHeight * EARTH_SCALE_FACTOR);
-        // Point3D gsPoint = Utils.latLonToScreenPoint(latitude, longitude, radius);
-        Point3D gsPoint = Utils.latLonToScreenPoint(latitude, longitude, 0);
+        float radius = EARTH_RADIUS + (float) (scHeight * EARTH_SCALE_FACTOR);
+        // Point3D gsPoint = TimeUtils.latLonToScreenPoint(latitude, longitude, radius);
+        Point3D gsPoint = latLonToScreenPoint(latitude, longitude, 0);
         mesh.getPoints().addAll((float) gsPoint.getX(), (float) gsPoint.getY(), (float) gsPoint.getZ()); // Center (0)
         // The normal is the normalisation of the point
         Point3D gsNormal = gsPoint.normalize();
@@ -218,8 +166,8 @@ public class Utils {
             double[] latLon1 = visibilityCircleSortedLatLon.get(i);
             double[] latLon2 = visibilityCircleSortedLatLon.get(i + 1);
             // Make a triangle
-            Point3D p1 = Utils.latLonToScreenPoint(latLon1[0], latLon1[1], radius);
-            Point3D p2 = Utils.latLonToScreenPoint(latLon2[0], latLon2[1], radius);
+            Point3D p1 = latLonToScreenPoint(latLon1[0], latLon1[1], radius);
+            Point3D p2 = latLonToScreenPoint(latLon2[0], latLon2[1], radius);
             mesh.getPoints().addAll((float) p1.getX(), (float) p1.getY(), (float) p1.getZ()); // P1 (i * 0 + 1)
             mesh.getPoints().addAll((float) p2.getX(), (float) p2.getY(), (float) p2.getZ()); // P2 (i * 0 + 2)
             Point3D pn1 = computeNormal(p1, p2, gsPoint); // 1
@@ -241,8 +189,4 @@ public class Utils {
         return meshView;
     }
 
-    public static Point2D adjustAzimuthElevationPoint(Point2D azElPoint) {
-
-        return azElPoint;
-    }
 }

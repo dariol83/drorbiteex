@@ -1,7 +1,9 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.CelestrakSatellite;
-import eu.dariolucia.drorbiteex.data.CelestrakTleOrbit;
+import eu.dariolucia.drorbiteex.model.ModelManager;
+import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
+import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleOrbitModel;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
@@ -14,38 +16,26 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.net.URL;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class CelestrakDialog implements Initializable {
 
     public ComboBox<String> groupCombo;
-    public ListView<CelestrakSatellite> satelliteList;
+    public ListView<CelestrakTleData> satelliteList;
     public ProgressIndicator progressIndicator;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        satelliteList.setCellFactory(CheckBoxListCell.forListView(CelestrakSatellite::selectedProperty));
+        satelliteList.setCellFactory(CheckBoxListCell.forListView(CelestrakTleData::selectedProperty));
         groupCombo.getItems().addAll("weather", "noaa", "resource", "gps-ops", "galileo", "geo", "active");
     }
 
-    private List<CelestrakTleOrbit> getResult() {
-        List<CelestrakTleOrbit> orbits = new LinkedList<>();
-        for(CelestrakSatellite cs : satelliteList.getItems()) {
-            if(cs.selectedProperty().get()) {
-                CelestrakTleOrbit orb = new CelestrakTleOrbit();
-                orb.setName(cs.getName());
-                orb.setCode(cs.getName());
-                orb.setGroup(cs.getGroup());
-                orb.setVisible(true);
-                orb.setTle(cs.getTle());
-                orb.setColor(randomColor());
-                orbits.add(orb);
-            }
-        }
-        return orbits;
+    private List<Orbit> getResult() {
+        return satelliteList.getItems().stream()
+                .filter(o -> o.selectedProperty().get())
+                .map(cs -> new Orbit(UUID.randomUUID(), cs.getName(), cs.getName(), randomColor(),true, new CelestrakTleOrbitModel(cs.getGroup(), cs.getTle())))
+                .collect(Collectors.toList());
     }
 
     private String randomColor() {
@@ -57,8 +47,8 @@ public class CelestrakDialog implements Initializable {
         if(group != null) {
             satelliteList.setDisable(true);
             progressIndicator.setVisible(true);
-            Main.runLater(() -> {
-                List<CelestrakSatellite> sats = CelestrakSatellite.retrieveSpacecraftList(group);
+            ModelManager.runLater(() -> {
+                List<CelestrakTleData> sats = CelestrakTleData.retrieveSpacecraftList(group);
                 Platform.runLater(() -> {
                     if(sats != null) {
                         satelliteList.getItems().clear();
@@ -72,7 +62,7 @@ public class CelestrakDialog implements Initializable {
         }
     }
 
-    public static List<CelestrakTleOrbit> openDialog(Window owner) {
+    public static List<Orbit> openDialog(Window owner) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();

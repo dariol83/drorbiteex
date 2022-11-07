@@ -1,10 +1,7 @@
 package eu.dariolucia.drorbiteex.model.station;
 
-import eu.dariolucia.drorbiteex.data.Utils;
-import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
-import eu.dariolucia.drorbiteex.model.orbit.IOrbitVisibilityProcessor;
-import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.orbit.OrbitManager;
+import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.ode.events.Action;
 import org.orekit.bodies.GeodeticPoint;
@@ -35,24 +32,24 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     private static final double THRESHOLD =  0.001;
     private static final double GS_ELEVATION = Math.toRadians(0);
 
-    private UUID id;
-    private String code = "";
-    private String name = "";
-    private String description = "";
-    private String color = "0xFFFFFF";
-    private boolean visible = false;
-    private double latitude;
-    private double longitude;
-    private double height;
+    private volatile UUID id;
+    private volatile String code = "";
+    private volatile String name = "";
+    private volatile String description = "";
+    private volatile String color = "0xFFFFFF";
+    private volatile boolean visible = false;
+    private volatile double latitude;
+    private volatile double longitude;
+    private volatile double height;
 
     // Fields for visibility window computation
     private transient final Map<Orbit, List<VisibilityWindow>> visibilityWindows = new ConcurrentHashMap<>();
     private transient final Map<Orbit, TrackPoint> currentVisibilityMap = new ConcurrentHashMap<>();
-    private transient final Map<Orbit, List<GeodeticPoint>> visibilityCircles = new ConcurrentHashMap<>();
+    private transient final Map<Orbit, VisibilityCircle> visibilityCircles = new ConcurrentHashMap<>();
 
     private transient volatile TopocentricFrame stationFrame;
 
-    private transient EventDetector eventDetector;
+    private transient volatile EventDetector eventDetector;
 
     private transient final List<WeakReference<IGroundStationListener>> listeners = new CopyOnWriteArrayList<>();
 
@@ -147,8 +144,10 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     }
 
     public synchronized void setVisible(boolean visible) {
-        this.visible = visible;
-        notifyGroundStationUpdated();
+        if(this.visible != visible) {
+            this.visible = visible;
+            notifyGroundStationUpdated();
+        }
     }
 
     @XmlAttribute
@@ -183,7 +182,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     @Override
     public synchronized String toString() {
-        return this.code + " - " + this.name + "[" + this.latitude + ", " + this.longitude + ", " + this.height + "]";
+        return this.code + " - " + this.name + "[" + this.latitude + ", " + this.longitude + ", " + this.height + "] - " + (visible ? "visible" : "hidden");
     }
 
     public synchronized void update(GroundStation gs) {
@@ -200,12 +199,13 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     private void recomputeData() {
         GeodeticPoint geodeticPoint = new GeodeticPoint(Math.toRadians(getLatitude()), Math.toRadians(getLongitude()), getHeight());
-        this.stationFrame = new TopocentricFrame(Utils.getEarthShape(), geodeticPoint, getCode());
+        this.stationFrame = new TopocentricFrame(EarthReferenceUtils.getEarthShape(), geodeticPoint, getCode());
         this.eventDetector = new ElevationDetector(MAX_CHECK, THRESHOLD, this.stationFrame).withConstantElevation(GS_ELEVATION).withHandler(this);
         // Clear visibility windows and visibility circles
         this.visibilityWindows.clear();
         this.currentVisibilityMap.clear();
-        // TODO: raise callback to notify parameter updates --> must trigger orbit recomputation
+        // Raise callback to notify parameter updates --> must trigger orbit recomputation
+        notifyGroundStationUpdated();
     }
 
     public synchronized TopocentricFrame getStationFrame() {
@@ -265,6 +265,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     @Override
     public synchronized void startVisibilityComputation(Orbit o) {
         // Nothing to do
+        this.visibilityUpdateInProgress = true;
     }
 
     @Override
@@ -293,7 +294,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
             // Spacecraft is visible: update information
             int orbitNumber = currentSpacecraftPosition.getOrbitNumber();
             double[] azimuthElevation = getAzimuthElevationOf(spacecraftState);
-            this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, orbitNumber, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
+            this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
             if(!eventRaised) {
                 // Create a fake visibility window
                 VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this);
@@ -309,7 +310,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
             double azimuth = i * (2.0 * Math.PI / 180);
             visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(Constants.WGS84_EARTH_EQUATORIAL_RADIUS + currentSpacecraftPosition.getLatLonHeight().getAltitude(), azimuth, GS_ELEVATION));
         }
-        this.visibilityCircles.put(orbit, visibilityCircle);
+        this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
         // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified
         this.currentOrbit = null;
         this.temporaryPointMap.clear();
@@ -329,7 +330,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         if(windows != null) {
             windows = List.copyOf(windows);
         }
-        notifyOrbitEffectListeners(orbit, windows, List.copyOf(this.visibilityCircles.get(orbit)), this.currentVisibilityMap.get(orbit));
+        this.visibilityUpdateInProgress = false;
+        notifyOrbitEffectListeners(orbit, windows, this.visibilityCircles.get(orbit), this.currentVisibilityMap.get(orbit));
     }
 
     public synchronized Map<Orbit, List<VisibilityWindow>> getAllVisibilityWindows() {
@@ -348,11 +350,11 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         return this.currentVisibilityMap.get(o);
     }
 
-    public synchronized Map<Orbit, List<GeodeticPoint>> getAllVisibilityCircles() {
+    public synchronized Map<Orbit, VisibilityCircle> getAllVisibilityCircles() {
         return Map.copyOf(this.visibilityCircles);
     }
 
-    public synchronized List<GeodeticPoint> getVisibilityCircleOf(Orbit o) {
+    public synchronized VisibilityCircle getVisibilityCircleOf(Orbit o) {
         return this.visibilityCircles.get(o);
     }
 
@@ -395,12 +397,11 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     @Override
     public synchronized void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
         double[] azEl = getAzimuthElevationOf(currentPosition.getSpacecraftState());
-        if(azEl[1] < 0) {
+        if(azEl[1] < 0 && this.currentVisibilityMap.containsKey(orbit)) {
             this.currentVisibilityMap.remove(orbit);
             notifySpacecraftPositionListeners(orbit, null);
         } else {
-            int orbitNumber = currentPosition.getOrbitNumber();
-            TrackPoint point = new TrackPoint(currentPosition.getTime(), orbitNumber, currentPosition, this, azEl[0], azEl[1]);
+            TrackPoint point = new TrackPoint(currentPosition.getTime(), currentPosition, this, azEl[0], azEl[1]);
             this.currentVisibilityMap.put(orbit, point);
             notifySpacecraftPositionListeners(orbit, point);
         }
@@ -415,7 +416,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         });
     }
 
-    private void notifyOrbitEffectListeners(Orbit orbit, List<VisibilityWindow> windows, List<GeodeticPoint> visibilityCircle, TrackPoint currentPoint) {
+    private void notifyOrbitEffectListeners(Orbit orbit, List<VisibilityWindow> windows, VisibilityCircle visibilityCircle, TrackPoint currentPoint) {
         this.listeners.forEach(o -> {
             IGroundStationListener l = o.get();
             if(l != null) {

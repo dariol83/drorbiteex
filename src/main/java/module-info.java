@@ -18,5 +18,8 @@ open module eu.dariolucia.drorbiteex {
 
     exports eu.dariolucia.drorbiteex.fxml;
     exports eu.dariolucia.drorbiteex.application;
-    exports eu.dariolucia.drorbiteex.data;
+    exports eu.dariolucia.drorbiteex.model;
+    exports eu.dariolucia.drorbiteex.model.orbit;
+    exports eu.dariolucia.drorbiteex.model.station;
+    exports eu.dariolucia.drorbiteex.model.util;
 }

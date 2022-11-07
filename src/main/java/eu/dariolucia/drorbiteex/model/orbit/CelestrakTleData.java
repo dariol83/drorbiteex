@@ -1,4 +1,4 @@
-package eu.dariolucia.drorbiteex.data;
+package eu.dariolucia.drorbiteex.model.orbit;
 
 import javafx.beans.property.SimpleBooleanProperty;
 
@@ -9,7 +9,7 @@ import java.net.URLConnection;
 import java.util.LinkedList;
 import java.util.List;
 
-public class CelestrakSatellite {
+public class CelestrakTleData {
 
     private static final String CELESTRAK_PATH = "https://celestrak.org/NORAD/elements/gp.php?GROUP=<group>&FORMAT=tle";
 
@@ -18,7 +18,7 @@ public class CelestrakSatellite {
     private final String tle;
     private SimpleBooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
-    public CelestrakSatellite(String name, String group, String tle) {
+    public CelestrakTleData(String name, String group, String tle) {
         this.name = name;
         this.group = group;
         this.tle = tle;
@@ -45,9 +45,9 @@ public class CelestrakSatellite {
         return getName();
     }
 
-    public static List<CelestrakSatellite> retrieveSpacecraftList(String group) {
+    public static List<CelestrakTleData> retrieveSpacecraftList(String group) {
         try {
-            List<CelestrakSatellite> list = new LinkedList<>();
+            List<CelestrakTleData> list = new LinkedList<>();
             URL url = new URL(CELESTRAK_PATH.replace("<group>", group));
             URLConnection conn = url.openConnection();
             BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -69,7 +69,7 @@ public class CelestrakSatellite {
                     case 2:
                         tle2 = read.trim();
                         state = 0;
-                        list.add(new CelestrakSatellite(satelliteId, group, tle1 + "\n" + tle2));
+                        list.add(new CelestrakTleData(satelliteId, group, tle1 + "\n" + tle2));
                         break;
                 }
             }
@@ -82,9 +82,9 @@ public class CelestrakSatellite {
     }
 
     public static String retrieveUpdatedTle(String group, String name) {
-        List<CelestrakSatellite> sats = retrieveSpacecraftList(group);
+        List<CelestrakTleData> sats = retrieveSpacecraftList(group);
         if(sats != null) {
-            return sats.stream().filter(o -> o.getName().equals(name)).map(CelestrakSatellite::getTle).findFirst().orElse(null);
+            return sats.stream().filter(o -> o.getName().equals(name)).map(CelestrakTleData::getTle).findFirst().orElse(null);
         } else {
             return null;
         }

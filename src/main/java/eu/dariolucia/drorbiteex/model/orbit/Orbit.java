@@ -1,9 +1,6 @@
 package eu.dariolucia.drorbiteex.model.orbit;
 
-import eu.dariolucia.drorbiteex.data.CelestrakTleOrbit;
-import eu.dariolucia.drorbiteex.data.TleOrbit;
-import eu.dariolucia.drorbiteex.data.Utils;
-import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
@@ -23,19 +20,19 @@ public class Orbit {
     private static final double PROPAGATION_STEP_DURATION = 60.0;
 
     // Subject to serialisation
-    private UUID id;
-    private String code = "";
-    private String name = "";
-    private String color = "0xFFFFFF";
-    private boolean visible = false;
-    private IOrbitModel model;
+    private volatile UUID id;
+    private volatile String code = "";
+    private volatile String name = "";
+    private volatile String color = "0xFFFFFF";
+    private volatile boolean visible = false;
+    private volatile IOrbitModel model;
 
     // Transient state objects
-    private transient List<WeakReference<IOrbitListener>> listeners = new CopyOnWriteArrayList<>();
-    private transient List<SpacecraftPosition> spacecraftPositions = new ArrayList<>();
-    private transient Propagator modelPropagator = null;
-    private transient Date currentPositionTime = new Date();
-    private transient SpacecraftPosition currentSpacecraftPosition = null;
+    private transient volatile List<WeakReference<IOrbitListener>> listeners = new CopyOnWriteArrayList<>();
+    private transient volatile List<SpacecraftPosition> spacecraftPositions = new ArrayList<>();
+    private transient volatile Propagator modelPropagator = null;
+    private transient volatile Date currentPositionTime = new Date();
+    private transient volatile SpacecraftPosition currentSpacecraftPosition = null;
 
     private Orbit() {
         //
@@ -52,7 +49,7 @@ public class Orbit {
         this.visible = visible;
         this.model = model;
 
-        forceDataUpdate();
+        refresh();
     }
 
     @XmlAttribute(required = true)
@@ -105,8 +102,8 @@ public class Orbit {
     }
 
     @XmlElements({
-            @XmlElement(name="tle-model",type=TleOrbit.class),
-            @XmlElement(name="tle-celestrak-model",type=CelestrakTleOrbit.class)
+            @XmlElement(name="tle-model",type=TleOrbitModel.class),
+            @XmlElement(name="tle-celestrak-model",type=CelestrakTleOrbitModel.class)
     })
     public synchronized IOrbitModel getModel() {
         return model;
@@ -161,9 +158,13 @@ public class Orbit {
      * @param referenceDate the reference date to use
      */
     private void recomputeData(Date referenceDate) {
+        // Protect the call from null argument
+        if(referenceDate == null) {
+            referenceDate = new Date();
+        }
         this.modelPropagator = this.model.getPropagator();
         this.spacecraftPositions.clear();
-        AbsoluteDate ad = Utils.toAbsoluteDate(Objects.requireNonNullElse(referenceDate, new Date()));
+        AbsoluteDate ad = TimeUtils.toAbsoluteDate(Objects.requireNonNullElse(referenceDate, new Date()));
         // Propagate in 3 steps
         // Past
         for (int i = -PROPAGATION_STEPS; i < 0; ++i) {
@@ -252,12 +253,12 @@ public class Orbit {
     public synchronized SpacecraftState updateOrbitTime(Date time) {
         Date previousTime = this.currentPositionTime;
         this.currentPositionTime = time;
-        if(Duration.between(previousTime.toInstant(), time.toInstant()).getSeconds() > 60 * 30) {
+        if(this.modelPropagator == null || previousTime == null || Duration.between(previousTime.toInstant(), time.toInstant()).getSeconds() > 60 * 30) {
             recomputeData(this.currentPositionTime);
         } else {
             // Compute only the position of the spacecraft, notify listeners about new spacecraft position
             int orbitNumber = computeOrbitNumberAt(time);
-            this.currentSpacecraftPosition = new SpacecraftPosition(this, orbitNumber, this.modelPropagator.propagate(Utils.toAbsoluteDate(time)));
+            this.currentSpacecraftPosition = new SpacecraftPosition(this, orbitNumber, this.modelPropagator.propagate(TimeUtils.toAbsoluteDate(time)));
         }
         // Notify
         notifySpacecraftPositionUpdate();
@@ -265,11 +266,19 @@ public class Orbit {
         return this.currentSpacecraftPosition.getSpacecraftState();
     }
 
-    public synchronized void forceDataUpdate() {
+    public synchronized void refresh() {
         recomputeData(this.currentPositionTime);
     }
 
     public synchronized int computeOrbitNumberAt(Date time) {
         return this.model.computeOrbitNumberAt(time);
+    }
+
+    public synchronized List<SpacecraftPosition> getSpacecraftPositions() {
+        return List.copyOf(spacecraftPositions);
+    }
+
+    public synchronized SpacecraftPosition getCurrentSpacecraftPosition() {
+        return currentSpacecraftPosition;
     }
 }

@@ -1,6 +1,6 @@
 package eu.dariolucia.drorbiteex.model.station;
 
-import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 
 import java.util.Date;
 
@@ -13,9 +13,9 @@ public class TrackPoint {
     private final double elevation;
     private final double azimuth;
 
-    public TrackPoint(Date time, int orbitNumber, SpacecraftPosition spacecraftPosition, GroundStation station, double azimuth, double elevation) {
+    public TrackPoint(Date time, SpacecraftPosition spacecraftPosition, GroundStation station, double azimuth, double elevation) {
         this.time = time;
-        this.orbitNumber = orbitNumber;
+        this.orbitNumber = spacecraftPosition.getOrbitNumber();
         this.spacecraftPosition = spacecraftPosition;
         this.station = station;
         this.elevation = elevation;

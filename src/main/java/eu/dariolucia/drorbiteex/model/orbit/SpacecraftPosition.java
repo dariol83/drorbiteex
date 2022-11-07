@@ -1,7 +1,6 @@
-package eu.dariolucia.drorbiteex.model;
+package eu.dariolucia.drorbiteex.model.orbit;
 
-import eu.dariolucia.drorbiteex.data.Utils;
-import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.propagation.SpacecraftState;
@@ -27,8 +26,8 @@ public final class SpacecraftPosition {
         this.orbit = orbit;
         this.orbitNumber = orbitNumber;
         this.spacecraftState = spacecraftState;
-        this.positionVector = spacecraftState.getPVCoordinates(Utils.ITRF).getPosition();
-        this.latLonHeight = Utils.cartesianToGeodetic(this.positionVector, this.spacecraftState.getDate());
+        this.positionVector = spacecraftState.getPVCoordinates(EarthReferenceUtils.getITRF()).getPosition();
+        this.latLonHeight = EarthReferenceUtils.cartesianToGeodetic(this.positionVector, this.spacecraftState.getDate());
         this.time = spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
     }
 

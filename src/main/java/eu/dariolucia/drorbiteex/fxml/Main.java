@@ -1,6 +1,9 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.*;
+import eu.dariolucia.drorbiteex.model.ModelManager;
+import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.station.*;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
@@ -28,27 +31,22 @@ import javafx.util.StringConverter;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
-import org.orekit.propagation.SpacecraftState;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class Main implements Initializable {
+public class Main implements Initializable, IOrbitListener, IGroundStationListener {
 
     private static final String DEFAULT_CONFIG_FOLDER = System.getProperty("user.home") + File.separator + "drorbiteex";
-    private static final String DEFAULT_CONFIG_FILE_NAME = "state.xml";
-    private static final String DEFAULT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_CONFIG_FILE_NAME;
-    private static final String OREKIT_FOLDER_NAME = "orekit-data";
+    private static final String DEFAULT_ORBIT_CONFIG_FILE_NAME = "orbits.xml";
+    private static final String DEFAULT_ORBIT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_ORBIT_CONFIG_FILE_NAME;
+    private static final String DEFAULT_GS_CONFIG_FILE_NAME = "groundstations.xml";
+    private static final String DEFAULT_GS_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_GS_CONFIG_FILE_NAME;
+
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
+    private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String NO_GROUND_TRACK = "             ";
-
-
-    private File configFile;
 
     public SubScene scene3d;
 
@@ -70,11 +68,11 @@ public class Main implements Initializable {
     private double zoomDeltaFactor = 0.4;
 
     // Ground stations
-    public ListView<GroundStation> groundStationList;
+    public ListView<GroundStationGraphics> groundStationList;
     private Group groundStationGroup;
 
     // Orbits
-    public ListView<AbstractOrbit> orbitList;
+    public ListView<OrbitGraphics> orbitList;
     private Group orbitGroup;
 
     // Time tracker
@@ -103,37 +101,30 @@ public class Main implements Initializable {
     public PolarPlot polarPlotController;
     public ProgressIndicator polarPlotProgress;
 
-    private static ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "Dr. Orbiteex - Background Thread");
-        t.setDaemon(true);
-        return t;
-    });
-
-    public static void runLater(Runnable r) {
-        executorService.execute(r);
-    }
-
-    public static void dismiss() {
-        executorService.shutdownNow();
-    }
+    private ModelManager manager;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Load old configuration if available
         String configLocation = System.getProperty(CONFIG_FOLDER_LOCATION_KEY);
         File orekitData;
+        String orbitFile;
+        String gsFile;
         if(configLocation != null && !configLocation.isBlank()) {
-            configFile = new File(configLocation + File.separator + DEFAULT_CONFIG_FILE_NAME);
+            orbitFile = configLocation + File.separator + DEFAULT_ORBIT_CONFIG_FILE_NAME;
+            gsFile = configLocation + File.separator + DEFAULT_GS_CONFIG_FILE_NAME;
             orekitData = new File(configLocation + File.separator + OREKIT_FOLDER_NAME);
         } else {
-            configFile = new File(DEFAULT_CONFIG_LOCATION);
+            orbitFile = DEFAULT_ORBIT_CONFIG_LOCATION;
+            gsFile = DEFAULT_GS_CONFIG_LOCATION;
             orekitData = new File(DEFAULT_CONFIG_FOLDER + File.separator + OREKIT_FOLDER_NAME);
         }
+        // Orekit initialisation
         DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
         manager.addProvider(new DirectoryCrawler(orekitData));
 
         // Earth sphere object
-        earth = Utils.createEarthSphere();
+        earth = DrawingUtils.createEarthSphere();
         groundStationGroup = new Group();
         orbitGroup = new Group();
         group = new Group(earth, groundStationGroup, orbitGroup);
@@ -154,8 +145,8 @@ public class Main implements Initializable {
         scene3d.getParent().addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
 
         // Handle ground station and orbit lists
-        groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStation::visibleProperty));
-        orbitList.setCellFactory(CheckBoxListCell.forListView(AbstractOrbit::visibleProperty));
+        groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStationGraphics::visibleProperty));
+        orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
 
         // Handle ground track list
         groundTrackCombo.setConverter(new StringConverter<>() {
@@ -163,8 +154,8 @@ public class Main implements Initializable {
             public String toString(Object o) {
                 if (o.equals(NO_GROUND_TRACK)) {
                     return NO_GROUND_TRACK;
-                } else if (o instanceof AbstractOrbit) {
-                    return ((AbstractOrbit) o).getName();
+                } else if (o instanceof OrbitGraphics) {
+                    return ((OrbitGraphics) o).getName();
                 } else {
                     throw new IllegalStateException("Wrong conversion object: " + o);
                 }
@@ -175,7 +166,7 @@ public class Main implements Initializable {
                 if (s.equals(NO_GROUND_TRACK)) {
                     return NO_GROUND_TRACK;
                 } else {
-                    for (AbstractOrbit ao : orbitList.getItems()) {
+                    for (OrbitGraphics ao : orbitList.getItems()) {
                         if (ao.getName().equals(s)) {
                             return ao;
                         }
@@ -185,12 +176,12 @@ public class Main implements Initializable {
             }
         });
         groundTrackCombo.getItems().add(NO_GROUND_TRACK);
-        orbitList.getItems().addListener((ListChangeListener<AbstractOrbit>) c -> {
+        orbitList.getItems().addListener((ListChangeListener<OrbitGraphics>) c -> {
             while (c.next()) {
-                for (AbstractOrbit remitem : c.getRemoved()) {
+                for (OrbitGraphics remitem : c.getRemoved()) {
                     groundTrackCombo.getItems().remove(remitem);
                 }
-                for (AbstractOrbit additem : c.getAddedSubList()) {
+                for (OrbitGraphics additem : c.getAddedSubList()) {
                     groundTrackCombo.getItems().add(additem);
                 }
             }
@@ -201,38 +192,105 @@ public class Main implements Initializable {
         polarPlotController.setForegroundColor(Color.LIMEGREEN);
         polarPlotController.setBackgroundColor(Color.BLACK);
 
-        // Load configuration file
-        if(configFile.exists()) {
-            loadConfigFile();
-        }
-
         // Update 2D view
         this.scene2dImage = new Image(this.getClass().getResourceAsStream("/images/earth.jpg"));
         update2Dscene();
         this.scene2d.visibleProperty().bind(this.minimapButton.selectedProperty());
 
         // Configure pass table
-        satelliteColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getSatellite()));
+        satelliteColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getOrbit().getName()));
         orbitColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(String.valueOf(o.getValue().getOrbitNumber())));
         aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getAosString()));
         losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getLosString()));
-        groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> {
-            updatePassTableSelection(b);
-        });
+        groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updatePassTableSelection(b));
         passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
+
+        // Create model manager
+        this.manager = new ModelManager(orbitFile, gsFile);
+        this.manager.getOrbitManager().addListener(this);
+        this.manager.getGroundStationManager().addListener(this);
+
+        // Create graphics objects
+        for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
+            registerNewOrbit(o);
+        }
+
+        for(GroundStation gs : this.manager.getGroundStationManager().getGroundStations().values()) {
+            registerNewGroundStation(gs);
+        }
+
+        // Redraw stuff on the 2D scene
+        update2Dscene();
+
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
     }
 
-    private void updatePassTableSelection(GroundStation b) {
+    private void registerNewGroundStation(GroundStation gs) {
+        GroundStationGraphics graphics = new GroundStationGraphics(this.manager, gs);
+        groundStationList.getItems().add(graphics);
+        Group s = graphics.createGraphicItem();
+        groundStationGroup.getChildren().add(s);
+        graphics.visibleProperty().addListener(this.visibilityUpdateListener);
+    }
+
+    private void deregisterGroundStation(GroundStation gs) {
+        Optional<GroundStationGraphics> first = groundStationList.getItems().stream().filter(o -> o.getGroundStation().equals(gs)).findFirst();
+        if(first.isPresent()) {
+            GroundStationGraphics graphics = first.get();
+            groundStationList.getItems().remove(graphics);
+            groundStationGroup.getChildren().remove(graphics.getGraphicItem());
+            graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
+            graphics.dispose();
+            groundStationList.refresh();
+            update2Dscene();
+        }
+    }
+
+    private void registerNewOrbit(Orbit o) {
+        OrbitGraphics graphics = new OrbitGraphics(this.manager, o);
+        orbitList.getItems().add(graphics);
+        Group s = graphics.createGraphicItem();
+        orbitGroup.getChildren().add(s);
+        graphics.visibleProperty().addListener(this.visibilityUpdateListener);
+    }
+
+    private void deregisterOrbit(Orbit orbit) {
+        Optional<OrbitGraphics> first = orbitList.getItems().stream().filter(o -> o.getOrbit().equals(orbit)).findFirst();
+        if(first.isPresent()) {
+            OrbitGraphics graphics = first.get();
+            orbitList.getItems().remove(graphics);
+            orbitGroup.getChildren().remove(graphics.getGraphicItem());
+            graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
+            graphics.dispose();
+            orbitList.refresh();
+            update2Dscene();
+            updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
+        }
+    }
+
+    private void updatePassTableSelection(GroundStationGraphics b) {
+        // If there is already a pass selected, remember it
+        VisibilityWindow selected = passTable.getSelectionModel().getSelectedItem();
         passTable.getItems().clear();
         if(b != null) {
-            Map<String, List<VisibilityWindow>> windows = b.getVisibilityWindows();
+            Map<Orbit, List<VisibilityWindow>> windows = b.getGroundStation().getAllVisibilityWindows();
             List<VisibilityWindow> vw = new LinkedList<>();
             windows.values().forEach(vw::addAll);
             Collections.sort(vw);
             passTable.getItems().addAll(vw);
+            // If there was a selection, re-select it
+            if(selected != null && selected.getStation().equals(b.getGroundStation())) {
+                // Look for the visibility and select it
+                for(VisibilityWindow window : passTable.getItems()) {
+                    if(window.getOrbit().equals(selected.getOrbit()) && window.getOrbitNumber() == selected.getOrbitNumber()) {
+                        // Found
+                        passTable.getSelectionModel().select(window);
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -240,51 +298,13 @@ public class Main implements Initializable {
         // Handle 2D view
         GraphicsContext gc = scene2d.getGraphicsContext2D();
         gc.drawImage(this.scene2dImage, 0, 0, scene2d.getWidth(), scene2d.getHeight());
-        for(GroundStation gs : groundStationList.getItems()) {
-            gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
+        for(GroundStationGraphics gs : groundStationList.getItems()) {
+            gs.draw(gc, getGroundTrackSelection(), scene2d.getWidth(), scene2d.getHeight());
         }
-        for(AbstractOrbit gs : orbitList.getItems()) {
+        for(OrbitGraphics gs : orbitList.getItems()) {
             gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
         }
         // Done
-    }
-
-    private void loadConfigFile() {
-        try (FileInputStream is = new FileInputStream(this.configFile)) {
-            Configuration c = Configuration.load(is);
-            for (GroundStation gs : c.getGroundStations()) {
-                initialiseGroundStation(gs);
-            }
-            for(AbstractOrbit gs : c.getOrbits()) {
-                initialiseOrbit(gs);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Ignore
-        }
-    }
-
-    private void saveConfigFile() {
-        Configuration c = new Configuration();
-        c.setGroundStations(new ArrayList<>());
-        for(GroundStation gs : groundStationList.getItems()) {
-            c.getGroundStations().add(gs);
-        }
-        c.setOrbits(new ArrayList<>());
-        for(AbstractOrbit gs : orbitList.getItems()) {
-            c.getOrbits().add(gs);
-        }
-        try {
-            if (this.configFile.exists()) {
-                this.configFile.delete();
-            }
-            this.configFile.getParentFile().mkdirs();
-            this.configFile.createNewFile();
-            FileOutputStream out = new FileOutputStream(this.configFile);
-            Configuration.save(c, out);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void onEndDragOnScene(MouseEvent t) {
@@ -342,18 +362,12 @@ public class Main implements Initializable {
 
     public void onNewGroundStationAction(ActionEvent actionEvent) {
         GroundStation gs = GroundStationDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        // Register the ground station to the manager: the callbacks will do the rest
         if(gs != null) {
-            initialiseGroundStation(gs);
-            saveConfigFile();
-            update2Dscene();
+            ModelManager.runLater(() -> manager.getGroundStationManager().newGroundStation(
+                    gs.getCode(), gs.getName(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight()
+            ));
         }
-    }
-
-    private void initialiseGroundStation(GroundStation gs) {
-        groundStationList.getItems().add(gs);
-        Group s = gs.createGraphicItem();
-        groundStationGroup.getChildren().add(s);
-        gs.visibleProperty().addListener(this.visibilityUpdateListener);
     }
 
     public void onEditGroundStationAction(ActionEvent mouseEvent) {
@@ -361,7 +375,7 @@ public class Main implements Initializable {
     }
 
     public void onDeleteGroundStationAction(ActionEvent actionEvent) {
-        GroundStation gs = groundStationList.getSelectionModel().getSelectedItem();
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
         if(gs != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Delete Ground Station");
@@ -370,13 +384,7 @@ public class Main implements Initializable {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK){
-                groundStationList.getItems().remove(gs);
-                groundStationGroup.getChildren().remove(gs.getGraphicItem());
-                gs.visibleProperty().removeListener(this.visibilityUpdateListener);
-                gs.dispose();
-                saveConfigFile();
-                groundStationList.refresh();
-                update2Dscene();
+                ModelManager.runLater(() -> manager.getGroundStationManager().removeGroundStation(gs.getGroundStation().getId()));
             }
         }
     }
@@ -388,56 +396,62 @@ public class Main implements Initializable {
     }
 
     private void editGroundStation() {
-        GroundStation originalGs = groundStationList.getSelectionModel().getSelectedItem();
+        GroundStationGraphics originalGs = groundStationList.getSelectionModel().getSelectedItem();
         if(originalGs != null) {
-            GroundStation gs = GroundStationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalGs);
+            GroundStation gs = GroundStationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalGs.getGroundStation());
             if (gs != null) {
-                originalGs.update(gs);
-                saveConfigFile();
-                groundStationList.refresh();
-                update2Dscene();
+                // Go via the manager, callback will do the rest
+                ModelManager.runLater(() -> originalGs.getGroundStation().update(gs));
             }
         }
     }
 
     public void onNewOrbitAction(ActionEvent actionEvent) {
-        TleOrbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        Orbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
         if(gs != null) {
-            initialiseOrbit(gs);
-            saveConfigFile();
+            ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+                    gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
+            ));
         }
     }
 
-    private void initialiseOrbit(AbstractOrbit gs) {
-        gs.setGroundStationProvider(this::getGroundStations);
-        orbitList.getItems().add(gs);
-        Group s = gs.createGraphicItem();
-        orbitGroup.getChildren().add(s);
-        gs.visibleProperty().addListener(this.visibilityUpdateListener);
+    public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
+        List<Orbit> orbitList = CelestrakDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        if(orbitList != null) {
+            orbitList.forEach(gs -> ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+                    gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
+            )));
+        }
     }
 
-    private List<GroundStation> getGroundStations() {
-        return List.copyOf(this.groundStationList.getItems());
+    public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
+        //
+        for(OrbitGraphics ao : orbitList.getItems()) {
+            if (ao.getOrbit().getModel() instanceof CelestrakTleOrbitModel) {
+                final Orbit orbit = ao.getOrbit();
+                final CelestrakTleOrbitModel theOrbit = (CelestrakTleOrbitModel) orbit.getModel();
+                ModelManager.runLater(() -> {
+                    String newTle = CelestrakTleData.retrieveUpdatedTle(theOrbit.getGroup(), orbit.getName());
+                    if(newTle != null) {
+                        CelestrakTleOrbitModel model = new CelestrakTleOrbitModel(theOrbit.getGroup(), newTle);
+                        orbit.update(new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), model));
+                    }
+                });
+            }
+        }
     }
 
     public void onDeleteOrbitAction(ActionEvent actionEvent) {
-        AbstractOrbit gs = orbitList.getSelectionModel().getSelectedItem();
-        if(gs != null) {
+        OrbitGraphics orbit = orbitList.getSelectionModel().getSelectedItem();
+        if(orbit != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Delete Orbit");
             alert.setHeaderText(null);
-            alert.setContentText("Do you want to delete orbit for " + gs.getName() + "?");
+            alert.setContentText("Do you want to delete orbit for " + orbit.getName() + "?");
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK){
-                orbitList.getItems().remove(gs);
-                orbitGroup.getChildren().remove(gs.getGraphicItem());
-                gs.dispose();
-                saveConfigFile();
-                orbitList.refresh();
-                update2Dscene();
-                groundStationList.getItems().forEach(o -> o.removeVisibilityOf(gs.getName()));
-                updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
+                ModelManager.runLater(() -> manager.getOrbitManager().removeOrbit(orbit.getOrbit().getId()));
             }
         }
     }
@@ -453,24 +467,20 @@ public class Main implements Initializable {
     }
 
     private void editOrbit() {
-        AbstractOrbit originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
-            if(originalOrbit instanceof CelestrakTleOrbit) {
-                CelestrakTleOrbit gs = CelestrakTleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), (CelestrakTleOrbit) originalOrbit);
-                if (gs != null) {
-                    originalOrbit.update(gs);
-                    saveConfigFile();
-                    orbitList.refresh();
+            Orbit orbit = originalOrbit.getOrbit();
+            if(orbit.getModel() instanceof CelestrakTleOrbitModel) {
+                Orbit ob = CelestrakTleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
+                if (ob != null) {
+                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
-            } else if(originalOrbit instanceof TleOrbit) {
-                TleOrbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), (TleOrbit) originalOrbit);
-                if (gs != null) {
-                    originalOrbit.update(gs);
-                    saveConfigFile();
-                    orbitList.refresh();
+            } else if(orbit.getModel()  instanceof TleOrbitModel) {
+                Orbit ob = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
+                if (ob != null) {
+                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
             }
-            update2Dscene();
         }
     }
 
@@ -479,17 +489,8 @@ public class Main implements Initializable {
             this.timerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    Platform.runLater(() -> {
-                        Date d = new Date();
-                        boolean refreshPasses = false;
-                        for(GroundStation gs : groundStationList.getItems()) {
-                            if(gs.isAnyPassInThePast(d)) {
-                                refreshPasses = true;
-                                break;
-                            }
-                        }
-                        timerTick(d, refreshPasses);
-                    });
+                    final Date now = new Date();
+                    ModelManager.runLater(() -> manager.getOrbitManager().updateOrbitTime(now));
                 }
             };
             this.tracker.schedule(timerTask, 0, 5000);
@@ -499,63 +500,16 @@ public class Main implements Initializable {
         }
     }
 
-    private void timerTick(Date now, boolean refreshPasses) {
-        this.currentTimeLabel.setText(Utils.formatDate(now));
-        for(AbstractOrbit ao : this.orbitList.getItems()) {
-            SpacecraftState currentLocation = ao.updateOrbitTime(now, refreshPasses);
-            polarPlotController.newSpacecraftPosition(ao.getName(), currentLocation, now);
-        }
-        update2Dscene();
-        if(refreshPasses) {
-            updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
-        }
-        //
-    }
-
-    public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
-        List<CelestrakTleOrbit> gs = CelestrakDialog.openDialog(scene3d.getParent().getScene().getWindow());
-        if(gs != null) {
-            gs.forEach(this::initialiseOrbit);
-            saveConfigFile();
-        }
-    }
-
-    public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
-        //
-        for(AbstractOrbit ao : orbitList.getItems()) {
-            if (ao instanceof CelestrakTleOrbit) {
-                final CelestrakTleOrbit theOrbit = (CelestrakTleOrbit) ao;
-                Main.runLater(() -> {
-                    String newTle = CelestrakSatellite.retrieveUpdatedTle(theOrbit.getGroup(), theOrbit.getName());
-                    if(newTle != null) {
-                        final CelestrakTleOrbit gs = new CelestrakTleOrbit();
-                        gs.setCode(theOrbit.getCode());
-                        gs.setName(theOrbit.getName());
-                        gs.setGroup(theOrbit.getGroup());
-                        gs.setTle(newTle);
-                        gs.setColor(theOrbit.getColor());
-                        gs.setVisible(theOrbit.isVisible());
-                        Platform.runLater(() -> {
-                            theOrbit.update(gs);
-                            saveConfigFile();
-                            orbitList.refresh();
-                            update2Dscene();
-                        });
-                    }
-                });
-            }
+    private OrbitGraphics getGroundTrackSelection() {
+        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
+        if(selectedSc.equals(NO_GROUND_TRACK)) {
+            return null;
+        } else {
+            return (OrbitGraphics) selectedSc;
         }
     }
 
     public void onGroundTrackComboSelected(ActionEvent actionEvent) {
-        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
-        if(selectedSc.equals(NO_GROUND_TRACK)) {
-            // Stop rendering ground tracks
-            groundStationList.getItems().forEach(o -> o.setSpacecraftGroundTrack(null, null));
-        } else {
-            // Enable ground track computation and rendering for the specific satellite
-            groundStationList.getItems().forEach(o -> o.setSpacecraftGroundTrack(((AbstractOrbit) selectedSc).getName(), ((AbstractOrbit) selectedSc).getSpacecraftCurrentLatLon()));
-        }
         update2Dscene();
     }
 
@@ -563,19 +517,76 @@ public class Main implements Initializable {
         if(c == null) {
             this.polarPlotController.clear();
         } else {
-            this.polarPlotProgress.setVisible(true);
-            this.polarPlotController.setDisable(true);
-            Main.runLater(() -> {
-                List<VisibilityWindow.SpacecraftTrackPoint> track = c.getAzimuthElevationTrack();
-                Platform.runLater(() -> {
-                    polarPlotController.setSpacecraftTrack(c.getSatellite(), track);
-                    Color trackColor = Color.valueOf(c.getOrbit().getColor());
-                    polarPlotController.setTrackColor(trackColor);
-                    polarPlotController.setSpacecraftColor(trackColor);
-                    polarPlotProgress.setVisible(false);
-                    polarPlotController.setDisable(false);
-                });
-            });
+            this.polarPlotController.setSpacecraftTrack(c);
+            Color trackColor = Color.valueOf(c.getOrbit().getColor());
+            this.polarPlotController.setTrackColor(trackColor);
+            this.polarPlotController.setSpacecraftColor(trackColor);
         }
+    }
+
+    @Override
+    public void orbitAdded(OrbitManager manager, Orbit orbit) {
+        Platform.runLater(() -> registerNewOrbit(orbit));
+    }
+
+    @Override
+    public void orbitRemoved(OrbitManager manager, Orbit orbit) {
+        Platform.runLater(() -> deregisterOrbit(orbit));
+    }
+
+    @Override
+    public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
+        Platform.runLater(() -> {
+            orbitList.refresh();
+            update2Dscene();
+        });
+    }
+
+    @Override
+    public void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
+        // Do nothing
+    }
+
+    @Override
+    public void groundStationAdded(GroundStationManager manager, GroundStation groundStation) {
+        Platform.runLater(() -> registerNewGroundStation(groundStation));
+    }
+
+    @Override
+    public void groundStationRemoved(GroundStationManager manager, GroundStation groundStation) {
+        Platform.runLater(() -> deregisterGroundStation(groundStation));
+    }
+
+    @Override
+    public void groundStationUpdated(GroundStation groundStation) {
+        Platform.runLater(() -> {
+            groundStationList.refresh();
+            update2Dscene();
+        });
+    }
+
+    @Override
+    public void groundStationOrbitDataUpdated(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows, VisibilityCircle visibilityCircle, TrackPoint currentPoint) {
+        Platform.runLater(() -> {
+            this.currentTimeLabel.setText(TimeUtils.formatDate(currentPoint.getTime()));
+            this.polarPlotController.updateCurrentData(groundStation, orbit, visibilityWindows);
+            this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, currentPoint);
+            if(groundStationList.getSelectionModel().getSelectedItem() != null && groundStation.equals(groundStationList.getSelectionModel().getSelectedItem().getGroundStation())) {
+                // Force refresh of visibility windows
+                updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
+            }
+            update2Dscene();
+        });
+    }
+
+    @Override
+    public void spacecraftPositionUpdated(GroundStation groundStation, Orbit orbit, TrackPoint point) {
+        Platform.runLater(() -> {
+            if(point != null) {
+                this.currentTimeLabel.setText(TimeUtils.formatDate(point.getTime()));
+            }
+            this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
+            update2Dscene();
+        });
     }
 }

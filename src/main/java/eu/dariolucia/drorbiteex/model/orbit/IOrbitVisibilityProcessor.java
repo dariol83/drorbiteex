@@ -1,6 +1,5 @@
 package eu.dariolucia.drorbiteex.model.orbit;
 
-import eu.dariolucia.drorbiteex.model.SpacecraftPosition;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.events.EventDetector;
 

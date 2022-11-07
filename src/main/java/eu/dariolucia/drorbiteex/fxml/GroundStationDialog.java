@@ -1,6 +1,6 @@
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.data.GroundStation;
+import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +14,7 @@ import javafx.stage.Window;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 public class GroundStationDialog implements Initializable {
     public TextField codeText;
@@ -21,6 +22,7 @@ public class GroundStationDialog implements Initializable {
     public TextArea descriptionTextArea;
     public TextField latitudeText;
     public TextField longitudeText;
+    public TextField altitudeText;
     public ColorPicker colorPicker;
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
@@ -33,6 +35,7 @@ public class GroundStationDialog implements Initializable {
         nameText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         latitudeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         longitudeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        altitudeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
     }
@@ -47,6 +50,7 @@ public class GroundStationDialog implements Initializable {
             }
             Double.parseDouble(latitudeText.getText());
             Double.parseDouble(longitudeText.getText());
+            Double.parseDouble(altitudeText.getText());
             error = null;
             validData.setValue(true);
         } catch (Exception e) {
@@ -55,26 +59,19 @@ public class GroundStationDialog implements Initializable {
         }
     }
 
-
     private void setOriginalGroundStation(GroundStation gs) {
         codeText.setText(gs.getCode());
         nameText.setText(gs.getName());
         descriptionTextArea.setText(gs.getDescription());
         latitudeText.setText(String.valueOf(gs.getLatitude()));
         longitudeText.setText(String.valueOf(gs.getLongitude()));
+        altitudeText.setText(String.valueOf(gs.getHeight()));
         colorPicker.setValue(Color.valueOf(gs.getColor()));
     }
 
     public GroundStation getResult() {
-        GroundStation gs = new GroundStation();
-        gs.setCode(codeText.getText());
-        gs.setName(nameText.getText());
-        gs.setDescription(descriptionTextArea.getText());
-        gs.setLatitude(Double.parseDouble(latitudeText.getText()));
-        gs.setLongitude(Double.parseDouble(longitudeText.getText()));
-        gs.setColor(colorPicker.getValue().toString());
-        gs.setVisible(true);
-        return gs;
+        return new GroundStation(UUID.randomUUID(), codeText.getText(), nameText.getText(), descriptionTextArea.getText(),colorPicker.getValue().toString(), true,
+                Double.parseDouble(latitudeText.getText()), Double.parseDouble(longitudeText.getText()), Double.parseDouble(altitudeText.getText()));
     }
 
     public static GroundStation openDialog(Window owner) {

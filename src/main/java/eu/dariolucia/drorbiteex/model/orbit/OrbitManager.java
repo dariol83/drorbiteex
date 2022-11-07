@@ -3,10 +3,7 @@ package eu.dariolucia.drorbiteex.model.orbit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -88,5 +85,17 @@ public class OrbitManager {
 
     public Map<UUID, Orbit> getOrbits() {
         return Map.copyOf(this.orbits);
+    }
+
+    public void refresh() {
+        this.orbits.values().forEach(Orbit::refresh);
+    }
+
+    public void updateOrbitTime(Date time) {
+        try {
+            this.orbits.values().forEach(o -> o.updateOrbitTime(time));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

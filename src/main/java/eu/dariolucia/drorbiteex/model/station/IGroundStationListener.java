@@ -12,7 +12,7 @@ public interface IGroundStationListener {
 
     void groundStationUpdated(GroundStation groundStation);
 
-    void groundStationOrbitDataUpdated(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows, List<GeodeticPoint> visibilityCircle, TrackPoint currentPoint);
+    void groundStationOrbitDataUpdated(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows, VisibilityCircle visibilityCircle, TrackPoint currentPoint);
 
     void spacecraftPositionUpdated(GroundStation groundStation, Orbit orbit, TrackPoint point);
 
