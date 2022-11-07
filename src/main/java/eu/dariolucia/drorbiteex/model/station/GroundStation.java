@@ -71,7 +71,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.longitude = longitude;
         this.height = height;
 
-        recomputeData();
+        recomputeData(true);
     }
 
     public void addListener(IGroundStationListener l) {
@@ -194,10 +194,10 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.longitude = gs.getLongitude();
         this.height = gs.getHeight();
 
-        recomputeData();
+        recomputeData(true);
     }
 
-    private void recomputeData() {
+    private void recomputeData(boolean notify) {
         GeodeticPoint geodeticPoint = new GeodeticPoint(Math.toRadians(getLatitude()), Math.toRadians(getLongitude()), getHeight());
         this.stationFrame = new TopocentricFrame(EarthReferenceUtils.getEarthShape(), geodeticPoint, getCode());
         this.eventDetector = new ElevationDetector(MAX_CHECK, THRESHOLD, this.stationFrame).withConstantElevation(GS_ELEVATION).withHandler(this);
@@ -205,10 +205,15 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.visibilityWindows.clear();
         this.currentVisibilityMap.clear();
         // Raise callback to notify parameter updates --> must trigger orbit recomputation
-        notifyGroundStationUpdated();
+        if(notify) {
+            notifyGroundStationUpdated();
+        }
     }
 
     public synchronized TopocentricFrame getStationFrame() {
+        if(this.stationFrame == null) {
+            recomputeData(false);
+        }
         return this.stationFrame;
     }
 
@@ -259,6 +264,9 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     @Override
     public synchronized EventDetector getEventDetector() {
+        if(this.eventDetector == null) {
+            recomputeData(false);
+        }
         return this.eventDetector;
     }
 

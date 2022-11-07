@@ -18,6 +18,7 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -132,8 +133,10 @@ public class GroundStationGraphics implements IGroundStationListener {
                 VisibilityCircle vc = obj.getVisibilityCircleOf(selectedOrbit.getOrbit());
                 if (vc != null) {
                     List<double[]> visibilityCircleSortedLatLon = vc.getVisibilityCircle().stream().map(gp -> new double[]{Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude())}).collect(Collectors.toCollection(ArrayList::new));
+                    // toXY puts the longitude into [0] and the latitude into [1]
                     List<double[]> toRender = visibilityCircleSortedLatLon.stream().map(gp -> DrawingUtils.toXY(gp[0], gp[1], w, h)).collect(Collectors.toCollection(ArrayList::new));
                     if (vc.isPolarCircle()) {
+                        toRender.sort(LONGITUDE_SORTER);
                         // Solution: points ordered according to longitude, draw them, then close the line with the two corners (check latitude)
                         gc.beginPath();
                         double[] p0 = toRender.get(0);
@@ -225,4 +228,12 @@ public class GroundStationGraphics implements IGroundStationListener {
     public String toString() {
         return this.obj.getCode();
     }
+
+    private static final Comparator<double[]> LONGITUDE_SORTER = (o1, o2) -> {
+        if(o1[0] == o2[0]) {
+            return Double.compare(o1[1], o2[1]);
+        } else {
+            return Double.compare(o1[0], o2[0]);
+        }
+    };
 }

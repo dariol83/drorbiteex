@@ -3,6 +3,7 @@ package eu.dariolucia.drorbiteex.model.orbit;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
@@ -188,7 +189,8 @@ public class Orbit {
         }).filter(Objects::nonNull).collect(Collectors.toList());
         // Add detectors
         detectors.forEach(o -> {
-            this.modelPropagator.addEventDetector(o.getEventDetector());
+            EventDetector detector = o.getEventDetector();
+            this.modelPropagator.addEventDetector(detector);
             o.initVisibilityComputation(this, ad.toDate(TimeScalesFactory.getUTC()));
         });
         for (int i = 1; i < PROPAGATION_STEPS; ++i) {

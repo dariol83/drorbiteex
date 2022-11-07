@@ -255,10 +255,9 @@ public class PolarPlot implements Initializable {
             if(currentLocation == null) {
                 this.spacecraftPosition.set(null);
             } else {
-                if (currentTrack.getWindow().getOrbitNumber() == currentLocation.getOrbitNumber() &&
-                        currentTrack.contains(currentLocation.getTime())) {
+                if (currentTrack.contains(currentLocation.getTime())) {
                     // set spacecraft position
-                    Point2D currentScPos = toXY(currentLocation.getAzimuth(), currentLocation.getElevation());
+                    Point2D currentScPos = new Point2D(currentLocation.getAzimuth(), currentLocation.getElevation());
                     System.out.println("Spacecraft " + orbit.getName() + ", position AZ/EL" + currentScPos);
                     this.spacecraftPosition.set(currentScPos);
                 }
