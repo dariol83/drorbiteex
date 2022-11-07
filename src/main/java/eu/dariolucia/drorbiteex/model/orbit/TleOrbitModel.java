@@ -86,7 +86,7 @@ public class TleOrbitModel implements IOrbitModel {
             AbsoluteDate epochTime = this.tleObject.getDate();
             // If you know how many orbits - orbitsAtEpoch - it had at epochTime, then you have to check the difference in
             // seconds between the epoch time and the time and, knowing the period, compute the orbit accordingly.
-            long timeDifferenceSec = time.getTime() - epochTime.toDate(TimeScalesFactory.getUTC()).getTime();
+            long timeDifferenceSec = (time.getTime() - epochTime.toDate(TimeScalesFactory.getUTC()).getTime())/1000;
             long periodSec = Math.round(period);
             // Number of orbits in the time difference (integral number)
             // Obviously, if the time difference is negative, the number of orbits will be negatives
