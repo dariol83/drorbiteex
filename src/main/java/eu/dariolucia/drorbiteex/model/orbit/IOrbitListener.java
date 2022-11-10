@@ -1,5 +1,6 @@
 package eu.dariolucia.drorbiteex.model.orbit;
 
+import java.util.Date;
 import java.util.List;
 
 public interface IOrbitListener {
@@ -11,4 +12,12 @@ public interface IOrbitListener {
     void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition);
 
     void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition);
+
+    default void startOrbitTimeUpdate(Date referenceTime) {
+        // Do nothing
+    }
+
+    default void endOrbitTimeUpdate(Date referenceTime) {
+        // Do nothing
+    }
 }

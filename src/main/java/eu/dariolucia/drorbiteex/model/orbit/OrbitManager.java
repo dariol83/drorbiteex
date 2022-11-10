@@ -1,17 +1,50 @@
 package eu.dariolucia.drorbiteex.model.orbit;
 
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import org.orekit.attitudes.Attitude;
+import org.orekit.bodies.CelestialBodyFactory;
+import org.orekit.data.DataContext;
+import org.orekit.files.ccsds.definitions.BodyFacade;
+import org.orekit.files.ccsds.definitions.FrameFacade;
+import org.orekit.files.ccsds.definitions.TimeSystem;
+import org.orekit.files.ccsds.ndm.WriterBuilder;
+import org.orekit.files.ccsds.ndm.odm.oem.EphemerisWriter;
+import org.orekit.files.ccsds.ndm.odm.oem.InterpolationMethod;
+import org.orekit.files.ccsds.ndm.odm.oem.OemMetadata;
+import org.orekit.files.ccsds.ndm.odm.oem.OemWriter;
+import org.orekit.files.ccsds.section.Header;
+import org.orekit.files.ccsds.utils.FileFormat;
+import org.orekit.files.general.OrekitEphemerisFile;
+import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
+import org.orekit.frames.Transform;
+import org.orekit.orbits.CartesianOrbit;
+import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.AbsolutePVCoordinates;
+import org.orekit.utils.IERSConventions;
+import org.orekit.utils.TimeStampedPVCoordinates;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class OrbitManager {
+
+    private static final Logger LOGGER = Logger.getLogger(OrbitManager.class.getName());
 
     private final Map<UUID, Orbit> orbits = new ConcurrentHashMap<>();
 
     private final List<IOrbitListener> listeners = new CopyOnWriteArrayList<>();
+
+    private volatile Date lastReferenceTime = null;
 
     public void initialise(InputStream inputStream) throws IOException {
         OrbitConfiguration oc = OrbitConfiguration.load(inputStream);
@@ -88,14 +121,92 @@ public class OrbitManager {
     }
 
     public void refresh() {
-        this.orbits.values().forEach(Orbit::refresh);
+        updateOrbitTime(this.lastReferenceTime);
     }
 
     public void updateOrbitTime(Date time) {
-        try {
-            this.orbits.values().forEach(o -> o.updateOrbitTime(time));
-        } catch (Exception e) {
-            e.printStackTrace();
+        LOGGER.log(Level.FINE, "Updating orbit time to " + time);
+        this.lastReferenceTime = time;
+        this.listeners.forEach(o -> o.startOrbitTimeUpdate(time));
+        for(Orbit ob : this.orbits.values()) {
+            try {
+                ob.updateOrbitTime(time);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Error when propagating orbit for " + ob.getName(), e);
+            }
+        }
+        this.listeners.forEach(o -> o.endOrbitTimeUpdate(time));
+    }
+
+    public void exportOem(UUID id, String code, String name, Date startTime, Date endTime, int periodSeconds, String file, Frame targetFrame, FileFormat format) throws IOException {
+        Orbit targetOrbit = getOrbit(id);
+        if(targetOrbit == null) {
+            throw new IllegalArgumentException("Orbit ID " + id + " cannot be found");
+        }
+
+        AbsoluteDate startDate = TimeUtils.toAbsoluteDate(startTime);
+        AbsoluteDate endDate = TimeUtils.toAbsoluteDate(endTime);
+
+        // Get copy of model propagator
+        IOrbitModel model = targetOrbit.getModel().copy();
+        Propagator p = model.getPropagator();
+
+        // Check https://forum.orekit.org/t/spacececraftstate-in-wgs84/1813
+
+        // Propagate from startDate
+        List<SpacecraftState> states = new ArrayList<>();
+        SpacecraftState ss1 = p.propagate(startDate);
+        states.add(convert(ss1, targetFrame));
+
+        // Move propagation by steps of periodSeconds
+        AbsoluteDate currentDate = startDate;
+        while(currentDate.isBefore(endDate)) {
+            currentDate = currentDate.shiftedBy(periodSeconds);
+            SpacecraftState ss = p.propagate(currentDate);
+            // states.add(ss.getPVCoordinates(targetFrame));
+            states.add(convert(ss, targetFrame));
+        }
+        // Write OEM
+        OrekitEphemerisFile ephemerisFile = new OrekitEphemerisFile();
+        OrekitEphemerisFile.OrekitSatelliteEphemeris satellite = ephemerisFile.addSatellite(code);
+        // OrekitEphemerisFile.OrekitEphemerisSegment segment = new OrekitEphemerisFile.OrekitEphemerisSegment(states,
+        //        targetFrame, CelestialBodyFactory.getCelestialBodies().getEarth().getGM(), 7);
+        satellite.addNewSegment(states, 7);
+
+        OemMetadata template = new OemMetadata(7);
+        template.setTimeSystem(TimeSystem.UTC);
+        template.setObjectID(code);
+        template.setObjectName(name);
+        template.setCenter(new BodyFacade("EARTH", CelestialBodyFactory.getCelestialBodies().getEarth()));
+        template.setReferenceFrame(FrameFacade.map(targetFrame));
+        template.setInterpolationMethod(InterpolationMethod.LAGRANGE);
+        template.setInterpolationDegree(7);
+        template.setUseableStartTime(startDate);
+        template.setUseableStopTime(states.get(states.size() - 1).getDate());
+
+        Header header = new Header(2);
+        header.setOriginator("Dr Orbiteex");
+
+        //
+        EphemerisWriter writer = new EphemerisWriter(new WriterBuilder().buildOemWriter(),
+                header, template, format, "dummy", 60);
+        writer.write(file, ephemerisFile);
+    }
+
+    private SpacecraftState convert(SpacecraftState ss, Frame targetFrame) {
+        if(ss.getFrame().equals(targetFrame)) {
+            return ss;
+        } else {
+            // Spacecraft conversion implies:
+            // 1. Attitude conversion
+            // 2. Position conversion
+            TimeStampedPVCoordinates tsPV = ss.getPVCoordinates(targetFrame);
+            AbsolutePVCoordinates absolutePVCoordinates = new AbsolutePVCoordinates(targetFrame, tsPV);
+            TimeStampedPVCoordinates orbitPVinTargetFrame = ss.getOrbit().getPVCoordinates(targetFrame);
+            //
+            Attitude newAttitude = ss.getAttitude().withReferenceFrame(targetFrame);
+            //
+            return new SpacecraftState(absolutePVCoordinates, newAttitude, ss.getMass());
         }
     }
 }

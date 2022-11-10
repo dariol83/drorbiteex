@@ -70,8 +70,6 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.latitude = latitude;
         this.longitude = longitude;
         this.height = height;
-
-        recomputeData(true);
     }
 
     public void addListener(IGroundStationListener l) {

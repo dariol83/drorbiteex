@@ -103,6 +103,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     private ModelManager manager;
 
+    private boolean orbitUpdateInProgress = false;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Load old configuration if available
@@ -233,6 +235,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Group s = graphics.createGraphicItem();
         groundStationGroup.getChildren().add(s);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
+        update2Dscene();
     }
 
     private void deregisterGroundStation(GroundStation gs) {
@@ -254,6 +257,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Group s = graphics.createGraphicItem();
         orbitGroup.getChildren().add(s);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
+        update2Dscene();
     }
 
     private void deregisterOrbit(Orbit orbit) {
@@ -295,6 +299,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void update2Dscene() {
+        System.out.println("Updating 2D scene");
         // Handle 2D view
         GraphicsContext gc = scene2d.getGraphicsContext2D();
         gc.drawImage(this.scene2dImage, 0, 0, scene2d.getWidth(), scene2d.getHeight());
@@ -424,6 +429,16 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         }
     }
 
+
+    public void onNewOemOrbitAction(ActionEvent actionEvent) {
+        Orbit gs = OemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        if(gs != null) {
+            ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+                    gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
+            ));
+        }
+    }
+
     public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
         //
         for(OrbitGraphics ao : orbitList.getItems()) {
@@ -477,6 +492,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 }
             } else if(orbit.getModel()  instanceof TleOrbitModel) {
                 Orbit ob = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
+                if (ob != null) {
+                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
+                }
+            } else if(orbit.getModel()  instanceof OemOrbitModel) {
+                Orbit ob = OemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
                 if (ob != null) {
                     ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
@@ -538,14 +558,32 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
         Platform.runLater(() -> {
             orbitList.refresh();
+            if(!orbitUpdateInProgress) {
+                update2Dscene();
+            }
+        });
+    }
+
+    @Override
+    public void startOrbitTimeUpdate(Date referenceTime) {
+        Platform.runLater(() -> orbitUpdateInProgress = true);
+    }
+
+    @Override
+    public void endOrbitTimeUpdate(Date referenceTime) {
+        Platform.runLater(() -> {
+            orbitUpdateInProgress = false;
             update2Dscene();
         });
     }
 
     @Override
     public void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
-        // Do nothing
-    }
+        Platform.runLater(() -> {
+            if(!orbitUpdateInProgress) {
+                update2Dscene();
+            }
+        });    }
 
     @Override
     public void groundStationAdded(GroundStationManager manager, GroundStation groundStation) {
@@ -561,7 +599,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public void groundStationUpdated(GroundStation groundStation) {
         Platform.runLater(() -> {
             groundStationList.refresh();
-            update2Dscene();
+            if(!orbitUpdateInProgress) {
+                update2Dscene();
+            }
         });
     }
 
@@ -575,7 +615,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 // Force refresh of visibility windows
                 updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
             }
-            update2Dscene();
+            if(!orbitUpdateInProgress) {
+                update2Dscene();
+            }
         });
     }
 
@@ -586,7 +628,49 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 this.currentTimeLabel.setText(TimeUtils.formatDate(point.getTime()));
             }
             this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
-            update2Dscene();
+            if(!orbitUpdateInProgress) {
+                update2Dscene();
+            }
         });
+    }
+
+    public void onExportOemOrbitAction(ActionEvent actionEvent) {
+        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        if(originalOrbit != null) {
+            Orbit orbit = originalOrbit.getOrbit();
+            ExportOemOrbitDialog.ExportOemResult exportOemResult = ExportOemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
+            if(exportOemResult != null) {
+                ModelManager.runLater(() -> {
+                    try {
+                        manager.getOrbitManager().exportOem(
+                                orbit.getId(),
+                                exportOemResult.getCode(),
+                                exportOemResult.getName(),
+                                exportOemResult.getStartTime(),
+                                exportOemResult.getEndTime(),
+                                exportOemResult.getPeriodSeconds(),
+                                exportOemResult.getFile(),
+                                exportOemResult.getFrame(),
+                                exportOemResult.getFormat());
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("OEM Export");
+                            alert.setHeaderText("Orbit of " + orbit.getName() + " exported");
+                            alert.setContentText("OEM file: " + exportOemResult.getFile());
+                            alert.showAndWait();
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("OEM Export");
+                            alert.setHeaderText("Orbit of " + orbit.getName() + " not exported");
+                            alert.setContentText("Error: " + e.getMessage());
+                            alert.showAndWait();
+                        });
+                    }
+                });
+            }
+        }
     }
 }

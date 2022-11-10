@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedList;
 import java.util.List;
 
 @XmlRootElement(name = "ground-station-config", namespace = "http://dariolucia.eu/drorbiteex/groundstation")
@@ -38,9 +39,9 @@ public class GroundStationConfiguration {
         }
     }
 
-    private List<GroundStation> groundStations;
+    private List<GroundStation> groundStations = new LinkedList<>();
 
-    @XmlElement
+    @XmlElement(name = "ground-station")
     public List<GroundStation> getGroundStations() {
         return groundStations;
     }

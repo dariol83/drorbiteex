@@ -118,7 +118,6 @@ public class GroundStationGraphics implements IGroundStationListener {
     }
 
     public void draw(GraphicsContext gc, OrbitGraphics selectedOrbit, double w, double h) {
-        System.out.println("Ground station " + obj + " visible: " + obj.isVisible());
         if(obj.isVisible()) {
             double[] xy = DrawingUtils.toXY(obj.getLatitude(), obj.getLongitude(), w, h);
             Color gsColor = Color.valueOf(obj.getColor());

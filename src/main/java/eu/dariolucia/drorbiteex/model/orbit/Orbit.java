@@ -49,8 +49,6 @@ public class Orbit {
         this.color = color;
         this.visible = visible;
         this.model = model;
-
-        refresh();
     }
 
     @XmlAttribute(required = true)
@@ -104,7 +102,8 @@ public class Orbit {
 
     @XmlElements({
             @XmlElement(name="tle-model",type=TleOrbitModel.class),
-            @XmlElement(name="tle-celestrak-model",type=CelestrakTleOrbitModel.class)
+            @XmlElement(name="tle-celestrak-model",type=CelestrakTleOrbitModel.class),
+            @XmlElement(name="oem-model",type=OemOrbitModel.class)
     })
     public synchronized IOrbitModel getModel() {
         return model;

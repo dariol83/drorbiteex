@@ -171,6 +171,30 @@
                                                           <Tooltip text="New Celestrak Orbit..." />
                                                       </tooltip>
                                                   </Button>
+                                                  <Button mnemonicParsing="false" onAction="#onNewOemOrbitAction">
+                                                      <graphic>
+                                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                                              <image>
+                                                                  <Image url="@/plus-circle-outline-oem.png" />
+                                                              </image>
+                                                          </ImageView>
+                                                      </graphic>
+                                                      <tooltip>
+                                                          <Tooltip text="New OEM Orbit..." />
+                                                      </tooltip>
+                                                  </Button>
+                                                  <Button mnemonicParsing="false" onAction="#onExportOemOrbitAction">
+                                                      <graphic>
+                                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                                              <image>
+                                                                  <Image url="@/export-oem.png" />
+                                                              </image>
+                                                          </ImageView>
+                                                      </graphic>
+                                                      <tooltip>
+                                                          <Tooltip text="Export OEM..." />
+                                                      </tooltip>
+                                                  </Button>
                                                   <Button mnemonicParsing="false" onAction="#onRefreshCelestrakOrbitAction">
                                                       <graphic>
                                                           <ImageView pickOnBounds="true" preserveRatio="true">

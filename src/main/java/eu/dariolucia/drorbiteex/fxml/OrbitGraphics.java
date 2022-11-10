@@ -69,6 +69,7 @@ public class OrbitGraphics implements IOrbitListener {
     }
 
     private void updateGraphicItems(boolean renderTrajectory) {
+        System.out.println("Updating 3D graphics of " + obj.getCode() + " orbit");
         if(renderTrajectory) {
             renderTrajectory();
         }

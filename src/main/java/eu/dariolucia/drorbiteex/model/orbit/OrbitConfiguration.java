@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedList;
 import java.util.List;
 
 @XmlRootElement(name = "orbit-config", namespace = "http://dariolucia.eu/drorbiteex/orbit")
@@ -38,9 +39,9 @@ public class OrbitConfiguration {
         }
     }
 
-    private List<Orbit> orbits;
+    private List<Orbit> orbits = new LinkedList<>();
 
-    @XmlElement
+    @XmlElement(name = "orbit")
     public List<Orbit> getOrbits() {
         return orbits;
     }

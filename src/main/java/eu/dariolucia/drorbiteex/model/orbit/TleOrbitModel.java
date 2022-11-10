@@ -96,4 +96,9 @@ public class TleOrbitModel implements IOrbitModel {
             return -1;
         }
     }
+
+    @Override
+    public IOrbitModel copy() {
+        return new TleOrbitModel(getTle());
+    }
 }

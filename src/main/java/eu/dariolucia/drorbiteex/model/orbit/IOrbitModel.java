@@ -11,4 +11,6 @@ public interface IOrbitModel {
     boolean updateModel(IOrbitModel model);
 
     int computeOrbitNumberAt(Date time);
+
+    IOrbitModel copy();
 }

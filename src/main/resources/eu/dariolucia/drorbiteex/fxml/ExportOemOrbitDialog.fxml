@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+
+<?import javafx.scene.control.ComboBox?>
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<AnchorPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.ExportOemOrbitDialog">
+   <children>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <children>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Satellite Name/Code" />
+                  <TextField fx:id="nameText" minWidth="150.0" prefWidth="150.0" promptText="Name" />
+                  <TextField fx:id="codeText" minWidth="150.0" prefWidth="150.0" promptText="Code" />
+               </children>
+            </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Start Date/Time" />
+                  <TextField fx:id="startDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
+                  <TextField fx:id="startTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
+               </children>
+            </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="End Date/Time" />
+                  <TextField fx:id="endDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
+                  <TextField fx:id="endTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
+               </children>
+            </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Period btw points (seconds)" />
+                  <TextField fx:id="periodText" minWidth="150.0" prefWidth="150.0" promptText="30" text="30" />
+               </children>
+            </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Reference Frame" />
+                  <ComboBox fx:id="frameCombo" minWidth="150.0" prefWidth="150.0">
+                     <items>
+                        <FXCollections fx:factory="observableArrayList">
+                           <String fx:value="ITRF" />
+                           <String fx:value="EME2000" />
+                           <String fx:value="GCRF" />
+                           <String fx:value="ICRF" />
+                           <String fx:value="TOD" />
+                           <String fx:value="TEME" />
+                        </FXCollections>
+                     </items>
+                  </ComboBox>
+               </children>
+            </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="OEM File Format" />
+                  <ComboBox fx:id="formatCombo" minWidth="150.0" prefWidth="150.0">
+                     <items>
+                        <FXCollections fx:factory="observableArrayList">
+                           <String fx:value="XML" />
+                           <String fx:value="KVN" />
+                        </FXCollections>
+                     </items>
+                  </ComboBox>
+               </children>
+            </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="File Path" />
+                  <TextField fx:id="filePathText" minWidth="315.0" prefWidth="315.0" disable="true" />
+                  <Button minWidth="100.0" prefWidth="100.0" text="Select..." onAction="#onSelectOemAction" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

@@ -37,4 +37,9 @@ public class CelestrakTleOrbitModel extends TleOrbitModel {
             throw new IllegalArgumentException("Not a class of type CelestrakTleOrbitModel");
         }
     }
+
+    @Override
+    public IOrbitModel copy() {
+        return new CelestrakTleOrbitModel(getGroup(), getTle());
+    }
 }
