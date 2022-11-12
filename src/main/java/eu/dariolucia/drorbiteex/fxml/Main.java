@@ -23,6 +23,8 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
@@ -49,6 +51,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private static final String NO_GROUND_TRACK = "             ";
 
     public SubScene scene3d;
+    public Label processingLabel;
 
     private Group group;
     private Group earth;
@@ -100,6 +103,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     // Polar plot
     public PolarPlot polarPlotController;
     public ProgressIndicator polarPlotProgress;
+
+    // Orbit panel
+    public OrbitPanel orbitPanelController;
 
     private ModelManager manager;
 
@@ -206,7 +212,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getLosString()));
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updatePassTableSelection(b));
         passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
-
+        orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(b));
         // Create model manager
         this.manager = new ModelManager(orbitFile, gsFile);
         this.manager.getOrbitManager().addListener(this);
@@ -509,8 +515,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             this.timerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    final Date now = new Date();
-                    ModelManager.runLater(() -> manager.getOrbitManager().updateOrbitTime(now));
+                    refreshModel(new Date(), false);
                 }
             };
             this.tracker.schedule(timerTask, 0, 5000);
@@ -518,6 +523,10 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             this.timerTask.cancel();
             this.timerTask = null;
         }
+    }
+
+    private void refreshModel(Date now, boolean forceUpdate) {
+        ModelManager.runLater(() -> manager.getOrbitManager().updateOrbitTime(now, forceUpdate));
     }
 
     private OrbitGraphics getGroundTrackSelection() {
@@ -541,6 +550,22 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             Color trackColor = Color.valueOf(c.getOrbit().getColor());
             this.polarPlotController.setTrackColor(trackColor);
             this.polarPlotController.setSpacecraftColor(trackColor);
+            // Check if the spacecraft is in visibility
+            SpacecraftPosition sp = c.getOrbit().getCurrentSpacecraftPosition();
+            if(sp != null) {
+                TrackPoint tp = c.getStation().getTrackPointOf(sp);
+                if(tp != null && c.isInPass(tp.getTime())) {
+                    this.polarPlotController.setNewSpacecraftPosition(c.getStation(), c.getOrbit(), tp);
+                }
+            }
+        }
+    }
+
+    private void updateOrbitPanelSelection(OrbitGraphics c) {
+        if(c == null) {
+            this.orbitPanelController.clear();
+        } else {
+            this.orbitPanelController.update(c.getOrbit());
         }
     }
 
@@ -565,14 +590,20 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     @Override
-    public void startOrbitTimeUpdate(Date referenceTime) {
-        Platform.runLater(() -> orbitUpdateInProgress = true);
+    public void startOrbitTimeUpdate(Date referenceTime, boolean isForced) {
+        Platform.runLater(() -> {
+            processingLabel.setBackground(new Background(new BackgroundFill(Color.valueOf("green"), null, null)));
+            processingLabel.setText("UPDATE");
+            orbitUpdateInProgress = true;
+        });
     }
 
     @Override
-    public void endOrbitTimeUpdate(Date referenceTime) {
+    public void endOrbitTimeUpdate(Date referenceTime, boolean isForced) {
         Platform.runLater(() -> {
             orbitUpdateInProgress = false;
+            processingLabel.setBackground(null);
+            processingLabel.setText("IDLE");
             update2Dscene();
         });
     }
@@ -583,7 +614,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }
-        });    }
+        });
+    }
 
     @Override
     public void groundStationAdded(GroundStationManager manager, GroundStation groundStation) {
@@ -672,5 +704,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 });
             }
         }
+    }
+
+    public void onForceOrbitComputationAction(ActionEvent actionEvent) {
+        refreshModel(new Date(), true);
     }
 }

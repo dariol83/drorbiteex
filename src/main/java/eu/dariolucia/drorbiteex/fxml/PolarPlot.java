@@ -4,6 +4,7 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.Initializable;
@@ -11,6 +12,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 import java.net.URL;
 import java.util.Date;
@@ -123,6 +125,8 @@ public class PolarPlot implements Initializable {
         gc.setStroke(trackColor.get());
         gc.setFill(trackColor.get());
         gc.setLineWidth(1.5);
+        Font previous = gc.getFont();
+        gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
         if(location != null && st != null) {
             Point2D p1 = toXY(location.getX(), location.getY());
             gc.fillOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
@@ -135,6 +139,7 @@ public class PolarPlot implements Initializable {
             // TL: entry
             gc.strokeText(st.getName(), 2, 15);
         }
+        gc.setFont(previous);
     }
 
     private void drawPass(GraphicsContext gc) {
@@ -171,14 +176,17 @@ public class PolarPlot implements Initializable {
             }
             // Text
             gc.setStroke(getForegroundColor());
+            Font previous = gc.getFont();
+            gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
             // BL: entry
-            gc.strokeText("Start\nAZ " + doublePrint(track.get(0).getAzimuth(), 4) + "\nEL " + doublePrint(track.get(0).getElevation(), 4), 2, canvas.getHeight() - 40);
+            gc.strokeText("Start\nAZ " + doublePrint(track.get(0).getAzimuth(), 4) + "\n" + TimeUtils.formatDate(track.get(0).getTime()), 2, canvas.getHeight() - 35);
             // BR: exit
-            gc.strokeText("End\nAZ " + doublePrint(track.get(track.size() - 1).getAzimuth(), 4) + "\nEL " + doublePrint(track.get(track.size() - 1).getElevation(), 4), canvas.getWidth() - 70, canvas.getHeight() - 40);
+            gc.strokeText("End\nAZ " + doublePrint(track.get(track.size() - 1).getAzimuth(), 4) + "\n" + TimeUtils.formatDate(track.get(track.size() - 1).getTime()), canvas.getWidth() - 100, canvas.getHeight() - 35);
             // TR: max elevation
             if(maxElPoint != null) {
-                gc.strokeText("Max EL\nAZ " + doublePrint(maxElPoint.getAzimuth(), 4) + "\nEL " + doublePrint(maxElPoint.getElevation(), 4), canvas.getWidth() - 70, 15);
+                gc.strokeText("Max EL\nAZ " + doublePrint(maxElPoint.getAzimuth(), 4) + "\nEL " + doublePrint(maxElPoint.getElevation(), 4) + "\n" + TimeUtils.formatDate(maxElPoint.getTime()), canvas.getWidth() - 100, 15);
             }
+            gc.setFont(previous);
         }
     }
 

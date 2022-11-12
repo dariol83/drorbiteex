@@ -5,8 +5,11 @@
 <?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -21,10 +24,8 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.ProgressIndicator?>
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
@@ -32,8 +33,8 @@
                <Region HBox.hgrow="ALWAYS" />
 
                <Separator orientation="VERTICAL" />
-               <Label text="Ground Track" />
-               <ComboBox fx:id="groundTrackCombo" onAction="#onGroundTrackComboSelected">
+               <Label text="Spacecraft" />
+               <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
                </ComboBox>
                <Separator orientation="VERTICAL" />
                <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
@@ -59,9 +60,22 @@
                        </ImageView>
                    </graphic>
                    <tooltip>
-                       <Tooltip text="Toggle current time tracking" />
+                       <Tooltip text="Toggle current time processing" />
                    </tooltip>
                </ToggleButton>
+               <Button mnemonicParsing="false" onAction="#onForceOrbitComputationAction">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/refresh.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Refresh orbits/visibilities" />
+                   </tooltip>
+               </Button>
+               
            </items>
        </ToolBar>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
@@ -117,20 +131,37 @@
                                                </items>
                                            </ToolBar>
                                           <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" />
-                                           <Label text="Upcoming passes" />
+                                           <Label maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Upcoming passes">
+                                               <padding>
+                                                   <Insets bottom="0" left="5" right="5" top="0" />
+                                               </padding>
+                                             <VBox.margin>
+                                                <Insets />
+                                             </VBox.margin>
+                                             <font>
+                                                <Font name="System Bold" size="12.0" />
+                                             </font>
+                                           </Label>
                                            <TableView fx:id="passTable" VBox.vgrow="ALWAYS">
                                              <columns>
-                                                <TableColumn prefWidth="120.0" text="Satellite" fx:id="satelliteColumn"/>
-                                                <TableColumn prefWidth="50.0" text="Orbit" fx:id="orbitColumn"/>
-                                                <TableColumn prefWidth="120.0" text="AOS" fx:id="aosColumn"/>
-                                                <TableColumn prefWidth="120.0" text="LOS" fx:id="losColumn"/>
+                                                <TableColumn fx:id="satelliteColumn" prefWidth="120.0" text="Satellite" />
+                                                <TableColumn fx:id="orbitColumn" prefWidth="50.0" text="Orbit" />
+                                                <TableColumn fx:id="aosColumn" prefWidth="120.0" text="AOS" />
+                                                <TableColumn fx:id="losColumn" prefWidth="120.0" text="LOS" />
                                              </columns>
                                            </TableView>
-                                           <Label text="Pass plot" />
+                                           <Label maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Pass plot">
+                                               <padding>
+                                                   <Insets bottom="0" left="5" right="5" top="0" />
+                                               </padding>
+                                             <font>
+                                                <Font name="System Bold" size="12.0" />
+                                             </font>
+                                           </Label>
                                            <StackPane>
                                                <children>
-                                                   <fx:include source="PolarPlot.fxml" fx:id="polarPlot"/>
-                                                   <ProgressIndicator visible="false" fx:id="polarPlotProgress"/>
+                                                   <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
+                                                   <ProgressIndicator fx:id="polarPlotProgress" visible="false" />
                                                </children>
                                            </StackPane>
 
@@ -234,6 +265,15 @@
                                               </items>
                                           </ToolBar>
                                           <ListView fx:id="orbitList" onMouseClicked="#onOrbitSelectionClick" VBox.vgrow="ALWAYS" />
+                                          <Label maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Orbit Information">
+                                              <padding>
+                                                  <Insets bottom="0" left="5" right="5" top="0" />
+                                              </padding>
+                                              <font>
+                                                  <Font name="System Bold" size="12.0" />
+                                              </font>
+                                          </Label>
+                                          <fx:include fx:id="orbitPanel" source="OrbitPanel.fxml" />
                                       </children>
                                       <padding>
                                           <Insets bottom="0" left="0" right="0" top="0" />
@@ -267,5 +307,14 @@
             </SplitPane>
          </children>
       </AnchorPane>
+      <ToolBar maxHeight="24.0" maxWidth="1.7976931348623157E308" minHeight="24.0" prefHeight="24.0">
+         <items>
+            <Region prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+            <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="100.0" minWidth="100.0" prefWidth="100.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
+                <tooltip>
+                    <Tooltip text="Processing status" />
+                </tooltip>
+            </Label>
+         </items></ToolBar>
    </children>
 </VBox>

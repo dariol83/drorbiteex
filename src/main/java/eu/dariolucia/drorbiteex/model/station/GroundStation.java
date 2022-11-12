@@ -402,14 +402,22 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     @Override
     public synchronized void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
-        double[] azEl = getAzimuthElevationOf(currentPosition.getSpacecraftState());
-        if(azEl[1] < 0 && this.currentVisibilityMap.containsKey(orbit)) {
+        TrackPoint tp = getTrackPointOf(currentPosition);
+        if(tp == null && this.currentVisibilityMap.containsKey(orbit)) {
             this.currentVisibilityMap.remove(orbit);
             notifySpacecraftPositionListeners(orbit, null);
+        } else if(tp != null) {
+            this.currentVisibilityMap.put(orbit, tp);
+            notifySpacecraftPositionListeners(orbit, tp);
+        }
+    }
+
+    public synchronized TrackPoint getTrackPointOf(SpacecraftPosition sp) {
+        double[] azEl = getAzimuthElevationOf(sp.getSpacecraftState());
+        if(azEl[1] < 0) {
+            return null;
         } else {
-            TrackPoint point = new TrackPoint(currentPosition.getTime(), currentPosition, this, azEl[0], azEl[1]);
-            this.currentVisibilityMap.put(orbit, point);
-            notifySpacecraftPositionListeners(orbit, point);
+            return new TrackPoint(sp.getTime(), sp, this, azEl[0], azEl[1]);
         }
     }
 

@@ -142,4 +142,16 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
     public List<TrackPoint> getGroundTrack() {
         return Collections.unmodifiableList(this.azimuthElevationTrack);
     }
+
+    public boolean isInPass(Date time) {
+        if(this.aos == null && this.los == null) {
+            return true;
+        } else if(this.aos == null) {
+            return time.before(this.los);
+        } else if(this.los == null) {
+            return time.after(this.aos);
+        } else {
+            return time.after(this.aos) && time.before(this.los);
+        }
+    }
 }

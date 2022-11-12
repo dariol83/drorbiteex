@@ -33,6 +33,8 @@ public class Orbit {
     private transient volatile List<SpacecraftPosition> spacecraftPositions = new ArrayList<>();
     private transient volatile Propagator modelPropagator = null;
     private transient volatile Date currentPositionTime = new Date();
+
+    private transient volatile Date lastOrbitUpdateTime = null;
     private transient volatile SpacecraftPosition currentSpacecraftPosition = null;
 
     private Orbit() {
@@ -162,9 +164,10 @@ public class Orbit {
         if(referenceDate == null) {
             referenceDate = new Date();
         }
+        this.lastOrbitUpdateTime = referenceDate;
         this.modelPropagator = this.model.getPropagator();
         this.spacecraftPositions.clear();
-        AbsoluteDate ad = TimeUtils.toAbsoluteDate(Objects.requireNonNullElse(referenceDate, new Date()));
+        AbsoluteDate ad = TimeUtils.toAbsoluteDate(referenceDate);
         // Propagate in 3 steps
         // Past
         for (int i = -PROPAGATION_STEPS; i < 0; ++i) {
@@ -251,10 +254,9 @@ public class Orbit {
         this.listeners.clear();
     }
 
-    public synchronized SpacecraftState updateOrbitTime(Date time) {
-        Date previousTime = this.currentPositionTime;
+    public synchronized SpacecraftState updateOrbitTime(Date time, boolean forceUpdate) {
         this.currentPositionTime = time;
-        if(this.modelPropagator == null || previousTime == null || Duration.between(previousTime.toInstant(), time.toInstant()).getSeconds() > 60 * 30) {
+        if(forceUpdate || this.modelPropagator == null || this.lastOrbitUpdateTime == null || Duration.between(this.lastOrbitUpdateTime.toInstant(), time.toInstant()).getSeconds() > 60 * 30) {
             recomputeData(this.currentPositionTime);
         } else {
             // Compute only the position of the spacecraft, notify listeners about new spacecraft position

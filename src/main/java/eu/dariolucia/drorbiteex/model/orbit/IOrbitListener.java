@@ -13,11 +13,11 @@ public interface IOrbitListener {
 
     void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition);
 
-    default void startOrbitTimeUpdate(Date referenceTime) {
+    default void startOrbitTimeUpdate(Date referenceTime, boolean isForced) {
         // Do nothing
     }
 
-    default void endOrbitTimeUpdate(Date referenceTime) {
+    default void endOrbitTimeUpdate(Date referenceTime, boolean isForced) {
         // Do nothing
     }
 }

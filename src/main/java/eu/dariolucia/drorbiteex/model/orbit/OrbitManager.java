@@ -121,21 +121,21 @@ public class OrbitManager {
     }
 
     public void refresh() {
-        updateOrbitTime(this.lastReferenceTime);
+        updateOrbitTime(this.lastReferenceTime, true);
     }
 
-    public void updateOrbitTime(Date time) {
-        LOGGER.log(Level.FINE, "Updating orbit time to " + time);
+    public void updateOrbitTime(Date time, boolean forceUpdate) {
+        LOGGER.log(Level.FINE, "Updating orbit time to " + time + ", force update " + forceUpdate);
         this.lastReferenceTime = time;
-        this.listeners.forEach(o -> o.startOrbitTimeUpdate(time));
+        this.listeners.forEach(o -> o.startOrbitTimeUpdate(time, forceUpdate));
         for(Orbit ob : this.orbits.values()) {
             try {
-                ob.updateOrbitTime(time);
+                ob.updateOrbitTime(time, forceUpdate);
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Error when propagating orbit for " + ob.getName(), e);
             }
         }
-        this.listeners.forEach(o -> o.endOrbitTimeUpdate(time));
+        this.listeners.forEach(o -> o.endOrbitTimeUpdate(time, forceUpdate));
     }
 
     public void exportOem(UUID id, String code, String name, Date startTime, Date endTime, int periodSeconds, String file, Frame targetFrame, FileFormat format) throws IOException {
