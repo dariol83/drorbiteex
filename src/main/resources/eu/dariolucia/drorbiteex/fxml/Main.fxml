@@ -104,6 +104,18 @@
                                                            <Tooltip text="New Ground Station..." />
                                                        </tooltip>
                                                    </Button>
+                                                   <Button mnemonicParsing="false" onAction="#onGenerateScheduleAction">
+                                                       <graphic>
+                                                           <ImageView pickOnBounds="true" preserveRatio="true">
+                                                               <image>
+                                                                   <Image url="@/calendar-text-outline.png" />
+                                                               </image>
+                                                           </ImageView>
+                                                       </graphic>
+                                                       <tooltip>
+                                                           <Tooltip text="Generate schedule..." />
+                                                       </tooltip>
+                                                   </Button>
                                                    <Button mnemonicParsing="false" onAction="#onDeleteGroundStationAction">
                                                        <graphic>
                                                            <ImageView pickOnBounds="true" preserveRatio="true">

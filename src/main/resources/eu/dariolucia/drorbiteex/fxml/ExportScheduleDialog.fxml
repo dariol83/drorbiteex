@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.ExportScheduleDialog">
+   <children>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <children>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Orbits" />
+                  <ListView fx:id="orbitList" prefHeight="150.0" prefWidth="255.0" />
+                  <VBox spacing="5">
+                     <children>
+                        <HBox spacing="5">
+                           <children>
+                              <CheckBox fx:id="telemetryCheck" minWidth="150.0" mnemonicParsing="false" text="Telemetry" />
+                              <ComboBox fx:id="telemetryCombo" minWidth="100.0" prefWidth="150.0" />
+                           </children>
+                        </HBox>
+                        <HBox spacing="5">
+                           <children>
+                              <CheckBox fx:id="telecommandCheck" minWidth="150.0" mnemonicParsing="false" text="Telecommand" />
+                              <ComboBox fx:id="telecommandCombo" minWidth="100.0" prefWidth="150.0" />
+                           </children>
+                        </HBox>
+                        <HBox spacing="5">
+                           <children>
+                              <CheckBox fx:id="rangingCheck" minWidth="150.0" mnemonicParsing="false" text="Ranging" />
+                              <ComboBox fx:id="rangingCombo" minWidth="100.0" prefWidth="150.0" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Start Date/Time" />
+                  <TextField fx:id="startDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
+                  <TextField fx:id="startTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Status" />
+                  <ComboBox fx:id="statusCombo" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="End Date/Time" />
+                  <TextField fx:id="endDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
+                  <TextField fx:id="endTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="User" />
+                  <TextField fx:id="userText" minWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Originating Entity" />
+                  <TextField fx:id="originatingEntityText" minWidth="150.0" prefWidth="150.0" promptText="Originating Entity" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="File Path" />
+                  <TextField fx:id="filePathText" disable="true" minWidth="315.0" prefWidth="315.0" HBox.hgrow="ALWAYS" />
+                  <Button minWidth="100.0" onAction="#onGenerateScheduleAction" prefWidth="100.0" text="Select..." />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

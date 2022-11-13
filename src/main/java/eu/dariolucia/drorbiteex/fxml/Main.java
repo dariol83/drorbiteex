@@ -37,6 +37,7 @@ import org.orekit.data.DirectoryCrawler;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
 
@@ -427,9 +428,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
-        List<Orbit> orbitList = CelestrakDialog.openDialog(scene3d.getParent().getScene().getWindow());
-        if(orbitList != null) {
-            orbitList.forEach(gs -> ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+        List<Orbit> theNewOrbits = CelestrakDialog.openDialog(scene3d.getParent().getScene().getWindow());
+        if(theNewOrbits != null) {
+            theNewOrbits.forEach(gs -> ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
                     gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
             )));
         }
@@ -708,5 +709,14 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     public void onForceOrbitComputationAction(ActionEvent actionEvent) {
         refreshModel(new Date(), true);
+    }
+
+    public void onGenerateScheduleAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            GroundStation station = gs.getGroundStation();
+            List<Orbit> orbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
+            // TODO open dialog
+        }
     }
 }
