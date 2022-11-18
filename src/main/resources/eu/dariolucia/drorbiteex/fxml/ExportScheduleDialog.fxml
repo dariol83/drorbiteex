@@ -17,22 +17,33 @@
                   <ListView fx:id="orbitList" prefHeight="150.0" prefWidth="255.0" />
                   <VBox spacing="5">
                      <children>
+                        <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Services" />
                         <HBox spacing="5">
                            <children>
-                              <CheckBox fx:id="telemetryCheck" minWidth="150.0" mnemonicParsing="false" text="Telemetry" />
-                              <ComboBox fx:id="telemetryCombo" minWidth="100.0" prefWidth="150.0" />
+                              <CheckBox fx:id="service1Check" minWidth="20.0" mnemonicParsing="false" />
+                              <ComboBox fx:id="type1Combo" minWidth="130.0" prefWidth="130.0" />
+                              <ComboBox fx:id="service1Combo" minWidth="100.0" prefWidth="150.0" />
                            </children>
                         </HBox>
                         <HBox spacing="5">
                            <children>
-                              <CheckBox fx:id="telecommandCheck" minWidth="150.0" mnemonicParsing="false" text="Telecommand" />
-                              <ComboBox fx:id="telecommandCombo" minWidth="100.0" prefWidth="150.0" />
+                              <CheckBox fx:id="service2Check" minWidth="20.0" mnemonicParsing="false" />
+                              <ComboBox fx:id="type2Combo" minWidth="130.0" prefWidth="130.0" />
+                              <ComboBox fx:id="service2Combo" minWidth="100.0" prefWidth="150.0" />
                            </children>
                         </HBox>
                         <HBox spacing="5">
                            <children>
-                              <CheckBox fx:id="rangingCheck" minWidth="150.0" mnemonicParsing="false" text="Ranging" />
-                              <ComboBox fx:id="rangingCombo" minWidth="100.0" prefWidth="150.0" />
+                              <CheckBox fx:id="service3Check" minWidth="20.0" mnemonicParsing="false" />
+                              <ComboBox fx:id="type3Combo" minWidth="130.0" prefWidth="130.0" />
+                              <ComboBox fx:id="service3Combo" minWidth="100.0" prefWidth="150.0" />
+                           </children>
+                        </HBox>
+                        <HBox spacing="5">
+                           <children>
+                              <CheckBox fx:id="service4Check" minWidth="20.0" mnemonicParsing="false" />
+                              <ComboBox fx:id="type4Combo" minWidth="130.0" prefWidth="130.0" />
+                              <ComboBox fx:id="service4Combo" minWidth="100.0" prefWidth="150.0" />
                            </children>
                         </HBox>
                      </children>
@@ -44,8 +55,6 @@
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Start Date/Time" />
                   <TextField fx:id="startDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
                   <TextField fx:id="startTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Status" />
-                  <ComboBox fx:id="statusCombo" minWidth="150.0" prefWidth="150.0" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
@@ -53,8 +62,6 @@
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="End Date/Time" />
                   <TextField fx:id="endDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
                   <TextField fx:id="endTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="User" />
-                  <TextField fx:id="userText" minWidth="150.0" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
@@ -65,9 +72,27 @@
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Status" />
+                  <ComboBox fx:id="statusCombo" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Start/End Activity Delta-Time (seconds)" />
+                  <TextField fx:id="startEndActivityDeltaText" minWidth="150.0" promptText="0" text="0"/>
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Custom Exporter" />
+                  <ComboBox fx:id="exporterCombo" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="File Path" />
                   <TextField fx:id="filePathText" disable="true" minWidth="315.0" prefWidth="315.0" HBox.hgrow="ALWAYS" />
-                  <Button minWidth="100.0" onAction="#onGenerateScheduleAction" prefWidth="100.0" text="Select..." />
+                  <Button minWidth="100.0" onAction="#onSelectScheduleAction" prefWidth="100.0" text="Select..." />
                </children>
             </HBox>
          </children>

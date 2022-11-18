@@ -2,6 +2,7 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -377,7 +378,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Register the ground station to the manager: the callbacks will do the rest
         if(gs != null) {
             ModelManager.runLater(() -> manager.getGroundStationManager().newGroundStation(
-                    gs.getCode(), gs.getName(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight()
+                    gs.getCode(), gs.getName(), gs.getSite(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight()
             ));
         }
     }
@@ -641,7 +642,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void groundStationOrbitDataUpdated(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows, VisibilityCircle visibilityCircle, TrackPoint currentPoint) {
         Platform.runLater(() -> {
-            this.currentTimeLabel.setText(TimeUtils.formatDate(currentPoint.getTime()));
+            if(currentPoint != null) {
+                this.currentTimeLabel.setText(TimeUtils.formatDate(currentPoint.getTime()));
+            }
             this.polarPlotController.updateCurrentData(groundStation, orbit, visibilityWindows);
             this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, currentPoint);
             if(groundStationList.getSelectionModel().getSelectedItem() != null && groundStation.equals(groundStationList.getSelectionModel().getSelectedItem().getGroundStation())) {
@@ -714,9 +717,32 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public void onGenerateScheduleAction(ActionEvent actionEvent) {
         GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
         if(gs != null) {
-            GroundStation station = gs.getGroundStation();
             List<Orbit> orbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
-            // TODO open dialog
+            // open dialog
+            ScheduleGenerationRequest sgr = ExportScheduleDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
+            if(sgr != null) {
+                ModelManager.runLater(() -> {
+                    try {
+                        manager.exportSchedule(sgr);
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("CCSDS Simple Schedule Export");
+                            alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " exported");
+                            alert.setContentText("Schedule file: " + sgr.getFilePath());
+                            alert.showAndWait();
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("CCSDS Simple Schedule Export");
+                            alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " not exported");
+                            alert.setContentText("Error: " + e.getMessage());
+                            alert.showAndWait();
+                        });
+                    }
+                });
+            }
         }
     }
 }

@@ -30,9 +30,9 @@ public class GroundStationManager {
         outputStream.flush();
     }
 
-    public void newGroundStation(String code, String name, String description, String color, boolean visibility, double latitude, double longitude, double height) {
+    public void newGroundStation(String code, String name, String site, String description, String color, boolean visibility, double latitude, double longitude, double height) {
         // Create station
-        GroundStation station = new GroundStation(UUID.randomUUID(), code, name, description, color, visibility, latitude, longitude, height);
+        GroundStation station = new GroundStation(UUID.randomUUID(), code, name, site, description, color, visibility, latitude, longitude, height);
         registerStation(station);
     }
 

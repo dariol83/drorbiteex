@@ -1,4 +1,4 @@
-package eu.dariolucia.drorbiteex.model.station;
+package eu.dariolucia.drorbiteex.model.schedule;
 
 public enum FrequencyEnum {
     HF("HF"),
@@ -32,4 +32,9 @@ public enum FrequencyEnum {
     public String getFrequencyBand() {
         return frequencyBand;
     }
+
+	@Override
+	public String toString() {
+		return getFrequencyBand();
+	}
 }

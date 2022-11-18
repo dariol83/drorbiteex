@@ -35,6 +35,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     private volatile UUID id;
     private volatile String code = "";
     private volatile String name = "";
+    private volatile String site = "";
     private volatile String description = "";
     private volatile String color = "0xFFFFFF";
     private volatile boolean visible = false;
@@ -60,10 +61,11 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         //
     }
 
-    public GroundStation(UUID id, String code, String name, String description, String color, boolean visible, double latitude, double longitude, double height) {
+    public GroundStation(UUID id, String code, String name, String site, String description, String color, boolean visible, double latitude, double longitude, double height) {
         this.id = id;
         this.code = code;
         this.name = name;
+        this.site = site;
         this.description = description;
         this.color = color;
         this.visible = visible;
@@ -113,6 +115,16 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     public synchronized void setName(String name) {
         this.name = name;
+        notifyGroundStationUpdated();
+    }
+
+    @XmlAttribute
+    public synchronized String getSite() {
+        return site;
+    }
+
+    public synchronized void setSite(String site) {
+        this.site = site;
         notifyGroundStationUpdated();
     }
 
@@ -186,6 +198,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     public synchronized void update(GroundStation gs) {
         this.code = gs.getCode();
         this.name = gs.getName();
+        this.site = gs.getSite();
         this.description = gs.getDescription();
         this.color = gs.getColor();
         this.latitude = gs.getLatitude();
@@ -292,34 +305,36 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         }
         // Verify current visibility
         // As from https://www.orekit.org/mailing-list-archives/orekit-users/msg00625.html
-        SpacecraftState spacecraftState = currentSpacecraftPosition.getSpacecraftState();
-        Date sTime = spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
-        PVCoordinates pv = spacecraftState.getFrame().getTransformTo(this.stationFrame, spacecraftState.getDate()).transformPVCoordinates(spacecraftState.getPVCoordinates());
-        Vector3D p = pv.getPosition();
-        if(p.getDelta() > 0) {
-            // Spacecraft is visible: update information
-            int orbitNumber = currentSpacecraftPosition.getOrbitNumber();
-            double[] azimuthElevation = getAzimuthElevationOf(spacecraftState);
-            this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
-            if(!eventRaised) {
-                // Create a fake visibility window
-                VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this);
-                visibilityWindows.computeIfAbsent(currentOrbit, o -> new ArrayList<>()).add(0, vw);
+        if(currentSpacecraftPosition != null) {
+            SpacecraftState spacecraftState = currentSpacecraftPosition.getSpacecraftState();
+            Date sTime = spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
+            PVCoordinates pv = spacecraftState.getFrame().getTransformTo(this.stationFrame, spacecraftState.getDate()).transformPVCoordinates(spacecraftState.getPVCoordinates());
+            Vector3D p = pv.getPosition();
+            if (p.getDelta() > 0) {
+                // Spacecraft is visible: update information
+                int orbitNumber = currentSpacecraftPosition.getOrbitNumber();
+                double[] azimuthElevation = getAzimuthElevationOf(spacecraftState);
+                this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
+                if (!eventRaised) {
+                    // Create a fake visibility window
+                    VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this);
+                    visibilityWindows.computeIfAbsent(currentOrbit, o -> new ArrayList<>()).add(0, vw);
+                }
+            } else {
+                // Spacecraft is not visible: remove information
+                this.currentVisibilityMap.remove(currentOrbit);
             }
-        } else {
-            // Spacecraft is not visible: remove information
-            this.currentVisibilityMap.remove(currentOrbit);
+            // Compute visibility circle (AOS0) using the current S/C height
+            List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
+            for (int i = 0; i < 180; ++i) {
+                double azimuth = i * (2.0 * Math.PI / 180);
+                visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(Constants.WGS84_EARTH_EQUATORIAL_RADIUS + currentSpacecraftPosition.getLatLonHeight().getAltitude(), azimuth, GS_ELEVATION));
+            }
+            this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
+            // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified
+            this.currentOrbit = null;
+            this.temporaryPointMap.clear();
         }
-        // Compute visibility circle (AOS0) using the current S/C height
-        List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
-        for (int i = 0; i < 180; ++i) {
-            double azimuth = i * (2.0 * Math.PI / 180);
-            visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(Constants.WGS84_EARTH_EQUATORIAL_RADIUS + currentSpacecraftPosition.getLatLonHeight().getAltitude(), azimuth, GS_ELEVATION));
-        }
-        this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
-        // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified
-        this.currentOrbit = null;
-        this.temporaryPointMap.clear();
     }
 
     @Override

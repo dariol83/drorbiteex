@@ -19,6 +19,7 @@ import java.util.UUID;
 public class GroundStationDialog implements Initializable {
     public TextField codeText;
     public TextField nameText;
+    public TextField siteText;
     public TextArea descriptionTextArea;
     public TextField latitudeText;
     public TextField longitudeText;
@@ -62,6 +63,7 @@ public class GroundStationDialog implements Initializable {
     private void setOriginalGroundStation(GroundStation gs) {
         codeText.setText(gs.getCode());
         nameText.setText(gs.getName());
+        siteText.setText(gs.getSite());
         descriptionTextArea.setText(gs.getDescription());
         latitudeText.setText(String.valueOf(gs.getLatitude()));
         longitudeText.setText(String.valueOf(gs.getLongitude()));
@@ -70,7 +72,7 @@ public class GroundStationDialog implements Initializable {
     }
 
     public GroundStation getResult() {
-        return new GroundStation(UUID.randomUUID(), codeText.getText(), nameText.getText(), descriptionTextArea.getText(),colorPicker.getValue().toString(), true,
+        return new GroundStation(UUID.randomUUID(), codeText.getText(), nameText.getText(), siteText.getText(), descriptionTextArea.getText(),colorPicker.getValue().toString(), true,
                 Double.parseDouble(latitudeText.getText()), Double.parseDouble(longitudeText.getText()), Double.parseDouble(altitudeText.getText()));
     }
 

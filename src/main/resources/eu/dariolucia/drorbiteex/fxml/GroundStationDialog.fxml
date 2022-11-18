@@ -11,6 +11,7 @@
 <?import javafx.scene.layout.VBox?>
 
 
+<?import javafx.scene.control.Tooltip?>
 <AnchorPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.GroundStationDialog">
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -21,13 +22,19 @@
             <HBox VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Code" />
-                  <TextField fx:id="codeText" minWidth="150.0" prefWidth="150.0" promptText="Ground Station Code" />
+                  <TextField fx:id="codeText" minWidth="150.0" prefWidth="150.0" promptText="Ground Station Code/Aperture" />
                </children>
             </HBox>
             <HBox>
                <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Name" />
                   <TextField fx:id="nameText" minWidth="150.0" prefWidth="150.0" promptText="Ground Station Name" />
+               </children>
+            </HBox>
+            <HBox>
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Site" />
+                  <TextField fx:id="siteText" minWidth="150.0" prefWidth="150.0" promptText="Ground Station Site" />
                </children>
             </HBox>
             <HBox prefHeight="100.0" prefWidth="200.0">
@@ -40,9 +47,21 @@
             <HBox spacing="5.0">
                <children>
                   <Label minWidth="145.0" prefHeight="24.0" prefWidth="145.0" text="Coordinates (Lat/Lon/Alt)" />
-                  <TextField fx:id="latitudeText" minWidth="150.0" prefWidth="150.0" />
-                  <TextField fx:id="longitudeText" minWidth="150.0" prefWidth="150.0" />
-                  <TextField fx:id="altitudeText" minWidth="150.0" prefWidth="150.0" text="0"/>
+                  <TextField fx:id="latitudeText" minWidth="150.0" prefWidth="150.0">
+                     <tooltip>
+                        <Tooltip text="Latitude in degrees (decimal)" />
+                     </tooltip>
+                  </TextField>
+                  <TextField fx:id="longitudeText" minWidth="150.0" prefWidth="150.0">
+                     <tooltip>
+                        <Tooltip text="Longitude in degrees (decimal)" />
+                     </tooltip>
+                  </TextField>
+                  <TextField fx:id="altitudeText" minWidth="150.0" prefWidth="150.0" text="0">
+                     <tooltip>
+                        <Tooltip text="Altitude in meters (WGS84 reference)" />
+                     </tooltip>
+                  </TextField>
                </children>
             </HBox>
             <HBox>

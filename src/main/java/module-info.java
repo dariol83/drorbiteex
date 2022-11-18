@@ -22,4 +22,9 @@ open module eu.dariolucia.drorbiteex {
     exports eu.dariolucia.drorbiteex.model.orbit;
     exports eu.dariolucia.drorbiteex.model.station;
     exports eu.dariolucia.drorbiteex.model.util;
+    exports eu.dariolucia.drorbiteex.model.schedule;
+
+    uses eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;
+    provides eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter with eu.dariolucia.drorbiteex.model.schedule.DefaultExporter;
+
 }

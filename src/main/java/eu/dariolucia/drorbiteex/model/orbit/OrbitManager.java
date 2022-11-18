@@ -1,9 +1,10 @@
 package eu.dariolucia.drorbiteex.model.orbit;
 
+import eu.dariolucia.drorbiteex.model.station.GroundStation;
+import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.attitudes.Attitude;
 import org.orekit.bodies.CelestialBodyFactory;
-import org.orekit.data.DataContext;
 import org.orekit.files.ccsds.definitions.BodyFacade;
 import org.orekit.files.ccsds.definitions.FrameFacade;
 import org.orekit.files.ccsds.definitions.TimeSystem;
@@ -11,22 +12,18 @@ import org.orekit.files.ccsds.ndm.WriterBuilder;
 import org.orekit.files.ccsds.ndm.odm.oem.EphemerisWriter;
 import org.orekit.files.ccsds.ndm.odm.oem.InterpolationMethod;
 import org.orekit.files.ccsds.ndm.odm.oem.OemMetadata;
-import org.orekit.files.ccsds.ndm.odm.oem.OemWriter;
 import org.orekit.files.ccsds.section.Header;
 import org.orekit.files.ccsds.utils.FileFormat;
 import org.orekit.files.general.OrekitEphemerisFile;
 import org.orekit.frames.Frame;
-import org.orekit.frames.FramesFactory;
-import org.orekit.frames.Transform;
-import org.orekit.orbits.CartesianOrbit;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.AbsolutePVCoordinates;
-import org.orekit.utils.IERSConventions;
 import org.orekit.utils.TimeStampedPVCoordinates;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

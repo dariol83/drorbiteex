@@ -1,4 +1,4 @@
-package eu.dariolucia.drorbiteex.model.station;
+package eu.dariolucia.drorbiteex.model.schedule;
 
 public enum StatusEnum {
     TEST,

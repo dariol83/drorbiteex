@@ -1,20 +1,26 @@
 package eu.dariolucia.drorbiteex.model;
 
-import eu.dariolucia.drorbiteex.model.orbit.IOrbitListener;
-import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.orbit.OrbitManager;
-import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
+import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.schedule.CcsdsSimpleScheduleExporter;
+import eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;
+import eu.dariolucia.drorbiteex.model.schedule.ScheduleExporterRegistry;
+import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.station.*;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import org.orekit.propagation.events.EventDetector;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ModelManager implements IOrbitListener, IGroundStationListener {
 
@@ -73,6 +79,49 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
 
     public GroundStationManager getGroundStationManager() {
         return groundStationManager;
+    }
+
+    public void exportSchedule(ScheduleGenerationRequest request) throws IOException {
+        // For all the provided orbits, get a copy of the model and compute the visibility windows between the dates
+        IScheduleExporter externalExporter = ScheduleExporterRegistry.instance().getExporter(request.getExporterToUse());
+        CcsdsSimpleScheduleExporter exporter = new CcsdsSimpleScheduleExporter(request.getFilePath(), externalExporter);
+        exporter.writeHeader(request);
+        // Go for passes
+        for(Orbit o : request.getOrbits()) {
+            List<VisibilityWindow> passes = computePasses(request.getGroundStation(), o, request.getStartTime(), request.getEndTime());
+            exporter.writeScheduledPackage(request, request.getGroundStation(), o, passes);
+        }
+        exporter.close();
+    }
+
+    // TODO: refactor to avoid duplication with method in Orbit class
+    private List<VisibilityWindow> computePasses(GroundStation groundStation, Orbit orbit, Date startTime, Date endTime) {
+        // Clone the orbit and the ground station
+        Orbit clonedOrbit = new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), orbit.getModel().copy());
+        GroundStation clonedStation = new GroundStation(groundStation.getId(), groundStation.getCode(), groundStation.getName(), groundStation.getSite(), groundStation.getDescription(), groundStation.getColor(),
+                groundStation.isVisible(), groundStation.getLatitude(), groundStation.getLongitude(), groundStation.getHeight());
+        // Perform the propagation
+        AbsoluteDate startDate = TimeUtils.toAbsoluteDate(startTime);
+        AbsoluteDate endDate = TimeUtils.toAbsoluteDate(endTime);
+        clonedOrbit.getModel().getPropagator().propagate(startDate);
+        // Future, register event detectors from listeners
+        EventDetector detector = clonedStation.getEventDetector();
+        clonedOrbit.getModel().getPropagator().addEventDetector(detector);
+        clonedStation.initVisibilityComputation(clonedOrbit, startDate.toDate(TimeScalesFactory.getUTC()));
+        // Propagate to end date
+        clonedOrbit.getModel().getPropagator().propagate(endDate);
+        // Declare end for detectors, clear detectors
+        clonedStation.finalizeVisibilityComputation(clonedOrbit, null);
+        clonedOrbit.getModel().getPropagator().clearEventsDetectors();
+        // Now: for every listener, move back the model propagation to the current date and offer the propagator to
+        // each listener for visibility use (GroundStation) or other use.
+        clonedStation.endVisibilityComputation(clonedOrbit);
+
+        // Reset the propagator after every use
+        clonedOrbit.getModel().getPropagator().propagate(startDate);
+        clonedStation.propagationModelAvailable(clonedOrbit, startTime, clonedOrbit.getModel().getPropagator());
+        // Return the passes that are completed - passes with null AOS or null LOS (open passes) must be discarded
+        return clonedStation.getVisibilityWindowsOf(clonedOrbit).stream().filter(o -> o.getAos() != null && o.getLos() != null).collect(Collectors.toList());
     }
 
     @Override
