@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package eu.dariolucia.drorbiteex.model.station;
 
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
@@ -95,12 +111,18 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
     @Override
     public int compareTo(VisibilityWindow o) {
-        if(this.aos == null) {
-            if(o.aos == null) {
+        if(this.aos == null && o.aos == null) {
+            if(this.los == null && o.los == null) {
                 return this.orbit.getCode().compareTo(o.getOrbit().getCode());
-            } else {
+            } else if(this.los == null) {
                 return -1;
+            } else if(o.los == null) {
+                return 1;
+            } else {
+                return this.los.compareTo(o.los);
             }
+        } else if(this.aos == null) {
+            return -1;
         } else if(o.aos == null) {
             return 1;
         } else {
