@@ -16,6 +16,8 @@
 
 package eu.dariolucia.drorbiteex.model.station;
 
+import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -56,6 +58,18 @@ public class GroundStationConfiguration {
     }
 
     private List<GroundStation> groundStations = new LinkedList<>();
+
+    private GroundStationParameterConfiguration configuration = new GroundStationParameterConfiguration();
+
+    @XmlElement(name = "configuration")
+    public GroundStationParameterConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(GroundStationParameterConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
 
     @XmlElement(name = "ground-station")
     public List<GroundStation> getGroundStations() {

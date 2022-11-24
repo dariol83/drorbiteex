@@ -21,13 +21,26 @@ import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DefaultExporter implements IScheduleExporter {
 
     @Override
     public String getName() {
         return "Default Exporter";
+    }
+
+    @Override
+    public LinkedHashMap<String, String> getSimpleScheduleRootAttributes() {
+        return new LinkedHashMap<>(Map.of(
+                "xmlns", "urn:ccsds:schema:cssm:1.0.0",
+                "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance",
+                "xmlns:xmi", "http://www.omg.org/XMI",
+                "xsi:schemaLocation", "urn:ccsds:schema:cssm:1.0.0 902x01b1TC1-SmplSchd.xsd",
+                "srvMgtEntityType", "SIMPLE_SCHEDULE"
+        ));
     }
 
     @Override

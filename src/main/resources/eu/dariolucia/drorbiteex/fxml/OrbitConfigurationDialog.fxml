@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  ~ Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitConfigurationDialog">
+   <children>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <children>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Propagation Steps (before)" />
+                  <TextField fx:id="beforePropagationStepsText" minWidth="150.0" prefWidth="150.0" promptText="50" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Propagation Steps (after)" />
+                  <TextField fx:id="afterPropagationStepsText" minWidth="150.0" prefWidth="150.0" promptText="150" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Propagation Step Interval (seconds)" />
+                  <TextField fx:id="propagationStepPeriodText" minWidth="150.0" prefWidth="150.0" promptText="120" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

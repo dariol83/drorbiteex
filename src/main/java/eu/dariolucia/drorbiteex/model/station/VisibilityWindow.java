@@ -50,7 +50,7 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         if(this.azimuthElevationTrack.isEmpty()) {
             if (propagator != null) {
                 Date currentDate = this.aos;
-                // If you don't have AOS, then use the current time // TODO: use reference date from parameter
+                // If you don't have AOS, then use the current time
                 if (currentDate == null) {
                     currentDate = new Date();
                 }

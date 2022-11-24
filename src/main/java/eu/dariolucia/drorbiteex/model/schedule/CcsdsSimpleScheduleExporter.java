@@ -22,9 +22,7 @@ import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 public class CcsdsSimpleScheduleExporter {
 
@@ -48,10 +46,12 @@ public class CcsdsSimpleScheduleExporter {
 
     private void writeStart() {
         out.println("<?xml version=\"1.0\"?>");
-        out.println("<simpleSchedule xmlns=\"urn:ccsds:schema:cssm:1.0.0\"\n" +
-                " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-                " xmlns:xmi=\"http://www.omg.org/XMI\"\n" +
-                " xsi:schemaLocation=\"urn:ccsds:schema:cssm:1.0.0 902x01b1TC1-SmplSchd.xsd\" >");
+        LinkedHashMap<String, String> attribs = exporter.getSimpleScheduleRootAttributes();
+        out.print("<simpleSchedule");
+        for(Map.Entry<String, String> e : attribs.entrySet()) {
+            out.print(" " + e.getKey() + "=\"" + e.getValue() + "\"");
+        }
+        out.println(">");
     }
 
     public void writeHeader(ScheduleGenerationRequest request) {
@@ -115,7 +115,7 @@ public class CcsdsSimpleScheduleExporter {
         }
         // Service info
         for(ServiceInfoRequest sir : services) {
-            out.println("\t\t\t\t<serviceInfo serviceType=\"" + sir.getService().getType() + "\"\n" +
+            out.println("\t\t\t\t<serviceInfo serviceType=\"" + sir.getService().getType() + "\"" +
                     " frequencyBand=\"" + sir.getFrequency().getFrequencyBand() + "\" />");
         }
         // Extended activity parameters

@@ -16,7 +16,10 @@
 
 package eu.dariolucia.drorbiteex.model.station;
 
-import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.orbit.IOrbitVisibilityProcessor;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.OrbitManager;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.ode.events.Action;
@@ -29,7 +32,6 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.events.handlers.EventHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
-import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -46,7 +48,6 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     private static final double MAX_CHECK = 60.0;
     private static final double THRESHOLD =  0.001;
-    private static final double GS_ELEVATION = Math.toRadians(0);
 
     private volatile UUID id;
     private volatile String code = "";
@@ -73,6 +74,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     // To record the update state on visibility process
     private boolean visibilityUpdateInProgress = false;
 
+    private volatile GroundStationParameterConfiguration configuration;
+
     public GroundStation() {
         //
     }
@@ -88,6 +91,16 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.latitude = latitude;
         this.longitude = longitude;
         this.height = height;
+    }
+
+    public GroundStationParameterConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(GroundStationParameterConfiguration configuration) {
+        this.configuration = configuration;
+        // Recompute event detector
+        recomputeData(false);
     }
 
     public void addListener(IGroundStationListener l) {
@@ -227,7 +240,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     private void recomputeData(boolean notify) {
         GeodeticPoint geodeticPoint = new GeodeticPoint(Math.toRadians(getLatitude()), Math.toRadians(getLongitude()), getHeight());
         this.stationFrame = new TopocentricFrame(EarthReferenceUtils.getEarthShape(), geodeticPoint, getCode());
-        this.eventDetector = new ElevationDetector(MAX_CHECK, THRESHOLD, this.stationFrame).withConstantElevation(GS_ELEVATION).withHandler(this);
+        double gsElevation = Math.toRadians(configuration.getElevationThreshold());
+        this.eventDetector = new ElevationDetector(MAX_CHECK, THRESHOLD, this.stationFrame).withConstantElevation(gsElevation).withHandler(this);
         // Clear visibility windows and visibility circles
         this.visibilityWindows.clear();
         this.currentVisibilityMap.clear();
@@ -340,12 +354,12 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
                 // Spacecraft is not visible: remove information
                 this.currentVisibilityMap.remove(currentOrbit);
             }
-            // Compute visibility circle (AOS0) using the orbit semiaxis major
+            // Compute visibility circle (AOS at GS_ELEVATION in radians) using the orbit semiaxis major
             List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
+            double gsElevation = Math.toRadians(configuration.getElevationThreshold());
             for (int i = 0; i < 180; ++i) {
                 double azimuth = i * (2.0 * Math.PI / 180);
-                // visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(Constants.WGS84_EARTH_EQUATORIAL_RADIUS + currentSpacecraftPosition.getLatLonHeight().getAltitude(), azimuth, GS_ELEVATION));
-                visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(currentSpacecraftPosition.getSpacecraftState().getOrbit().getA(), azimuth, GS_ELEVATION));
+                visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(currentSpacecraftPosition.getSpacecraftState().getOrbit().getA(), azimuth, gsElevation));
             }
             this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
             // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified

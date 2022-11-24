@@ -107,7 +107,7 @@ public class OemOrbitModel implements IOrbitModel {
             // Get the reference orbit
             Orbit o = this.oemPropagator.getInitialState().getOrbit();
             double period = o.getKeplerianPeriod();
-            long orbitsAtEpoch = 0; // TODO: this is wrong but the OEM has no orbit number information
+            long orbitsAtEpoch = 0; // the OEM has no orbit number information
             AbsoluteDate epochTime = this.oemPropagator.getMinDate();
             // If you know how many orbits - orbitsAtEpoch - it had at epochTime, then you have to check the difference in
             // seconds between the epoch time and the time and, knowing the period, compute the orbit accordingly.

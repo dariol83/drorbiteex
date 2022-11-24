@@ -761,4 +761,20 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             }
         }
     }
+
+    public void onSettingsOrbitAction(ActionEvent actionEvent) {
+        OrbitParameterConfiguration originalProps = this.manager.getOrbitManager().getConfiguration();
+        OrbitParameterConfiguration props = OrbitConfigurationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalProps);
+        if(props != null) {
+            ModelManager.runLater(() -> manager.updateOrbitParameters(props)); // This triggers a full update
+        }
+    }
+
+    public void onSettingsGroundStationAction(ActionEvent actionEvent) {
+        GroundStationParameterConfiguration originalProps = this.manager.getGroundStationManager().getConfiguration();
+        GroundStationParameterConfiguration props = GroundStationConfigurationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalProps);
+        if(props != null) {
+            ModelManager.runLater(() -> manager.updateGroundStationParameters(props)); // This triggers a full update
+        }
+    }
 }

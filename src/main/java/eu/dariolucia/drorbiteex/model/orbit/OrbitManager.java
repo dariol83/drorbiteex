@@ -59,8 +59,13 @@ public class OrbitManager {
 
     private volatile Date lastReferenceTime = null;
 
+    private final OrbitParameterConfiguration configuration = new OrbitParameterConfiguration();
+
     public void initialise(InputStream inputStream) throws IOException {
         OrbitConfiguration oc = OrbitConfiguration.load(inputStream);
+        if(oc.getConfiguration() != null) {
+            configuration.update(oc.getConfiguration());
+        }
         for(Orbit orbit : oc.getOrbits()) {
             registerOrbit(orbit);
         }
@@ -69,6 +74,7 @@ public class OrbitManager {
     public void persist(OutputStream outputStream) throws IOException {
         OrbitConfiguration oc = new OrbitConfiguration();
         oc.setOrbits(new LinkedList<>(this.orbits.values()));
+        oc.setConfiguration(this.configuration);
         OrbitConfiguration.save(oc, outputStream);
         outputStream.flush();
     }
@@ -80,6 +86,7 @@ public class OrbitManager {
     }
 
     private void registerOrbit(Orbit orbit) {
+        orbit.setOrbitConfiguration(this.configuration);
         // Register orbit
         this.orbits.put(orbit.getId(), orbit);
         // Add observers to new orbit
@@ -176,14 +183,11 @@ public class OrbitManager {
         while(currentDate.isBefore(endDate)) {
             currentDate = currentDate.shiftedBy(periodSeconds);
             SpacecraftState ss = p.propagate(currentDate);
-            // states.add(ss.getPVCoordinates(targetFrame));
             states.add(convert(ss, targetFrame));
         }
         // Write OEM
         OrekitEphemerisFile ephemerisFile = new OrekitEphemerisFile();
         OrekitEphemerisFile.OrekitSatelliteEphemeris satellite = ephemerisFile.addSatellite(code);
-        // OrekitEphemerisFile.OrekitEphemerisSegment segment = new OrekitEphemerisFile.OrekitEphemerisSegment(states,
-        //        targetFrame, CelestialBodyFactory.getCelestialBodies().getEarth().getGM(), 7);
         satellite.addNewSegment(states, 7);
 
         OemMetadata template = new OemMetadata(7);
@@ -215,11 +219,22 @@ public class OrbitManager {
             // 2. Position conversion
             TimeStampedPVCoordinates tsPV = ss.getPVCoordinates(targetFrame);
             AbsolutePVCoordinates absolutePVCoordinates = new AbsolutePVCoordinates(targetFrame, tsPV);
-            TimeStampedPVCoordinates orbitPVinTargetFrame = ss.getOrbit().getPVCoordinates(targetFrame);
             //
             Attitude newAttitude = ss.getAttitude().withReferenceFrame(targetFrame);
             //
             return new SpacecraftState(absolutePVCoordinates, newAttitude, ss.getMass());
         }
+    }
+
+    public OrbitParameterConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void updateConfiguration(OrbitParameterConfiguration props) {
+        this.configuration.update(props);
+        for(Orbit o : this.orbits.values()) {
+            o.setOrbitConfiguration(this.configuration);
+        }
+        refresh();
     }
 }

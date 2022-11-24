@@ -32,10 +32,6 @@ import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Orbit {
-
-    private static final int PROPAGATION_STEPS = 100;
-    private static final double PROPAGATION_STEP_DURATION = 60.0;
-
     // Subject to serialisation
     private volatile UUID id;
     private volatile String code = "";
@@ -52,6 +48,8 @@ public class Orbit {
 
     private transient volatile Date lastOrbitUpdateTime = null;
     private transient volatile SpacecraftPosition currentSpacecraftPosition = null;
+
+    private transient volatile OrbitParameterConfiguration orbitConfiguration = null;
 
     private Orbit() {
         //
@@ -176,6 +174,9 @@ public class Orbit {
      * @param referenceDate the reference date to use
      */
     private void recomputeData(Date referenceDate) {
+        int beforePropagationSteps = this.orbitConfiguration.getBeforePropagationSteps();
+        int afterPropagationSteps = this.orbitConfiguration.getAfterPropagationSteps();
+        int stepInterval = this.orbitConfiguration.getStepInterval();
         // Protect the call from null argument
         if(referenceDate == null) {
             referenceDate = new Date();
@@ -186,9 +187,9 @@ public class Orbit {
         AbsoluteDate ad = TimeUtils.toAbsoluteDate(referenceDate);
         // Propagate in 3 steps
         // Past
-        for (int i = -PROPAGATION_STEPS; i < 0; ++i) {
-            // Propagate for 100 minutes (1 point every 1 minute - 100 points) // TODO: refactor, make propagation time configurable
-            AbsoluteDate newDate = ad.shiftedBy(PROPAGATION_STEP_DURATION * i);
+        for (int i = -beforePropagationSteps; i < 0; ++i) {
+            // Propagate for the specified amount
+            AbsoluteDate newDate = ad.shiftedBy(stepInterval * i);
             int orbitNumber = computeOrbitNumberAt(newDate.toDate(TimeScalesFactory.getUTC()));
             SpacecraftState next = this.modelPropagator.propagate(newDate);
             this.spacecraftPositions.add(new SpacecraftPosition(this, orbitNumber, next));
@@ -211,9 +212,9 @@ public class Orbit {
             this.modelPropagator.addEventDetector(detector);
             o.initVisibilityComputation(this, ad.toDate(TimeScalesFactory.getUTC()));
         });
-        for (int i = 1; i < PROPAGATION_STEPS; ++i) {
-            // Propagate for 100 minutes (1 point every 1 minute - 100 points) // TODO: refactor, make propagation time configurable
-            AbsoluteDate newDate = ad.shiftedBy(PROPAGATION_STEP_DURATION * i);
+        for (int i = 1; i < afterPropagationSteps; ++i) {
+            // Propagate for the defined amount
+            AbsoluteDate newDate = ad.shiftedBy(stepInterval * i);
             orbitNumber = computeOrbitNumberAt(newDate.toDate(TimeScalesFactory.getUTC()));
             SpacecraftState next = this.modelPropagator.propagate(newDate);
             this.spacecraftPositions.add(new SpacecraftPosition(this, orbitNumber, next));
@@ -334,5 +335,9 @@ public class Orbit {
 
     public synchronized SpacecraftPosition getCurrentSpacecraftPosition() {
         return currentSpacecraftPosition;
+    }
+
+    public synchronized void setOrbitConfiguration(OrbitParameterConfiguration param) {
+        this.orbitConfiguration = param.copy();
     }
 }

@@ -27,11 +27,12 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
-import java.io.*;
-import java.util.Collections;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -89,6 +90,18 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
         THREAD_EXECUTOR.submit(e);
     }
 
+    public void updateOrbitParameters(OrbitParameterConfiguration configuration) {
+        this.orbitManager.updateConfiguration(configuration);
+        saveOrbitFile();
+    }
+
+    public void updateGroundStationParameters(GroundStationParameterConfiguration props) {
+        this.groundStationManager.updateConfiguration(props);
+        saveGroundStationFile();
+        // Refresh
+        orbitManager.refresh();
+    }
+
     public OrbitManager getOrbitManager() {
         return orbitManager;
     }
@@ -114,8 +127,10 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
     private List<VisibilityWindow> computePasses(GroundStation groundStation, Orbit orbit, Date startTime, Date endTime) {
         // Clone the orbit and the ground station
         Orbit clonedOrbit = new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), orbit.getModel().copy());
+        clonedOrbit.setOrbitConfiguration(orbitManager.getConfiguration());
         GroundStation clonedStation = new GroundStation(groundStation.getId(), groundStation.getCode(), groundStation.getName(), groundStation.getSite(), groundStation.getDescription(), groundStation.getColor(),
                 groundStation.isVisible(), groundStation.getLatitude(), groundStation.getLongitude(), groundStation.getHeight());
+        clonedStation.setConfiguration(groundStation.getConfiguration());
         // Perform the propagation
         AbsoluteDate startDate = TimeUtils.toAbsoluteDate(startTime);
         AbsoluteDate endDate = TimeUtils.toAbsoluteDate(endTime);

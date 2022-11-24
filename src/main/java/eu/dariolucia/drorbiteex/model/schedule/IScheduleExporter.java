@@ -20,11 +20,14 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public interface IScheduleExporter {
 
     String getName();
+
+    LinkedHashMap<String, String> getSimpleScheduleRootAttributes();
 
     String getScheduledPackageIdFor(ScheduleGenerationRequest request, GroundStation station, Orbit orbit);
 

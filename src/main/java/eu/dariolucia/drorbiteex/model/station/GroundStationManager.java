@@ -16,6 +16,9 @@
 
 package eu.dariolucia.drorbiteex.model.station;
 
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,8 +35,13 @@ public class GroundStationManager {
 
     private final List<IGroundStationListener> listeners = new CopyOnWriteArrayList<>();
 
+    private final GroundStationParameterConfiguration configuration = new GroundStationParameterConfiguration();
+
     public void initialise(InputStream inputStream) throws IOException {
         GroundStationConfiguration oc = GroundStationConfiguration.load(inputStream);
+        if(oc.getConfiguration() != null) {
+            configuration.update(oc.getConfiguration());
+        }
         for(GroundStation groundStation : oc.getGroundStations()) {
             registerStation(groundStation);
         }
@@ -41,6 +49,7 @@ public class GroundStationManager {
 
     public void persist(OutputStream outputStream) throws IOException {
         GroundStationConfiguration oc = new GroundStationConfiguration();
+        oc.setConfiguration(this.configuration);
         oc.setGroundStations(new LinkedList<>(this.groundStations.values()));
         GroundStationConfiguration.save(oc, outputStream);
         outputStream.flush();
@@ -53,6 +62,7 @@ public class GroundStationManager {
     }
 
     private void registerStation(GroundStation st) {
+        st.setConfiguration(this.configuration);
         // Register station
         this.groundStations.put(st.getId(), st);
         // Add observers to new orbit
@@ -105,4 +115,15 @@ public class GroundStationManager {
     public Map<UUID, GroundStation> getGroundStations() {
         return Map.copyOf(this.groundStations);
     }
+
+    public GroundStationParameterConfiguration getConfiguration() {
+        return configuration;
+    }
+    public void updateConfiguration(GroundStationParameterConfiguration props) {
+        this.configuration.update(props);
+        for(GroundStation o : this.groundStations.values()) {
+            o.setConfiguration(this.configuration);
+        }
+    }
+
 }

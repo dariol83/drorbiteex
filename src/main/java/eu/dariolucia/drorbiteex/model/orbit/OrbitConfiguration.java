@@ -57,6 +57,17 @@ public class OrbitConfiguration {
 
     private List<Orbit> orbits = new LinkedList<>();
 
+    private OrbitParameterConfiguration configuration = new OrbitParameterConfiguration();
+
+    @XmlElement(name = "configuration")
+    public OrbitParameterConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(OrbitParameterConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
     @XmlElement(name = "orbit")
     public List<Orbit> getOrbits() {
         return orbits;
@@ -65,4 +76,5 @@ public class OrbitConfiguration {
     public void setOrbits(List<Orbit> orbits) {
         this.orbits = orbits;
     }
+
 }

@@ -156,6 +156,19 @@
                                                            <Tooltip text="Delete Ground Station" />
                                                        </tooltip>
                                                    </Button>
+                                                   <Region HBox.hgrow="ALWAYS"></Region>
+                                                   <Button mnemonicParsing="false" onAction="#onSettingsGroundStationAction">
+                                                       <graphic>
+                                                           <ImageView pickOnBounds="true" preserveRatio="true">
+                                                               <image>
+                                                                   <Image url="@/cog-outline_24.png" />
+                                                               </image>
+                                                           </ImageView>
+                                                       </graphic>
+                                                       <tooltip>
+                                                           <Tooltip text="Settings..." />
+                                                       </tooltip>
+                                                   </Button>
                                                </items>
                                            </ToolBar>
                                           <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" />
@@ -288,6 +301,19 @@
                                                       </graphic>
                                                       <tooltip>
                                                           <Tooltip text="Delete Orbit" />
+                                                      </tooltip>
+                                                  </Button>
+                                                  <Region HBox.hgrow="ALWAYS"></Region>
+                                                  <Button mnemonicParsing="false" onAction="#onSettingsOrbitAction">
+                                                      <graphic>
+                                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                                              <image>
+                                                                  <Image url="@/cog-outline_24.png" />
+                                                              </image>
+                                                          </ImageView>
+                                                      </graphic>
+                                                      <tooltip>
+                                                          <Tooltip text="Settings..." />
                                                       </tooltip>
                                                   </Button>
                                               </items>
