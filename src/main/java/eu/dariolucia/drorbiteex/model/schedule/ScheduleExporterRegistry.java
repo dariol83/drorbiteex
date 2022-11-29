@@ -32,14 +32,21 @@ public class ScheduleExporterRegistry {
     }
 
     private final Map<String, IScheduleExporter> exporterMap = new TreeMap<>();
+    private final Map<String, IScheduleNameGenerator> nameGeneratorMap = new TreeMap<>();
 
     private ScheduleExporterRegistry() {
         ServiceLoader.load(IScheduleExporter.class).stream().forEach(this::addExporter);
+        ServiceLoader.load(IScheduleNameGenerator.class).stream().forEach(this::addGenerator);
     }
 
     private void addExporter(ServiceLoader.Provider<IScheduleExporter> o) {
         IScheduleExporter exporter = o.get();
         exporterMap.put(exporter.getName(), exporter);
+    }
+
+    private void addGenerator(ServiceLoader.Provider<IScheduleNameGenerator> o) {
+        IScheduleNameGenerator generator = o.get();
+        nameGeneratorMap.put(generator.getName(), generator);
     }
 
     public List<String> getExporters() {
@@ -48,6 +55,15 @@ public class ScheduleExporterRegistry {
 
     public IScheduleExporter getExporter(String name) {
         return exporterMap.get(name);
+    }
+
+
+    public List<String> getNameGenerators() {
+        return new LinkedList<>(nameGeneratorMap.keySet());
+    }
+
+    public IScheduleNameGenerator getNameGenerator(String name) {
+        return nameGeneratorMap.get(name);
     }
 
 }

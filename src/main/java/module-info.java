@@ -25,6 +25,9 @@ open module eu.dariolucia.drorbiteex {
     exports eu.dariolucia.drorbiteex.model.schedule;
 
     uses eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;
+    uses eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator;
+
     provides eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter with eu.dariolucia.drorbiteex.model.schedule.DefaultExporter;
+    provides eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator with eu.dariolucia.drorbiteex.model.schedule.DefaultGenerator;
 
 }

@@ -17,10 +17,7 @@
 package eu.dariolucia.drorbiteex.model;
 
 import eu.dariolucia.drorbiteex.model.orbit.*;
-import eu.dariolucia.drorbiteex.model.schedule.CcsdsSimpleScheduleExporter;
-import eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;
-import eu.dariolucia.drorbiteex.model.schedule.ScheduleExporterRegistry;
-import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
+import eu.dariolucia.drorbiteex.model.schedule.*;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.events.EventDetector;
@@ -110,17 +107,31 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
         return groundStationManager;
     }
 
-    public void exportSchedule(ScheduleGenerationRequest request) throws IOException {
+    public String exportSchedule(ScheduleGenerationRequest request) throws IOException {
         // For all the provided orbits, get a copy of the model and compute the visibility windows between the dates
         IScheduleExporter externalExporter = ScheduleExporterRegistry.instance().getExporter(request.getExporterToUse());
-        CcsdsSimpleScheduleExporter exporter = new CcsdsSimpleScheduleExporter(request.getFilePath(), externalExporter);
-        exporter.writeHeader(request);
+        // Compute generation time and check filename
+        Date genDate = new Date();
+        CcsdsSimpleScheduleExporter exporter = null;
+        String generatedFile = null;
+        if(request.getFilePath() != null) {
+            exporter = new CcsdsSimpleScheduleExporter(request.getFilePath(), externalExporter);
+            generatedFile = request.getFilePath();
+        } else {
+            String folder = request.getFolderPath();
+            IScheduleNameGenerator generator = ScheduleExporterRegistry.instance().getNameGenerator(request.getGeneratorToUse());
+            folder += File.separator + generator.generateFileName(request, genDate);
+            exporter = new CcsdsSimpleScheduleExporter(folder, externalExporter);
+            generatedFile = folder;
+        }
+        exporter.writeHeader(request, genDate);
         // Go for passes
         for(Orbit o : request.getOrbits()) {
             List<VisibilityWindow> passes = computePasses(request.getGroundStation(), o, request.getStartTime(), request.getEndTime());
             exporter.writeScheduledPackage(request, request.getGroundStation(), o, passes);
         }
         exporter.close();
+        return generatedFile;
     }
 
     // TODO: refactor to avoid duplication with method in Orbit class

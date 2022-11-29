@@ -54,10 +54,10 @@ public class CcsdsSimpleScheduleExporter {
         out.println(">");
     }
 
-    public void writeHeader(ScheduleGenerationRequest request) {
+    public void writeHeader(ScheduleGenerationRequest request, Date generationDate) {
         out.println("\t<simpleScheduleHeader" +
                 " originatingOrganization=\"" + request.getOriginatingRequest() + "\"" +
-                " generationTime=\"" + timeFormatter.format(new Date())+ "\"" +
+                " generationTime=\"" + timeFormatter.format(generationDate)+ "\"" +
                 " status=\"" + request.getStatus().name() + "\"" +
                 " inclusionType=\"START_INCLUSION\"\n" + // TODO: make it parametric
                 "\t version=\"1\"" +

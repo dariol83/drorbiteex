@@ -27,6 +27,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Window;
@@ -51,8 +52,12 @@ public class ExportScheduleDialog implements Initializable {
     private static int LAST_DELTA_PERIOD = 0;
 
     private static String LAST_SELECTED_EXPORTER = null;
+    private static String LAST_SELECTED_GENERATOR = null;
 
     private static String LAST_FILE_PATH = "";
+    private static String LAST_FOLDER_PATH = "";
+
+    private static boolean LAST_FILE_RADIO = true;
 
     public TextField startDateText;
     public TextField startTimeText;
@@ -79,6 +84,12 @@ public class ExportScheduleDialog implements Initializable {
     public ListView<OrbitWrapper> orbitList;
     public ComboBox<String> exporterCombo;
     public TextField startEndActivityDeltaText;
+    public RadioButton filePathRadio;
+    public RadioButton folderPathRadio;
+    public TextField folderPathText;
+    public ComboBox<String> fileGeneratorCombo;
+    public Button filePathButton;
+    public Button folderPathButton;
 
     private SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     private SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
@@ -103,6 +114,7 @@ public class ExportScheduleDialog implements Initializable {
         endDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         endTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         filePathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        folderPathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         originatingEntityText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         startEndActivityDeltaText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
@@ -116,6 +128,20 @@ public class ExportScheduleDialog implements Initializable {
 
         for(String exporter : ScheduleExporterRegistry.instance().getExporters()) {
             exporterCombo.getItems().add(exporter);
+        }
+
+        ToggleGroup fileTg = new ToggleGroup();
+        filePathRadio.setToggleGroup(fileTg);
+        folderPathRadio.setToggleGroup(fileTg);
+
+        folderPathText.disableProperty().bind(folderPathRadio.selectedProperty().not());
+        folderPathButton.disableProperty().bind(folderPathRadio.selectedProperty().not());
+        fileGeneratorCombo.disableProperty().bind(folderPathRadio.selectedProperty().not());
+        filePathText.disableProperty().bind(filePathRadio.selectedProperty().not());
+        filePathButton.disableProperty().bind(filePathRadio.selectedProperty().not());
+
+        for(String generator : ScheduleExporterRegistry.instance().getNameGenerators()) {
+            fileGeneratorCombo.getItems().add(generator);
         }
 
         validate();
@@ -144,8 +170,11 @@ public class ExportScheduleDialog implements Initializable {
             if(endTimeText.getText().isBlank()) {
                 throw new IllegalStateException("End time field is blank");
             }
-            if(filePathText.getText().isBlank()) {
+            if(filePathRadio.isSelected() && filePathText.getText().isBlank()) {
                 throw new IllegalStateException("File is not selected");
+            }
+            if(folderPathRadio.isSelected() && folderPathText.getText().isBlank()) {
+                throw new IllegalStateException("Folder is not selected");
             }
             if(originatingEntityText.getText().isBlank()) {
                 throw new IllegalStateException("Originating entity is blank");
@@ -177,9 +206,16 @@ public class ExportScheduleDialog implements Initializable {
             LAST_FILE_PATH = filePathText.getText();
             LAST_ORIG_ENTITY_ID = originatingEntityText.getText();
             LAST_STATUS = statusCombo.getValue();
+            LAST_SELECTED_EXPORTER = exporterCombo.getValue();
+            LAST_SELECTED_GENERATOR = fileGeneratorCombo.getValue();
+            LAST_FOLDER_PATH = folderPathText.getText();
+            LAST_FILE_RADIO = filePathRadio.isSelected();
 
             return new ScheduleGenerationRequest(this.groundStation, orbits, start, end, originatingEntityText.getText(), statusCombo.getValue(),
-                    buildServiceRequests(), exporterCombo.getValue(), Integer.parseInt(startEndActivityDeltaText.getText()), filePathText.getText());
+                    buildServiceRequests(), exporterCombo.getValue(), Integer.parseInt(startEndActivityDeltaText.getText()),
+                    filePathRadio.isSelected() ? filePathText.getText() : null,
+                    folderPathRadio.isSelected() ? folderPathText.getText() : null,
+                    fileGeneratorCombo.getValue());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -244,7 +280,14 @@ public class ExportScheduleDialog implements Initializable {
         this.endDateText.setText(toDateText(LAST_END_DATE));
         this.endTimeText.setText(toTimeText(LAST_END_DATE));
         this.originatingEntityText.setText(LAST_ORIG_ENTITY_ID);
+        if(LAST_FILE_RADIO) {
+            this.filePathRadio.setSelected(true);
+        } else {
+            this.folderPathRadio.setSelected(true);
+        }
         this.filePathText.setText(LAST_FILE_PATH);
+        this.folderPathText.setText(LAST_FOLDER_PATH);
+
         this.statusCombo.setValue(LAST_STATUS);
         this.startEndActivityDeltaText.setText(String.valueOf(LAST_DELTA_PERIOD));
         for(Orbit o : orbits) {
@@ -259,6 +302,13 @@ public class ExportScheduleDialog implements Initializable {
         } else {
             this.exporterCombo.getSelectionModel().select(0);
         }
+        if(LAST_SELECTED_GENERATOR != null) {
+            this.fileGeneratorCombo.setValue(LAST_SELECTED_GENERATOR);
+        } else {
+            this.fileGeneratorCombo.getSelectionModel().select(0);
+        }
+
+        validate();
     }
 
     private String toTimeText(Date date) {
@@ -269,16 +319,26 @@ public class ExportScheduleDialog implements Initializable {
         return dateFormatter.format(date);
     }
 
-    public void onSelectScheduleAction(ActionEvent actionEvent) {
+    public void onSelectFileAction(ActionEvent actionEvent) {
         FileChooser fc = new FileChooser();
         fc.setTitle("Save CCSDS Simple Schedule File");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Schedule file","*.xml"));
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
         fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("Schedule file","*.xml"));
 
-        File selected = fc.showSaveDialog(startDateText.getScene().getWindow());
+        File selected = fc.showSaveDialog(filePathText.getScene().getWindow());
         if(selected != null) {
             filePathText.setText(selected.getAbsolutePath());
+        }
+    }
+
+    public void onSelectDirectoryAction(ActionEvent actionEvent) {
+        DirectoryChooser fc = new DirectoryChooser();
+        fc.setTitle("Save CCSDS Simple Schedule File to Folder");
+
+        File selected = fc.showDialog(folderPathText.getScene().getWindow());
+        if(selected != null) {
+            folderPathText.setText(selected.getAbsolutePath());
         }
     }
 

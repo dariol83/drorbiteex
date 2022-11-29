@@ -739,12 +739,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             if(sgr != null) {
                 ModelManager.runLater(() -> {
                     try {
-                        manager.exportSchedule(sgr);
+                        final String finalPath = manager.exportSchedule(sgr);
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
                             alert.setTitle("CCSDS Simple Schedule Export");
                             alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " exported");
-                            alert.setContentText("Schedule file: " + sgr.getFilePath());
+                            alert.setContentText("Schedule file: " + finalPath);
                             alert.showAndWait();
                         });
                     } catch (Exception e) {

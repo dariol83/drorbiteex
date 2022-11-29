@@ -41,7 +41,11 @@ public class ScheduleGenerationRequest {
 
     private final String filePath;
 
-    public ScheduleGenerationRequest(GroundStation groundStation, List<Orbit> orbits, Date startTime, Date endTime, String originatingRequest, StatusEnum status, List<ServiceInfoRequest> serviceInfoRequests, String exporterToUse, int startEndActivityDeltaSeconds, String filePath) {
+    private final String folderPath;
+
+    private final String generatorToUse;
+
+    public ScheduleGenerationRequest(GroundStation groundStation, List<Orbit> orbits, Date startTime, Date endTime, String originatingRequest, StatusEnum status, List<ServiceInfoRequest> serviceInfoRequests, String exporterToUse, int startEndActivityDeltaSeconds, String filePath, String folderPath, String generatorToUse) {
         this.groundStation = groundStation;
         this.orbits = List.copyOf(orbits);
         this.startTime = startTime;
@@ -52,6 +56,8 @@ public class ScheduleGenerationRequest {
         this.exporterToUse = exporterToUse;
         this.startEndActivityDeltaSeconds = startEndActivityDeltaSeconds;
         this.filePath = filePath;
+        this.folderPath = folderPath;
+        this.generatorToUse = generatorToUse;
     }
 
     public GroundStation getGroundStation() {
@@ -92,5 +98,13 @@ public class ScheduleGenerationRequest {
 
     public int getStartEndActivityDeltaSeconds() {
         return startEndActivityDeltaSeconds;
+    }
+
+    public String getFolderPath() {
+        return folderPath;
+    }
+
+    public String getGeneratorToUse() {
+        return generatorToUse;
     }
 }
