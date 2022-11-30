@@ -17,6 +17,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.ModelManager;
+import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
 import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.station.*;
@@ -690,25 +691,16 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
             Orbit orbit = originalOrbit.getOrbit();
-            ExportOemOrbitDialog.ExportOemResult exportOemResult = ExportOemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
-            if(exportOemResult != null) {
+            OemGenerationRequest oemGenerationRequest = ExportOemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
+            if(oemGenerationRequest != null) {
                 ModelManager.runLater(() -> {
                     try {
-                        manager.getOrbitManager().exportOem(
-                                orbit.getId(),
-                                exportOemResult.getCode(),
-                                exportOemResult.getName(),
-                                exportOemResult.getStartTime(),
-                                exportOemResult.getEndTime(),
-                                exportOemResult.getPeriodSeconds(),
-                                exportOemResult.getFile(),
-                                exportOemResult.getFrame(),
-                                exportOemResult.getFormat());
+                        final String finalPath = manager.getOrbitManager().exportOem(oemGenerationRequest);
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
                             alert.setTitle("OEM Export");
                             alert.setHeaderText("Orbit of " + orbit.getName() + " exported");
-                            alert.setContentText("OEM file: " + exportOemResult.getFile());
+                            alert.setContentText("OEM file: " + finalPath);
                             alert.showAndWait();
                         });
                     } catch (Exception e) {

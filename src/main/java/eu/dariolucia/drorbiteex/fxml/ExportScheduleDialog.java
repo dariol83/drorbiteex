@@ -117,6 +117,8 @@ public class ExportScheduleDialog implements Initializable {
         folderPathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         originatingEntityText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         startEndActivityDeltaText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        filePathRadio.selectedProperty().addListener((prop, oldVal, newVal) -> validate());
+        folderPathRadio.selectedProperty().addListener((prop, oldVal, newVal) -> validate());
 
         initialiseService(service1Check, type1Combo, service1Combo);
         initialiseService(service2Check, type2Combo, service2Combo);

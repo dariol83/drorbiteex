@@ -23,11 +23,15 @@ open module eu.dariolucia.drorbiteex {
     exports eu.dariolucia.drorbiteex.model.station;
     exports eu.dariolucia.drorbiteex.model.util;
     exports eu.dariolucia.drorbiteex.model.schedule;
+    exports eu.dariolucia.drorbiteex.model.oem;
 
     uses eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;
     uses eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator;
+    uses eu.dariolucia.drorbiteex.model.oem.IOemPostProcessor;
+    uses eu.dariolucia.drorbiteex.model.oem.IOemNameGenerator;
 
     provides eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter with eu.dariolucia.drorbiteex.model.schedule.DefaultExporter;
     provides eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator with eu.dariolucia.drorbiteex.model.schedule.DefaultGenerator;
-
+    provides eu.dariolucia.drorbiteex.model.oem.IOemPostProcessor with eu.dariolucia.drorbiteex.model.oem.DefaultPostProcessor;
+    provides eu.dariolucia.drorbiteex.model.oem.IOemNameGenerator with eu.dariolucia.drorbiteex.model.oem.DefaultGenerator;
 }

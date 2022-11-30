@@ -16,6 +16,8 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.model.oem.OemExporterRegistry;
+import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import javafx.beans.property.BooleanProperty;
@@ -25,6 +27,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Window;
@@ -34,11 +37,7 @@ import org.orekit.frames.FramesFactory;
 import org.orekit.utils.IERSConventions;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -61,6 +60,14 @@ public class ExportOemOrbitDialog implements Initializable {
     public TextField filePathText;
     public ComboBox<String> frameCombo;
     public ComboBox<String> formatCombo;
+    public ComboBox<String> postProcessorCombo;
+    public RadioButton filePathRadio;
+    public Button filePathButton;
+    public RadioButton folderPathRadio;
+    public TextField folderPathText;
+    public ComboBox<String> fileGeneratorCombo;
+    public Button folderPathButton;
+
 
     private boolean isTle = false;
 
@@ -71,6 +78,7 @@ public class ExportOemOrbitDialog implements Initializable {
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
 
     private String error;
+    private Orbit orbit;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -85,11 +93,33 @@ public class ExportOemOrbitDialog implements Initializable {
         endDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         endTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         filePathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-
+        folderPathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        filePathRadio.selectedProperty().addListener((prop, oldVal, newVal) -> validate());
+        folderPathRadio.selectedProperty().addListener((prop, oldVal, newVal) -> validate());
         formatCombo.getSelectionModel().select(0);
         frameCombo.getSelectionModel().select(0);
 
         periodText.setText(String.valueOf(LAST_PERIOD));
+
+        for(String exporter : OemExporterRegistry.instance().getPostProcessors()) {
+            postProcessorCombo.getItems().add(exporter);
+        }
+        postProcessorCombo.getSelectionModel().select(0);
+
+        ToggleGroup fileTg = new ToggleGroup();
+        filePathRadio.setToggleGroup(fileTg);
+        folderPathRadio.setToggleGroup(fileTg);
+
+        folderPathText.disableProperty().bind(folderPathRadio.selectedProperty().not());
+        folderPathButton.disableProperty().bind(folderPathRadio.selectedProperty().not());
+        fileGeneratorCombo.disableProperty().bind(folderPathRadio.selectedProperty().not());
+        filePathText.disableProperty().bind(filePathRadio.selectedProperty().not());
+        filePathButton.disableProperty().bind(filePathRadio.selectedProperty().not());
+
+        for(String generator : OemExporterRegistry.instance().getNameGenerators()) {
+            fileGeneratorCombo.getItems().add(generator);
+        }
+        fileGeneratorCombo.getSelectionModel().select(0);
 
         validate();
     }
@@ -114,8 +144,11 @@ public class ExportOemOrbitDialog implements Initializable {
             if(endTimeText.getText().isBlank()) {
                 throw new IllegalStateException("End time field is blank");
             }
-            if(filePathText.getText().isBlank()) {
+            if(filePathRadio.isSelected() && filePathText.getText().isBlank()) {
                 throw new IllegalStateException("File is not selected");
+            }
+            if(folderPathRadio.isSelected() && folderPathText.getText().isBlank()) {
+                throw new IllegalStateException("Folder is not selected");
             }
             if(!isTle && frameCombo.getSelectionModel().getSelectedItem().equals("TEME")) {
                 throw new IllegalStateException("TEME reference frame can only be used with TLE orbits");
@@ -134,7 +167,7 @@ public class ExportOemOrbitDialog implements Initializable {
         }
     }
 
-    public ExportOemResult getResult() {
+    public OemGenerationRequest getResult() {
         try {
             LAST_PERIOD = Integer.parseInt(periodText.getText());
             Date start = getDate(startDateText, startTimeText);
@@ -142,7 +175,13 @@ public class ExportOemOrbitDialog implements Initializable {
             LAST_TIME_DIFFERENCE = end.getTime() - start.getTime();
             Frame frame = getFrame();
             FileFormat format = getFormat();
-            return new ExportOemResult(codeText.getText(), nameText.getText(), start, end, Integer.parseInt(periodText.getText()), filePathText.getText(), frame, format);
+            return new OemGenerationRequest(orbit, codeText.getText(), nameText.getText(), start, end, Integer.parseInt(periodText.getText()),
+                    filePathRadio.isSelected() ? filePathText.getText() : null,
+                    frame,
+                    format,
+                    folderPathRadio.isSelected() ? folderPathText.getText() : null,
+                    fileGeneratorCombo.getValue(),
+                    postProcessorCombo.getValue());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -173,7 +212,7 @@ public class ExportOemOrbitDialog implements Initializable {
         return dateTimeFormatter.parse(dateText.getText() + " " + timeText.getText());
     }
 
-    public static ExportOemResult openDialog(Window owner, Orbit gs) {
+    public static OemGenerationRequest openDialog(Window owner, Orbit gs) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -204,6 +243,7 @@ public class ExportOemOrbitDialog implements Initializable {
     }
 
     private void initialise(Orbit gs) {
+        this.orbit = gs;
         this.nameText.setText(gs.getName());
         this.codeText.setText(gs.getCode());
         Date refDate = new Date();
@@ -223,7 +263,7 @@ public class ExportOemOrbitDialog implements Initializable {
         return dateFormatter.format(date);
     }
 
-    public void onSelectOemAction(ActionEvent actionEvent) {
+    public void onSelectFileAction(ActionEvent actionEvent) {
         FileChooser fc = new FileChooser();
         fc.setTitle("Save OEM File");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("OEM file","*.xml", "*.oem", "*.txt"));
@@ -236,59 +276,14 @@ public class ExportOemOrbitDialog implements Initializable {
         }
     }
 
-    public static class ExportOemResult {
-        private final String code;
-        private final String name;
-        private final Date startTime;
-        private final Date endTime;
-        private final int periodSeconds;
-        private final String file;
+    public void onSelectDirectoryAction(ActionEvent actionEvent) {
+        DirectoryChooser fc = new DirectoryChooser();
+        fc.setTitle("Save OEM File to Folder");
 
-        private final Frame frame;
-
-        private final FileFormat format;
-
-        public ExportOemResult(String code, String name, Date startTime, Date endTime, int periodSeconds, String file, Frame frame, FileFormat format) {
-            this.code = code;
-            this.name = name;
-            this.startTime = startTime;
-            this.endTime = endTime;
-            this.periodSeconds = periodSeconds;
-            this.file = file;
-            this.frame = frame;
-            this.format = format;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Date getStartTime() {
-            return startTime;
-        }
-
-        public Date getEndTime() {
-            return endTime;
-        }
-
-        public int getPeriodSeconds() {
-            return periodSeconds;
-        }
-
-        public String getFile() {
-            return file;
-        }
-
-        public FileFormat getFormat() {
-            return format;
-        }
-
-        public Frame getFrame() {
-            return frame;
+        File selected = fc.showDialog(folderPathText.getScene().getWindow());
+        if(selected != null) {
+            folderPathText.setText(selected.getAbsolutePath());
         }
     }
+
 }

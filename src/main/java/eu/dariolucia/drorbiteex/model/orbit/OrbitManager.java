@@ -16,8 +16,7 @@
 
 package eu.dariolucia.drorbiteex.model.orbit;
 
-import eu.dariolucia.drorbiteex.model.station.GroundStation;
-import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
+import eu.dariolucia.drorbiteex.model.oem.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.attitudes.Attitude;
 import org.orekit.bodies.CelestialBodyFactory;
@@ -34,12 +33,11 @@ import org.orekit.files.general.OrekitEphemerisFile;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.AbsolutePVCoordinates;
 import org.orekit.utils.TimeStampedPVCoordinates;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -158,14 +156,14 @@ public class OrbitManager {
         this.listeners.forEach(o -> o.endOrbitTimeUpdate(time, forceUpdate));
     }
 
-    public void exportOem(UUID id, String code, String name, Date startTime, Date endTime, int periodSeconds, String file, Frame targetFrame, FileFormat format) throws IOException {
-        Orbit targetOrbit = getOrbit(id);
+    public String exportOem(OemGenerationRequest request) throws IOException {
+        Orbit targetOrbit = request.getOrbit();
         if(targetOrbit == null) {
-            throw new IllegalArgumentException("Orbit ID " + id + " cannot be found");
+            throw new IllegalArgumentException("Orbit not set");
         }
 
-        AbsoluteDate startDate = TimeUtils.toAbsoluteDate(startTime);
-        AbsoluteDate endDate = TimeUtils.toAbsoluteDate(endTime);
+        AbsoluteDate startDate = TimeUtils.toAbsoluteDate(request.getStartTime());
+        AbsoluteDate endDate = TimeUtils.toAbsoluteDate(request.getEndTime());
 
         // Get copy of model propagator
         IOrbitModel model = targetOrbit.getModel().copy();
@@ -176,26 +174,38 @@ public class OrbitManager {
         // Propagate from startDate
         List<SpacecraftState> states = new ArrayList<>();
         SpacecraftState ss1 = p.propagate(startDate);
-        states.add(convert(ss1, targetFrame));
+        states.add(convert(ss1, request.getFrame()));
 
         // Move propagation by steps of periodSeconds
         AbsoluteDate currentDate = startDate;
         while(currentDate.isBefore(endDate)) {
-            currentDate = currentDate.shiftedBy(periodSeconds);
+            currentDate = currentDate.shiftedBy(request.getPeriodSeconds());
             SpacecraftState ss = p.propagate(currentDate);
-            states.add(convert(ss, targetFrame));
+            states.add(convert(ss, request.getFrame()));
         }
+
+        Date generationDate = new Date();
+        String generatedFile;
+        if(request.getFile() != null) {
+            generatedFile = request.getFile();
+        } else {
+            String folder = request.getFolder();
+            IOemNameGenerator generator = OemExporterRegistry.instance().getNameGenerator(request.getNameGenerator());
+            folder += File.separator + generator.generateFileName(request, generationDate);
+            generatedFile = folder;
+        }
+
         // Write OEM
         OrekitEphemerisFile ephemerisFile = new OrekitEphemerisFile();
-        OrekitEphemerisFile.OrekitSatelliteEphemeris satellite = ephemerisFile.addSatellite(code);
+        OrekitEphemerisFile.OrekitSatelliteEphemeris satellite = ephemerisFile.addSatellite(request.getCode());
         satellite.addNewSegment(states, 7);
 
         OemMetadata template = new OemMetadata(7);
         template.setTimeSystem(TimeSystem.UTC);
-        template.setObjectID(code);
-        template.setObjectName(name);
+        template.setObjectID(request.getCode());
+        template.setObjectName(request.getName());
         template.setCenter(new BodyFacade("EARTH", CelestialBodyFactory.getCelestialBodies().getEarth()));
-        template.setReferenceFrame(FrameFacade.map(targetFrame));
+        template.setReferenceFrame(FrameFacade.map(request.getFrame()));
         template.setInterpolationMethod(InterpolationMethod.LAGRANGE);
         template.setInterpolationDegree(7);
         template.setUseableStartTime(startDate);
@@ -203,11 +213,28 @@ public class OrbitManager {
 
         Header header = new Header(2);
         header.setOriginator("Dr Orbiteex");
+        header.setCreationDate(TimeUtils.toAbsoluteDate(generationDate));
+        EphemerisWriter writer;
+        if(request.getFormat() == FileFormat.XML) {
+            header.setFormatVersion(2.0);
+            //
+            writer = new DrOrbiteexEphemerisWriter(new WriterBuilder().buildOemWriter(),
+                    header, template, request.getFormat(), "dummy", 60);
+        } else {
+            writer = new EphemerisWriter(new WriterBuilder().buildOemWriter(),
+                    header, template, request.getFormat(), "dummy", 60);
+        }
+        writer.write(generatedFile, ephemerisFile);
 
-        //
-        EphemerisWriter writer = new EphemerisWriter(new WriterBuilder().buildOemWriter(),
-                header, template, format, "dummy", 60);
-        writer.write(file, ephemerisFile);
+        // Post process
+        if(request.getPostProcessor() != null) {
+            IOemPostProcessor processor = OemExporterRegistry.instance().getPostProcessor(request.getPostProcessor());
+            if(processor != null) {
+                processor.postProcess(generatedFile, request, generationDate);
+            }
+        }
+
+        return generatedFile;
     }
 
     private SpacecraftState convert(SpacecraftState ss, Frame targetFrame) {

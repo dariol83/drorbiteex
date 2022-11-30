@@ -88,9 +88,23 @@
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="File Path" />
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Custom Post-Processor" />
+                  <ComboBox fx:id="postProcessorCombo" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <RadioButton fx:id="filePathRadio" selected="true" text="File Path" minWidth="150.0" />
                   <TextField fx:id="filePathText" disable="true" minWidth="315.0" prefWidth="315.0" HBox.hgrow="ALWAYS" />
-                  <Button minWidth="100.0" onAction="#onSelectOemAction" prefWidth="100.0" text="Select..." />
+                  <Button fx:id="filePathButton" minWidth="100.0" onAction="#onSelectFileAction" prefWidth="80.0" text="Select..." />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <RadioButton fx:id="folderPathRadio" text="Directory Path" minWidth="150.0" />
+                  <TextField fx:id="folderPathText" disable="true" minWidth="250.0" prefWidth="315.0" HBox.hgrow="ALWAYS" />
+                  <ComboBox fx:id="fileGeneratorCombo" minWidth="150.0" prefWidth="100.0" />
+                  <Button fx:id="folderPathButton" minWidth="100.0" onAction="#onSelectDirectoryAction" prefWidth="80.0" text="Select..." />
                </children>
             </HBox>
          </children>
