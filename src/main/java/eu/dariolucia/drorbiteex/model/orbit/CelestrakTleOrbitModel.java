@@ -23,15 +23,18 @@ import javax.xml.bind.annotation.XmlAttribute;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class CelestrakTleOrbitModel extends TleOrbitModel {
 
+    private String celestrakName;
+
     private String group;
 
     public CelestrakTleOrbitModel() {
         //
     }
 
-    public CelestrakTleOrbitModel(String group, String tle) {
+    public CelestrakTleOrbitModel(String group, String celestrakName, String tle) {
         super(tle);
         this.group = group;
+        this.celestrakName = celestrakName;
     }
 
     @XmlAttribute
@@ -43,11 +46,21 @@ public class CelestrakTleOrbitModel extends TleOrbitModel {
         this.group = group;
     }
 
+    @XmlAttribute
+    public String getCelestrakName() {
+        return celestrakName;
+    }
+
+    private void setCelestrakName(String celestrakName) {
+        this.celestrakName = celestrakName;
+    }
+
     @Override
     public boolean updateModel(IOrbitModel model) {
         if(model instanceof CelestrakTleOrbitModel) {
             CelestrakTleOrbitModel iModel = (CelestrakTleOrbitModel) model;
             this.group = iModel.getGroup();
+            this.celestrakName = iModel.getCelestrakName();
             return super.updateModel(model);
         } else {
             throw new IllegalArgumentException("Not a class of type CelestrakTleOrbitModel");
@@ -56,6 +69,6 @@ public class CelestrakTleOrbitModel extends TleOrbitModel {
 
     @Override
     public IOrbitModel copy() {
-        return new CelestrakTleOrbitModel(getGroup(), getTle());
+        return new CelestrakTleOrbitModel(getGroup(), getCelestrakName(), getTle());
     }
 }

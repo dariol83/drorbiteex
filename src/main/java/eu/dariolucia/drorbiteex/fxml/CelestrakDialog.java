@@ -44,13 +44,13 @@ public class CelestrakDialog implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         satelliteList.setCellFactory(CheckBoxListCell.forListView(CelestrakTleData::selectedProperty));
-        groupCombo.getItems().addAll("weather", "noaa", "resource", "gps-ops", "galileo", "geo", "active");
+        groupCombo.getItems().addAll("last-30-days", "weather", "dmc", "sarsar", "noaa", "resource", "gps-ops", "galileo", "geo", "cubesat", "active");
     }
 
     private List<Orbit> getResult() {
         return satelliteList.getItems().stream()
                 .filter(o -> o.selectedProperty().get())
-                .map(cs -> new Orbit(UUID.randomUUID(), cs.getName(), cs.getName(), randomColor(),true, new CelestrakTleOrbitModel(cs.getGroup(), cs.getTle())))
+                .map(cs -> new Orbit(UUID.randomUUID(), cs.getName(), cs.getName(), randomColor(),true, new CelestrakTleOrbitModel(cs.getGroup(), cs.getName(), cs.getTle())))
                 .collect(Collectors.toList());
     }
 

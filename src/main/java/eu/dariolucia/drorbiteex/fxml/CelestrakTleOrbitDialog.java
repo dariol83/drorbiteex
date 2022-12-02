@@ -41,6 +41,7 @@ public class CelestrakTleOrbitDialog implements Initializable {
     public TextField codeText;
     public TextField nameText;
     public TextField groupText;
+    public TextField celestrakNameText;
     public TextArea tleTextArea;
 
     public ColorPicker colorPicker;
@@ -54,6 +55,8 @@ public class CelestrakTleOrbitDialog implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         codeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        nameText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+
         tleTextArea.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
@@ -62,6 +65,9 @@ public class CelestrakTleOrbitDialog implements Initializable {
     private void validate() {
         try {
             if(codeText.getText().isBlank()) {
+                throw new IllegalStateException("Code field is blank");
+            }
+            if(nameText.getText().isBlank()) {
                 throw new IllegalStateException("Code field is blank");
             }
             if(tleTextArea.getText().isBlank()) {
@@ -82,12 +88,13 @@ public class CelestrakTleOrbitDialog implements Initializable {
         colorPicker.setValue(Color.valueOf(gs.getColor()));
         if(gs.getModel() instanceof CelestrakTleOrbitModel) {
             groupText.setText(((CelestrakTleOrbitModel) gs.getModel()).getGroup());
+            celestrakNameText.setText(((CelestrakTleOrbitModel) gs.getModel()).getCelestrakName());
             tleTextArea.setText(((CelestrakTleOrbitModel) gs.getModel()).getTle());
         }
     }
 
     public Orbit getResult() {
-        return new Orbit(UUID.randomUUID(), codeText.getText(), nameText.getText(), colorPicker.getValue().toString(), true, new CelestrakTleOrbitModel(groupText.getText(), tleTextArea.getText()));
+        return new Orbit(UUID.randomUUID(), codeText.getText(), nameText.getText(), colorPicker.getValue().toString(), true, new CelestrakTleOrbitModel(groupText.getText(), celestrakNameText.getText(), tleTextArea.getText()));
     }
 
     public static Orbit openDialog(Window owner) {
@@ -131,7 +138,7 @@ public class CelestrakTleOrbitDialog implements Initializable {
         tleTextArea.setDisable(true);
         tleProgress.setVisible(true);
         final String group = groupText.getText();
-        final String name = nameText.getText();
+        final String name = celestrakNameText.getText();
         ModelManager.runLater(() -> {
             String newTle = CelestrakTleData.retrieveUpdatedTle(group, name);
             Platform.runLater(() -> {

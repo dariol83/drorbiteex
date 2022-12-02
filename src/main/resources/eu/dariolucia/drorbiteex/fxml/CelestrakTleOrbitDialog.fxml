@@ -55,6 +55,12 @@
                   <TextField fx:id="groupText" minWidth="150.0" prefWidth="150.0" promptText="Group" disable="true" />
                </children>
             </HBox>
+            <HBox VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Celestrak Name" />
+                  <TextField fx:id="celestrakNameText" minWidth="150.0" prefWidth="150.0" promptText="Celestrak Name" disable="true" />
+               </children>
+            </HBox>
             <HBox prefHeight="100.0" VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="150.0" prefWidth="150.0" text="TLE" />

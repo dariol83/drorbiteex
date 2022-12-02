@@ -161,7 +161,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         scene3d.setRoot(group);
         scene3d.setDepthTest(DepthTest.ENABLE);
         scene3d.setManaged(false);
-        scene3d.setCamera(new PerspectiveCamera());
+        PerspectiveCamera pc = new PerspectiveCamera();
+        pc.setNearClip(0.05);
+        scene3d.setCamera(pc);
         scene3d.heightProperty().bind(((VBox)scene3d.getParent().getParent()).heightProperty());
         scene3d.widthProperty().bind(((VBox)scene3d.getParent().getParent()).widthProperty());
         scene3d.heightProperty().addListener((a,b,c) -> group.setTranslateY(c.floatValue()/2));
@@ -376,11 +378,18 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void onScrollOnScene(ScrollEvent event) {
+        // Prevent super zoom in that cuts the scene
+        if(group.getTranslateZ() <= -1300 && event.getDeltaY() > 0) {
+            return;
+        }
+        int zoomDelta;
         if(event.getDeltaY() < 0) {
+            zoomDelta =  group.getTranslateZ() < -1200.0 ? 10 : 50;
             zoomFactor += 1;
-            group.setTranslateZ(group.getTranslateZ() + 50);
+            group.setTranslateZ(group.getTranslateZ() + zoomDelta);
         } else if(event.getDeltaY() > 0) {
-            group.setTranslateZ(group.getTranslateZ() - 50);
+            zoomDelta =  group.getTranslateZ() <= -1200.0 ? 10 : 50;
+            group.setTranslateZ(group.getTranslateZ() - zoomDelta);
             zoomFactor -= 1;
         }
         if(zoomFactor >= -2) {
@@ -473,7 +482,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 ModelManager.runLater(() -> {
                     String newTle = CelestrakTleData.retrieveUpdatedTle(theOrbit.getGroup(), orbit.getName());
                     if(newTle != null) {
-                        CelestrakTleOrbitModel model = new CelestrakTleOrbitModel(theOrbit.getGroup(), newTle);
+                        CelestrakTleOrbitModel model = new CelestrakTleOrbitModel(theOrbit.getGroup(), theOrbit.getCelestrakName(), newTle);
                         orbit.update(new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), model));
                     }
                 });
