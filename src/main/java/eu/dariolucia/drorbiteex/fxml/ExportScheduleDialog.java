@@ -31,6 +31,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Window;
+import javafx.util.Pair;
 
 import java.io.File;
 import java.net.URL;
@@ -46,6 +47,8 @@ public class ExportScheduleDialog implements Initializable {
     private static Date LAST_END_DATE = new Date(LAST_START_DATE.getTime() + (7 * 24 * 3600 * 1000)); // 7 days
 
     private static List<String> LAST_SELECTED_ORBIT_NAMES = new LinkedList<>();
+
+    private static List<Pair<ServiceTypeEnum, FrequencyEnum>> LAST_SELECTED_SERVICES = new LinkedList<>();
 
     private static String LAST_ORIG_ENTITY_ID = "";
 
@@ -225,18 +228,23 @@ public class ExportScheduleDialog implements Initializable {
     }
 
     private List<ServiceInfoRequest> buildServiceRequests() {
+        LAST_SELECTED_SERVICES.clear();
         List<ServiceInfoRequest> reqs = new LinkedList<>();
         if(service1Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type1Combo.getValue(), service1Combo.getValue()));
+            LAST_SELECTED_SERVICES.add(new Pair<>(type1Combo.getValue(), service1Combo.getValue()));
         }
         if(service2Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type2Combo.getValue(), service2Combo.getValue()));
+            LAST_SELECTED_SERVICES.add(new Pair<>(type2Combo.getValue(), service2Combo.getValue()));
         }
         if(service3Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type3Combo.getValue(), service3Combo.getValue()));
+            LAST_SELECTED_SERVICES.add(new Pair<>(type3Combo.getValue(), service3Combo.getValue()));
         }
         if(service4Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type4Combo.getValue(), service4Combo.getValue()));
+            LAST_SELECTED_SERVICES.add(new Pair<>(type4Combo.getValue(), service4Combo.getValue()));
         }
         return reqs;
     }
@@ -308,6 +316,17 @@ public class ExportScheduleDialog implements Initializable {
             this.fileGeneratorCombo.setValue(LAST_SELECTED_GENERATOR);
         } else {
             this.fileGeneratorCombo.getSelectionModel().select(0);
+        }
+
+        CheckBox[] selection = new CheckBox[] {service1Check, service2Check, service3Check, service4Check};
+        ComboBox<FrequencyEnum>[] services = new ComboBox[] {service1Combo, service2Combo, service3Combo, service4Combo};
+        ComboBox<ServiceTypeEnum>[] frequencies = new ComboBox[] {type1Combo, type2Combo, type3Combo, type4Combo};
+        int i = 0;
+        for(Pair<ServiceTypeEnum, FrequencyEnum> p : LAST_SELECTED_SERVICES) {
+            services[i].getSelectionModel().select(p.getValue());
+            frequencies[i].getSelectionModel().select(p.getKey());
+            selection[i].setSelected(true);
+            ++i;
         }
 
         validate();

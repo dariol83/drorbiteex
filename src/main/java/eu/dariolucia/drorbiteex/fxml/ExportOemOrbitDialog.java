@@ -49,6 +49,13 @@ public class ExportOemOrbitDialog implements Initializable {
 
     private static int LAST_PERIOD = 30;
     private static long LAST_TIME_DIFFERENCE = 7 * 24 * 3600 * 1000L;
+    private static String LAST_FRAME;
+    private static String LAST_FORMAT;
+    private static String LAST_POSTPROCESSOR;
+    private static String LAST_GENERATOR;
+    private static String LAST_FILE;
+    private static String LAST_FOLDER;
+    private static boolean LAST_FILE_SELECTED = true;
 
     public TextField codeText;
     public TextField nameText;
@@ -175,6 +182,14 @@ public class ExportOemOrbitDialog implements Initializable {
             LAST_TIME_DIFFERENCE = end.getTime() - start.getTime();
             Frame frame = getFrame();
             FileFormat format = getFormat();
+            LAST_FRAME = frameCombo.getValue();
+            LAST_FORMAT = formatCombo.getValue();
+            LAST_GENERATOR = fileGeneratorCombo.getValue();
+            LAST_POSTPROCESSOR = postProcessorCombo.getValue();
+            LAST_FILE = filePathText.getText();
+            LAST_FOLDER = folderPathText.getText();
+            LAST_FILE_SELECTED = filePathRadio.isSelected();
+
             return new OemGenerationRequest(orbit, codeText.getText(), nameText.getText(), start, end, Integer.parseInt(periodText.getText()),
                     filePathRadio.isSelected() ? filePathText.getText() : null,
                     frame,
@@ -253,6 +268,23 @@ public class ExportOemOrbitDialog implements Initializable {
         this.endTimeText.setText(toTimeText(new Date()));
         this.periodText.setText(String.valueOf(LAST_PERIOD));
         this.isTle = gs.getModel() instanceof TleOrbitModel;
+        selectCombo(formatCombo, LAST_FORMAT);
+        selectCombo(frameCombo, LAST_FRAME);
+        selectCombo(postProcessorCombo, LAST_POSTPROCESSOR);
+        selectCombo(fileGeneratorCombo, LAST_GENERATOR);
+        if(LAST_FILE != null) {
+            filePathText.setText(LAST_FILE);
+        }
+        if(LAST_FOLDER != null) {
+            folderPathText.setText(LAST_FOLDER);
+        }
+        filePathRadio.setSelected(LAST_FILE_SELECTED);
+    }
+
+    private void selectCombo(ComboBox<String> combo, String value) {
+        if (value != null && combo.getItems().contains(value)){
+            combo.getSelectionModel().select(value);
+        }
     }
 
     private String toTimeText(Date date) {
