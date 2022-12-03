@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.SubScene?>
-<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.control.Tooltip?>
@@ -24,7 +17,6 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
 <!--
   ~ Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
@@ -113,8 +105,7 @@
                           <StackPane VBox.vgrow="ALWAYS">
                               <children>
                                   <fx:include source="Scene3D.fxml" fx:id="scene3d" />
-                                  <Canvas fx:id="scene2d" height="300" pickOnBounds="true" width="600" StackPane.alignment="BOTTOM_RIGHT">
-                                  </Canvas>
+                                  <fx:include source="Scene2D.fxml" fx:id="scene2d" />
                               </children>
                               <padding>
                                   <Insets bottom="5" left="5" right="5" top="5" />

@@ -69,6 +69,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     // 3D scene
     public Scene3D scene3dController;
 
+    // 2D scene
+    public Scene2D scene2dController;
 
     // Time tracker
     public ToggleButton timerTrackingButton;
@@ -76,9 +78,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private final Timer tracker = new Timer();
     private TimerTask timerTask = null;
 
-    // 2D scene (minimap)
-    public Canvas scene2d;
-    private Image scene2dImage;
     public ToggleButton minimapButton;
 
     // Ground track combo selection
@@ -112,8 +111,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             orekitData = new File(DEFAULT_CONFIG_FOLDER + File.separator + OREKIT_FOLDER_NAME);
         }
         // Orekit initialisation
-        DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
-        manager.addProvider(new DirectoryCrawler(orekitData));
+        DataProvidersManager orekitManager = DataContext.getDefault().getDataProvidersManager();
+        orekitManager.addProvider(new DirectoryCrawler(orekitData));
 
         // Handle ground track list
         groundTrackCombo.setConverter(new StringConverter<>() {
@@ -155,10 +154,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         });
         groundTrackCombo.getSelectionModel().select(0);
 
-        // Update 2D view
-        this.scene2dImage = new Image(this.getClass().getResourceAsStream("/images/earth.jpg"));
-        update2Dscene();
-        this.scene2d.visibleProperty().bind(this.minimapButton.selectedProperty());
+        // Bind visibility of minimap to toggle button
+        scene2dController.bindVisibilityTo(this.minimapButton.selectedProperty());
+
+        // Configure 3D scene
+        scene3dController.configure(mainSceneParent);
 
         // Create model manager
         this.manager = new ModelManager(orbitFile, gsFile);
@@ -166,8 +166,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.manager.getGroundStationManager().addListener(this);
 
         // Ground Station Pane configuration
-        groundStationPaneController.configure(this.manager, this::getOrbits);
-        orbitPaneController.configure(this.manager);
+        this.orbitPaneController.configure(this.manager);
+        this.groundStationPaneController.configure(this.manager, this::getOrbits);
+        this.scene2dController.configure(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
 
         // Create graphics objects
         for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
@@ -184,9 +185,15 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
+    }
 
-        // Configure 3D scene
-        scene3dController.configure(mainSceneParent);
+    private OrbitGraphics getSelectedOrbit() {
+        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
+        if(selectedSc.equals(NO_GROUND_TRACK)) {
+            return null;
+        } else {
+            return (OrbitGraphics) selectedSc;
+        }
     }
 
     private void registerNewGroundStation(GroundStation gs) {
@@ -229,17 +236,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void update2Dscene() {
-        System.out.println("Updating 2D scene");
-        // Handle 2D view
-        GraphicsContext gc = scene2d.getGraphicsContext2D();
-        gc.drawImage(this.scene2dImage, 0, 0, scene2d.getWidth(), scene2d.getHeight());
-        for(GroundStationGraphics gs : groundStationPaneController.getGroundStationGraphics()) {
-            gs.draw(gc, getGroundTrackSelection(), scene2d.getWidth(), scene2d.getHeight());
-        }
-        for(OrbitGraphics gs : orbitPaneController.getOrbitGraphics()) {
-            gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
-        }
-        // Done
+        scene2dController.refreshScene();
     }
 
     public void onActivateTrackingAction(ActionEvent actionEvent) {
@@ -259,15 +256,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     private void refreshModel(Date now, boolean forceUpdate) {
         BackgroundThread.runLater(() -> manager.getOrbitManager().updateOrbitTime(now, forceUpdate));
-    }
-
-    private OrbitGraphics getGroundTrackSelection() {
-        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
-        if(selectedSc.equals(NO_GROUND_TRACK)) {
-            return null;
-        } else {
-            return (OrbitGraphics) selectedSc;
-        }
     }
 
     public void onGroundTrackComboSelected(ActionEvent actionEvent) {
