@@ -126,7 +126,7 @@ public class GroundStationPane implements Initializable {
         GroundStation gs = GroundStationDialog.openDialog(groundStationList.getParent().getScene().getWindow());
         // Register the ground station to the manager: the callbacks will do the rest
         if(gs != null) {
-            ModelManager.runLater(() -> manager.getGroundStationManager().newGroundStation(
+            BackgroundThread.runLater(() -> manager.getGroundStationManager().newGroundStation(
                     gs.getCode(), gs.getName(), gs.getSite(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight()
             ));
         }
@@ -146,7 +146,7 @@ public class GroundStationPane implements Initializable {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK){
-                ModelManager.runLater(() -> manager.getGroundStationManager().removeGroundStation(gs.getGroundStation().getId()));
+                BackgroundThread.runLater(() -> manager.getGroundStationManager().removeGroundStation(gs.getGroundStation().getId()));
             }
         }
     }
@@ -163,7 +163,7 @@ public class GroundStationPane implements Initializable {
             GroundStation gs = GroundStationDialog.openDialog(groundStationList.getParent().getScene().getWindow(), originalGs.getGroundStation());
             if (gs != null) {
                 // Go via the manager, callback will do the rest
-                ModelManager.runLater(() -> originalGs.getGroundStation().update(gs));
+                BackgroundThread.runLater(() -> originalGs.getGroundStation().update(gs));
             }
         }
     }
@@ -175,7 +175,7 @@ public class GroundStationPane implements Initializable {
             // open dialog
             ScheduleGenerationRequest sgr = ExportScheduleDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
             if(sgr != null) {
-                ModelManager.runLater(() -> {
+                BackgroundThread.runLater(() -> {
                     try {
                         final String finalPath = manager.exportSchedule(sgr);
                         Platform.runLater(() -> DialogUtils.info("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " exported", "Schedule file: " + finalPath));
@@ -192,7 +192,7 @@ public class GroundStationPane implements Initializable {
         GroundStationParameterConfiguration originalProps = this.manager.getGroundStationManager().getConfiguration();
         GroundStationParameterConfiguration props = GroundStationConfigurationDialog.openDialog(groundStationList.getParent().getScene().getWindow(), originalProps);
         if(props != null) {
-            ModelManager.runLater(() -> manager.updateGroundStationParameters(props)); // This triggers a full update
+            BackgroundThread.runLater(() -> manager.updateGroundStationParameters(props)); // This triggers a full update
         }
     }
 

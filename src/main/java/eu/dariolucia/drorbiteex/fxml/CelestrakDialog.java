@@ -63,7 +63,7 @@ public class CelestrakDialog implements Initializable {
         if(group != null) {
             satelliteList.setDisable(true);
             progressIndicator.setVisible(true);
-            ModelManager.runLater(() -> {
+            BackgroundThread.runLater(() -> {
                 List<CelestrakTleData> sats = CelestrakTleData.retrieveSpacecraftList(group);
                 Platform.runLater(() -> {
                     if(sats != null) {

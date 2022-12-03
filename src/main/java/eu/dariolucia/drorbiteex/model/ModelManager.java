@@ -30,8 +30,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -45,13 +43,6 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
 
     private final String orbitFileStorage;
     private final String groundStationFileStorage;
-
-    private static final ExecutorService THREAD_EXECUTOR = Executors.newSingleThreadExecutor((e) -> {
-        Thread t = new Thread(e);
-        t.setDaemon(true);
-        t.setName("Dr Orbiteex - Model Manager Thread");
-        return t;
-    });
 
     public ModelManager(String orbitFileStorage, String groundStationFileStorage) {
         this.orbitFileStorage = orbitFileStorage;
@@ -81,10 +72,6 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
         // Register the manager as listener
         this.orbitManager.addListener(this);
         this.groundStationManager.addListener(this);
-    }
-
-    public static void runLater(Runnable e) {
-        THREAD_EXECUTOR.submit(e);
     }
 
     public void updateOrbitParameters(OrbitParameterConfiguration configuration) {

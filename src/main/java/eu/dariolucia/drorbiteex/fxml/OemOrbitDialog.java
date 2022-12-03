@@ -146,7 +146,7 @@ public class OemOrbitDialog implements Initializable {
             // Read contents and copy in oemTextArea
             oemTextArea.setDisable(true);
             oemProgress.setVisible(true);
-            ModelManager.runLater(() -> {
+            BackgroundThread.runLater(() -> {
                 try {
                     String newOem = readOem(selected);
                     Platform.runLater(() -> {

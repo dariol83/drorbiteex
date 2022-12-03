@@ -58,7 +58,7 @@ public class OrbitGraphics implements IOrbitListener {
         this.obj = obj;
         this.obj.addListener(this);
         this.visibleProperty.set(obj.isVisible());
-        this.visibleProperty.addListener((source,oldV,newV) -> ModelManager.runLater(() -> obj.setVisible(newV)));
+        this.visibleProperty.addListener((source,oldV,newV) -> BackgroundThread.runLater(() -> obj.setVisible(newV)));
     }
 
     public SimpleBooleanProperty visibleProperty() {

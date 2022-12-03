@@ -17,8 +17,10 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.ModelManager;
-import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
-import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.orbit.IOrbitListener;
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.OrbitManager;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -26,25 +28,16 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.geometry.Point3D;
-import javafx.scene.DepthTest;
-import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.SubScene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Transform;
 import javafx.util.StringConverter;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
@@ -265,7 +258,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void refreshModel(Date now, boolean forceUpdate) {
-        ModelManager.runLater(() -> manager.getOrbitManager().updateOrbitTime(now, forceUpdate));
+        BackgroundThread.runLater(() -> manager.getOrbitManager().updateOrbitTime(now, forceUpdate));
     }
 
     private OrbitGraphics getGroundTrackSelection() {

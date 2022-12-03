@@ -79,7 +79,7 @@ public class OrbitPane implements Initializable {
     public void onNewOrbitAction(ActionEvent actionEvent) {
         Orbit gs = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow());
         if(gs != null) {
-            ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+            BackgroundThread.runLater(() -> manager.getOrbitManager().newOrbit(
                     gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
             ));
         }
@@ -88,17 +88,16 @@ public class OrbitPane implements Initializable {
     public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
         List<Orbit> theNewOrbits = CelestrakDialog.openDialog(orbitList.getParent().getScene().getWindow());
         if(theNewOrbits != null) {
-            theNewOrbits.forEach(gs -> ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+            theNewOrbits.forEach(gs -> BackgroundThread.runLater(() -> manager.getOrbitManager().newOrbit(
                     gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
             )));
         }
     }
 
-
     public void onNewOemOrbitAction(ActionEvent actionEvent) {
         Orbit gs = OemOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow());
         if(gs != null) {
-            ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
+            BackgroundThread.runLater(() -> manager.getOrbitManager().newOrbit(
                     gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
             ));
         }
@@ -110,7 +109,7 @@ public class OrbitPane implements Initializable {
             if (ao.getOrbit().getModel() instanceof CelestrakTleOrbitModel) {
                 final Orbit orbit = ao.getOrbit();
                 final CelestrakTleOrbitModel theOrbit = (CelestrakTleOrbitModel) orbit.getModel();
-                ModelManager.runLater(() -> {
+                BackgroundThread.runLater(() -> {
                     String newTle = CelestrakTleData.retrieveUpdatedTle(theOrbit.getGroup(), orbit.getName());
                     if(newTle != null) {
                         CelestrakTleOrbitModel model = new CelestrakTleOrbitModel(theOrbit.getGroup(), theOrbit.getCelestrakName(), newTle);
@@ -131,7 +130,7 @@ public class OrbitPane implements Initializable {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK){
-                ModelManager.runLater(() -> manager.getOrbitManager().removeOrbit(orbit.getOrbit().getId()));
+                BackgroundThread.runLater(() -> manager.getOrbitManager().removeOrbit(orbit.getOrbit().getId()));
             }
         }
     }
@@ -153,17 +152,17 @@ public class OrbitPane implements Initializable {
             if(orbit.getModel() instanceof CelestrakTleOrbitModel) {
                 Orbit ob = CelestrakTleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
                 if (ob != null) {
-                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
+                    BackgroundThread.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
             } else if(orbit.getModel()  instanceof TleOrbitModel) {
                 Orbit ob = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
                 if (ob != null) {
-                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
+                    BackgroundThread.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
             } else if(orbit.getModel()  instanceof OemOrbitModel) {
                 Orbit ob = OemOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
                 if (ob != null) {
-                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
+                    BackgroundThread.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
             }
         }
@@ -175,7 +174,7 @@ public class OrbitPane implements Initializable {
             Orbit orbit = originalOrbit.getOrbit();
             OemGenerationRequest oemGenerationRequest = ExportOemOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
             if(oemGenerationRequest != null) {
-                ModelManager.runLater(() -> {
+                BackgroundThread.runLater(() -> {
                     try {
                         final String finalPath = manager.getOrbitManager().exportOem(oemGenerationRequest);
                         Platform.runLater(() -> DialogUtils.info("OEM Export", "Orbit of " + orbit.getName() + " exported", "OEM file: " + finalPath));
@@ -192,7 +191,7 @@ public class OrbitPane implements Initializable {
         OrbitParameterConfiguration originalProps = this.manager.getOrbitManager().getConfiguration();
         OrbitParameterConfiguration props = OrbitConfigurationDialog.openDialog(orbitList.getParent().getScene().getWindow(), originalProps);
         if(props != null) {
-            ModelManager.runLater(() -> manager.updateOrbitParameters(props)); // This triggers a full update
+            BackgroundThread.runLater(() -> manager.updateOrbitParameters(props)); // This triggers a full update
         }
     }
 

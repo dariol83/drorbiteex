@@ -24,7 +24,7 @@
   ~ limitations under the License.
   -->
 
-<TitledPane fx:id="orbitPane" animated="false" text="Ground Stations" xmlns="http://javafx.com/javafx"
+<TitledPane fx:id="orbitPane" animated="false" text="Orbits" xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitPane"
             prefHeight="400.0" prefWidth="600.0">

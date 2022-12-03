@@ -139,7 +139,7 @@ public class CelestrakTleOrbitDialog implements Initializable {
         tleProgress.setVisible(true);
         final String group = groupText.getText();
         final String name = celestrakNameText.getText();
-        ModelManager.runLater(() -> {
+        BackgroundThread.runLater(() -> {
             String newTle = CelestrakTleData.retrieveUpdatedTle(group, name);
             Platform.runLater(() -> {
                 if(newTle != null) {
