@@ -19,7 +19,6 @@ package eu.dariolucia.drorbiteex.fxml;
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
-import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -71,6 +70,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     // Ground Station Pane
     public GroundStationPane groundStationPaneController;
 
+    // Orbit Pane
+    public OrbitPane orbitPaneController;
+
     public SubScene scene3d;
     public Label processingLabel;
 
@@ -95,7 +97,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private Group groundStationGroup;
 
     // Orbits
-    public ListView<OrbitGraphics> orbitList;
     private Group orbitGroup;
 
     // Time tracker
@@ -112,9 +113,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
-
-    // Orbit panel
-    public OrbitPanel orbitPanelController;
 
     private ModelManager manager;
 
@@ -163,9 +161,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         scene3d.getParent().addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
         scene3d.getParent().addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
 
-        // Handle ground station and orbit lists
-        orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
-
         // Handle ground track list
         groundTrackCombo.setConverter(new StringConverter<>() {
             @Override
@@ -184,7 +179,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 if (s.equals(NO_GROUND_TRACK)) {
                     return NO_GROUND_TRACK;
                 } else {
-                    for (OrbitGraphics ao : orbitList.getItems()) {
+                    for (OrbitGraphics ao : orbitPaneController.getOrbitGraphics()) {
                         if (ao.getName().equals(s)) {
                             return ao;
                         }
@@ -194,7 +189,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             }
         });
         groundTrackCombo.getItems().add(NO_GROUND_TRACK);
-        orbitList.getItems().addListener((ListChangeListener<OrbitGraphics>) c -> {
+        orbitPaneController.getOrbitGraphics().addListener((ListChangeListener<OrbitGraphics>) c -> {
             while (c.next()) {
                 for (OrbitGraphics remitem : c.getRemoved()) {
                     groundTrackCombo.getItems().remove(remitem);
@@ -211,8 +206,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         update2Dscene();
         this.scene2d.visibleProperty().bind(this.minimapButton.selectedProperty());
 
-        //
-        orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(b));
         // Create model manager
         this.manager = new ModelManager(orbitFile, gsFile);
         this.manager.getOrbitManager().addListener(this);
@@ -220,6 +213,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
         // Ground Station Pane configuration
         groundStationPaneController.configure(this.manager, this::getOrbits);
+        orbitPaneController.configure(this.manager);
 
         // Create graphics objects
         for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
@@ -259,8 +253,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void registerNewOrbit(Orbit o) {
-        OrbitGraphics graphics = new OrbitGraphics(this.manager, o);
-        orbitList.getItems().add(graphics);
+        OrbitGraphics graphics = orbitPaneController.registerNewOrbit(o);
+
         Group s = graphics.createGraphicItem();
         orbitGroup.getChildren().add(s);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
@@ -268,14 +262,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void deregisterOrbit(Orbit orbit) {
-        Optional<OrbitGraphics> first = orbitList.getItems().stream().filter(o -> o.getOrbit().equals(orbit)).findFirst();
+        Optional<OrbitGraphics> first = orbitPaneController.getGraphicsOf(orbit);
         if(first.isPresent()) {
             OrbitGraphics graphics = first.get();
-            orbitList.getItems().remove(graphics);
             orbitGroup.getChildren().remove(graphics.getGraphicItem());
             graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
-            graphics.dispose();
-            orbitList.refresh();
+            orbitPaneController.deregisterOrbit(graphics);
             update2Dscene();
             groundStationPaneController.refreshPassTableSelection();
         }
@@ -289,7 +281,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         for(GroundStationGraphics gs : groundStationPaneController.getGroundStationGraphics()) {
             gs.draw(gc, getGroundTrackSelection(), scene2d.getWidth(), scene2d.getHeight());
         }
-        for(OrbitGraphics gs : orbitList.getItems()) {
+        for(OrbitGraphics gs : orbitPaneController.getOrbitGraphics()) {
             gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
         }
         // Done
@@ -355,99 +347,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         }
     }
 
-    public void onNewOrbitAction(ActionEvent actionEvent) {
-        Orbit gs = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
-        if(gs != null) {
-            ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
-                    gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
-            ));
-        }
-    }
-
-    public void onNewCelestrakOrbitAction(ActionEvent actionEvent) {
-        List<Orbit> theNewOrbits = CelestrakDialog.openDialog(scene3d.getParent().getScene().getWindow());
-        if(theNewOrbits != null) {
-            theNewOrbits.forEach(gs -> ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
-                    gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
-            )));
-        }
-    }
-
-
-    public void onNewOemOrbitAction(ActionEvent actionEvent) {
-        Orbit gs = OemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow());
-        if(gs != null) {
-            ModelManager.runLater(() -> manager.getOrbitManager().newOrbit(
-                    gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
-            ));
-        }
-    }
-
-    public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
-        //
-        for(OrbitGraphics ao : orbitList.getItems()) {
-            if (ao.getOrbit().getModel() instanceof CelestrakTleOrbitModel) {
-                final Orbit orbit = ao.getOrbit();
-                final CelestrakTleOrbitModel theOrbit = (CelestrakTleOrbitModel) orbit.getModel();
-                ModelManager.runLater(() -> {
-                    String newTle = CelestrakTleData.retrieveUpdatedTle(theOrbit.getGroup(), orbit.getName());
-                    if(newTle != null) {
-                        CelestrakTleOrbitModel model = new CelestrakTleOrbitModel(theOrbit.getGroup(), theOrbit.getCelestrakName(), newTle);
-                        orbit.update(new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), model));
-                    }
-                });
-            }
-        }
-    }
-
-    public void onDeleteOrbitAction(ActionEvent actionEvent) {
-        OrbitGraphics orbit = orbitList.getSelectionModel().getSelectedItem();
-        if(orbit != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Orbit");
-            alert.setHeaderText(null);
-            alert.setContentText("Do you want to delete orbit for " + orbit.getName() + "?");
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK){
-                ModelManager.runLater(() -> manager.getOrbitManager().removeOrbit(orbit.getOrbit().getId()));
-            }
-        }
-    }
-
-    public void onEditOrbitAction(ActionEvent actionEvent) {
-        editOrbit();
-    }
-
-    public void onOrbitSelectionClick(MouseEvent mouseEvent) {
-        if(mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
-            editOrbit();
-        }
-    }
-
-    private void editOrbit() {
-        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
-        if(originalOrbit != null) {
-            Orbit orbit = originalOrbit.getOrbit();
-            if(orbit.getModel() instanceof CelestrakTleOrbitModel) {
-                Orbit ob = CelestrakTleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
-                if (ob != null) {
-                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
-                }
-            } else if(orbit.getModel()  instanceof TleOrbitModel) {
-                Orbit ob = TleOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
-                if (ob != null) {
-                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
-                }
-            } else if(orbit.getModel()  instanceof OemOrbitModel) {
-                Orbit ob = OemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
-                if (ob != null) {
-                    ModelManager.runLater(() -> originalOrbit.getOrbit().update(ob));
-                }
-            }
-        }
-    }
-
     public void onActivateTrackingAction(ActionEvent actionEvent) {
         if(this.timerTrackingButton.isSelected() && this.timerTask == null) {
             this.timerTask = new TimerTask() {
@@ -480,14 +379,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         update2Dscene();
     }
 
-    private void updateOrbitPanelSelection(OrbitGraphics c) {
-        if(c == null) {
-            this.orbitPanelController.clear();
-        } else {
-            this.orbitPanelController.update(c.getOrbit());
-        }
-    }
-
     @Override
     public void orbitAdded(OrbitManager manager, Orbit orbit) {
         Platform.runLater(() -> registerNewOrbit(orbit));
@@ -501,7 +392,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
         Platform.runLater(() -> {
-            orbitList.refresh();
+            orbitPaneController.refreshOrbitList();
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }
@@ -582,51 +473,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         });
     }
 
-    public void onExportOemOrbitAction(ActionEvent actionEvent) {
-        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
-        if(originalOrbit != null) {
-            Orbit orbit = originalOrbit.getOrbit();
-            OemGenerationRequest oemGenerationRequest = ExportOemOrbitDialog.openDialog(scene3d.getParent().getScene().getWindow(), orbit);
-            if(oemGenerationRequest != null) {
-                ModelManager.runLater(() -> {
-                    try {
-                        final String finalPath = manager.getOrbitManager().exportOem(oemGenerationRequest);
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("OEM Export");
-                            alert.setHeaderText("Orbit of " + orbit.getName() + " exported");
-                            alert.setContentText("OEM file: " + finalPath);
-                            alert.showAndWait();
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("OEM Export");
-                            alert.setHeaderText("Orbit of " + orbit.getName() + " not exported");
-                            alert.setContentText("Error: " + e.getMessage());
-                            alert.showAndWait();
-                        });
-                    }
-                });
-            }
-        }
-    }
-
     public void onForceOrbitComputationAction(ActionEvent actionEvent) {
         refreshModel(new Date(), true);
     }
 
-    public void onSettingsOrbitAction(ActionEvent actionEvent) {
-        OrbitParameterConfiguration originalProps = this.manager.getOrbitManager().getConfiguration();
-        OrbitParameterConfiguration props = OrbitConfigurationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalProps);
-        if(props != null) {
-            ModelManager.runLater(() -> manager.updateOrbitParameters(props)); // This triggers a full update
-        }
-    }
-
     public List<Orbit> getOrbits() {
-        return orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
+        return orbitPaneController.getOrbitGraphics().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
     }
 
 }

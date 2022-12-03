@@ -37,7 +37,7 @@ import javafx.scene.paint.Color;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
 
 public class GroundStationPane implements Initializable {
 
@@ -178,22 +178,10 @@ public class GroundStationPane implements Initializable {
                 ModelManager.runLater(() -> {
                     try {
                         final String finalPath = manager.exportSchedule(sgr);
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("CCSDS Simple Schedule Export");
-                            alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " exported");
-                            alert.setContentText("Schedule file: " + finalPath);
-                            alert.showAndWait();
-                        });
+                        Platform.runLater(() -> DialogUtils.info("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " exported", "Schedule file: " + finalPath));
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("CCSDS Simple Schedule Export");
-                            alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " not exported");
-                            alert.setContentText("Error: " + e.getMessage());
-                            alert.showAndWait();
-                        });
+                        Platform.runLater(() -> DialogUtils.alert("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " not exported", "Error: " + e.getMessage()));
                     }
                 });
             }

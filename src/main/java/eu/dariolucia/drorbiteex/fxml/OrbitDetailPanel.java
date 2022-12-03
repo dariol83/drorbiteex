@@ -24,7 +24,7 @@ import javafx.scene.control.Label;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-public class OrbitPanel implements Initializable {
+public class OrbitDetailPanel implements Initializable {
     public static final String SECOND_FORMAT = "%.2f s";
     public Label semiMajorAxisLabel;
     public Label eccentricityLabel;
