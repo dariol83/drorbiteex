@@ -23,7 +23,6 @@ import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
@@ -69,6 +68,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String NO_GROUND_TRACK = "             ";
 
+    // Ground Station Pane
+    public GroundStationPane groundStationPaneController;
+
     public SubScene scene3d;
     public Label processingLabel;
 
@@ -90,7 +92,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private double zoomDeltaFactor = 0.4;
 
     // Ground stations
-    public ListView<GroundStationGraphics> groundStationList;
     private Group groundStationGroup;
 
     // Orbits
@@ -108,20 +109,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private Image scene2dImage;
     public ToggleButton minimapButton;
 
-    // Pass table
-    public TableView<VisibilityWindow> passTable;
-    public TableColumn<VisibilityWindow, String> satelliteColumn;
-    public TableColumn<VisibilityWindow, String> orbitColumn;
-    public TableColumn<VisibilityWindow, String> aosColumn;
-    public TableColumn<VisibilityWindow, String> losColumn;
-
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
-
-    // Polar plot
-    public PolarPlot polarPlotController;
-    public ProgressIndicator polarPlotProgress;
 
     // Orbit panel
     public OrbitPanel orbitPanelController;
@@ -174,7 +164,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         scene3d.getParent().addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
 
         // Handle ground station and orbit lists
-        groundStationList.setCellFactory(CheckBoxListCell.forListView(GroundStationGraphics::visibleProperty));
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
 
         // Handle ground track list
@@ -217,27 +206,20 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         });
         groundTrackCombo.getSelectionModel().select(0);
 
-        // Polar plot color configuration
-        polarPlotController.setForegroundColor(Color.LIMEGREEN);
-        polarPlotController.setBackgroundColor(Color.BLACK);
-
         // Update 2D view
         this.scene2dImage = new Image(this.getClass().getResourceAsStream("/images/earth.jpg"));
         update2Dscene();
         this.scene2d.visibleProperty().bind(this.minimapButton.selectedProperty());
 
-        // Configure pass table
-        satelliteColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getOrbit().getName()));
-        orbitColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(String.valueOf(o.getValue().getOrbitNumber())));
-        aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getAosString()));
-        losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getLosString()));
-        groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updatePassTableSelection(b));
-        passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
+        //
         orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(b));
         // Create model manager
         this.manager = new ModelManager(orbitFile, gsFile);
         this.manager.getOrbitManager().addListener(this);
         this.manager.getGroundStationManager().addListener(this);
+
+        // Ground Station Pane configuration
+        groundStationPaneController.configure(this.manager, this::getOrbits);
 
         // Create graphics objects
         for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
@@ -257,8 +239,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void registerNewGroundStation(GroundStation gs) {
-        GroundStationGraphics graphics = new GroundStationGraphics(this.manager, gs);
-        groundStationList.getItems().add(graphics);
+        GroundStationGraphics graphics = groundStationPaneController.registerNewGroundStation(gs);
+
         Group s = graphics.createGraphicItem();
         groundStationGroup.getChildren().add(s);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
@@ -266,14 +248,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     private void deregisterGroundStation(GroundStation gs) {
-        Optional<GroundStationGraphics> first = groundStationList.getItems().stream().filter(o -> o.getGroundStation().equals(gs)).findFirst();
+        Optional<GroundStationGraphics> first = groundStationPaneController.getGraphicsOf(gs);
         if(first.isPresent()) {
             GroundStationGraphics graphics = first.get();
-            groundStationList.getItems().remove(graphics);
             groundStationGroup.getChildren().remove(graphics.getGraphicItem());
             graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
-            graphics.dispose();
-            groundStationList.refresh();
+            groundStationPaneController.deregisterGroundStation(graphics);
             update2Dscene();
         }
     }
@@ -297,31 +277,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             graphics.dispose();
             orbitList.refresh();
             update2Dscene();
-            updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
-        }
-    }
-
-    private void updatePassTableSelection(GroundStationGraphics b) {
-        // If there is already a pass selected, remember it
-        VisibilityWindow selected = passTable.getSelectionModel().getSelectedItem();
-        passTable.getItems().clear();
-        if(b != null) {
-            Map<Orbit, List<VisibilityWindow>> windows = b.getGroundStation().getAllVisibilityWindows();
-            List<VisibilityWindow> vw = new LinkedList<>();
-            windows.values().forEach(vw::addAll);
-            Collections.sort(vw);
-            passTable.getItems().addAll(vw);
-            // If there was a selection, re-select it
-            if(selected != null && selected.getStation().equals(b.getGroundStation())) {
-                // Look for the visibility and select it
-                for(VisibilityWindow window : passTable.getItems()) {
-                    if(window.getOrbit().equals(selected.getOrbit()) && window.getOrbitNumber() == selected.getOrbitNumber()) {
-                        // Found
-                        passTable.getSelectionModel().select(window);
-                        break;
-                    }
-                }
-            }
+            groundStationPaneController.refreshPassTableSelection();
         }
     }
 
@@ -330,7 +286,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Handle 2D view
         GraphicsContext gc = scene2d.getGraphicsContext2D();
         gc.drawImage(this.scene2dImage, 0, 0, scene2d.getWidth(), scene2d.getHeight());
-        for(GroundStationGraphics gs : groundStationList.getItems()) {
+        for(GroundStationGraphics gs : groundStationPaneController.getGroundStationGraphics()) {
             gs.draw(gc, getGroundTrackSelection(), scene2d.getWidth(), scene2d.getHeight());
         }
         for(OrbitGraphics gs : orbitList.getItems()) {
@@ -396,52 +352,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             zoomDeltaFactor = 0.4;
         } else {
             zoomDeltaFactor = 0.1;
-        }
-    }
-
-    public void onNewGroundStationAction(ActionEvent actionEvent) {
-        GroundStation gs = GroundStationDialog.openDialog(scene3d.getParent().getScene().getWindow());
-        // Register the ground station to the manager: the callbacks will do the rest
-        if(gs != null) {
-            ModelManager.runLater(() -> manager.getGroundStationManager().newGroundStation(
-                    gs.getCode(), gs.getName(), gs.getSite(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight()
-            ));
-        }
-    }
-
-    public void onEditGroundStationAction(ActionEvent mouseEvent) {
-        editGroundStation();
-    }
-
-    public void onDeleteGroundStationAction(ActionEvent actionEvent) {
-        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
-        if(gs != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Ground Station");
-            alert.setHeaderText(null);
-            alert.setContentText("Do you want to delete ground station " + gs.getName() + "?");
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK){
-                ModelManager.runLater(() -> manager.getGroundStationManager().removeGroundStation(gs.getGroundStation().getId()));
-            }
-        }
-    }
-
-    public void onGroundStationSelectionClick(MouseEvent mouseEvent) {
-        if(mouseEvent.getButton() == MouseButton.PRIMARY && mouseEvent.getClickCount() == 2) {
-            editGroundStation();
-        }
-    }
-
-    private void editGroundStation() {
-        GroundStationGraphics originalGs = groundStationList.getSelectionModel().getSelectedItem();
-        if(originalGs != null) {
-            GroundStation gs = GroundStationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalGs.getGroundStation());
-            if (gs != null) {
-                // Go via the manager, callback will do the rest
-                ModelManager.runLater(() -> originalGs.getGroundStation().update(gs));
-            }
         }
     }
 
@@ -570,25 +480,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         update2Dscene();
     }
 
-    private void updatePolarPlotSelection(VisibilityWindow c) {
-        if(c == null) {
-            this.polarPlotController.clear();
-        } else {
-            this.polarPlotController.setSpacecraftTrack(c);
-            Color trackColor = Color.valueOf(c.getOrbit().getColor());
-            this.polarPlotController.setTrackColor(trackColor);
-            this.polarPlotController.setSpacecraftColor(trackColor);
-            // Check if the spacecraft is in visibility
-            SpacecraftPosition sp = c.getOrbit().getCurrentSpacecraftPosition();
-            if(sp != null) {
-                TrackPoint tp = c.getStation().getTrackPointOf(sp);
-                if(tp != null && c.isInPass(tp.getTime())) {
-                    this.polarPlotController.setNewSpacecraftPosition(c.getStation(), c.getOrbit(), tp);
-                }
-            }
-        }
-    }
-
     private void updateOrbitPanelSelection(OrbitGraphics c) {
         if(c == null) {
             this.orbitPanelController.clear();
@@ -658,7 +549,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void groundStationUpdated(GroundStation groundStation) {
         Platform.runLater(() -> {
-            groundStationList.refresh();
+            groundStationPaneController.refreshGroundStationList();
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }
@@ -671,12 +562,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             if(currentPoint != null) {
                 this.currentTimeLabel.setText(TimeUtils.formatDate(currentPoint.getTime()));
             }
-            this.polarPlotController.updateCurrentData(groundStation, orbit, visibilityWindows);
-            this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, currentPoint);
-            if(groundStationList.getSelectionModel().getSelectedItem() != null && groundStation.equals(groundStationList.getSelectionModel().getSelectedItem().getGroundStation())) {
-                // Force refresh of visibility windows
-                updatePassTableSelection(groundStationList.getSelectionModel().getSelectedItem());
-            }
+            groundStationPaneController.refreshGroundStationOrbitData(groundStation, orbit, visibilityWindows, currentPoint);
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }
@@ -689,7 +575,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             if(point != null) {
                 this.currentTimeLabel.setText(TimeUtils.formatDate(point.getTime()));
             }
-            this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
+            groundStationPaneController.refreshSpacecraftPosition(groundStation, orbit, point);
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }
@@ -731,38 +617,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         refreshModel(new Date(), true);
     }
 
-    public void onGenerateScheduleAction(ActionEvent actionEvent) {
-        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
-        if(gs != null) {
-            List<Orbit> orbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
-            // open dialog
-            ScheduleGenerationRequest sgr = ExportScheduleDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
-            if(sgr != null) {
-                ModelManager.runLater(() -> {
-                    try {
-                        final String finalPath = manager.exportSchedule(sgr);
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("CCSDS Simple Schedule Export");
-                            alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " exported");
-                            alert.setContentText("Schedule file: " + finalPath);
-                            alert.showAndWait();
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("CCSDS Simple Schedule Export");
-                            alert.setHeaderText("Schedule of " + gs.getGroundStation().getName() + " not exported");
-                            alert.setContentText("Error: " + e.getMessage());
-                            alert.showAndWait();
-                        });
-                    }
-                });
-            }
-        }
-    }
-
     public void onSettingsOrbitAction(ActionEvent actionEvent) {
         OrbitParameterConfiguration originalProps = this.manager.getOrbitManager().getConfiguration();
         OrbitParameterConfiguration props = OrbitConfigurationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalProps);
@@ -771,11 +625,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         }
     }
 
-    public void onSettingsGroundStationAction(ActionEvent actionEvent) {
-        GroundStationParameterConfiguration originalProps = this.manager.getGroundStationManager().getConfiguration();
-        GroundStationParameterConfiguration props = GroundStationConfigurationDialog.openDialog(scene3d.getParent().getScene().getWindow(), originalProps);
-        if(props != null) {
-            ModelManager.runLater(() -> manager.updateGroundStationParameters(props)); // This triggers a full update
-        }
+    public List<Orbit> getOrbits() {
+        return orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
     }
+
 }
