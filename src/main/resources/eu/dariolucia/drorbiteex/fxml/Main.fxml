@@ -108,15 +108,11 @@
                         </Accordion>
                      </children>
                   </AnchorPane>
-                  <VBox>
+                  <VBox fx:id="mainSceneParent">
                       <children>
                           <StackPane VBox.vgrow="ALWAYS">
                               <children>
-                                  <SubScene fx:id="scene3d" depthBuffer="true">
-                                      <root>
-                                          <Region />
-                                      </root>
-                                  </SubScene>
+                                  <fx:include source="Scene3D.fxml" fx:id="scene3d" />
                                   <Canvas fx:id="scene2d" height="300" pickOnBounds="true" width="600" StackPane.alignment="BOTTOM_RIGHT">
                                   </Canvas>
                               </children>

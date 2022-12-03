@@ -73,31 +73,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     // Orbit Pane
     public OrbitPane orbitPaneController;
 
-    public SubScene scene3d;
-    public Label processingLabel;
+    // 3D scene
+    public Scene3D scene3dController;
 
-    private Group group;
-    private Group earth;
-
-    // For dragging purposes
-    private boolean dragging;
-    private double dragXStart;
-    private double dragYStart;
-
-    private double initialYangle = 0;
-    private double initialXangle = 0;
-
-    private double currentYangle = 0;
-    private double currentXangle = 0;
-
-    private int zoomFactor = 0;
-    private double zoomDeltaFactor = 0.4;
-
-    // Ground stations
-    private Group groundStationGroup;
-
-    // Orbits
-    private Group orbitGroup;
 
     // Time tracker
     public ToggleButton timerTrackingButton;
@@ -113,6 +91,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
+
+    // Label to indicate processing on going
+    public Label processingLabel;
+
+    // Main scene parent node for 3D/2D views
+    public VBox mainSceneParent;
 
     private ModelManager manager;
 
@@ -137,29 +121,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Orekit initialisation
         DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
         manager.addProvider(new DirectoryCrawler(orekitData));
-
-        // Earth sphere object
-        earth = DrawingUtils.createEarthSphere();
-        groundStationGroup = new Group();
-        orbitGroup = new Group();
-        group = new Group(earth, groundStationGroup, orbitGroup);
-
-        // Handle 3D view
-        scene3d.setFill(Color.BLACK);
-        scene3d.setRoot(group);
-        scene3d.setDepthTest(DepthTest.ENABLE);
-        scene3d.setManaged(false);
-        PerspectiveCamera pc = new PerspectiveCamera();
-        pc.setNearClip(0.05);
-        scene3d.setCamera(pc);
-        scene3d.heightProperty().bind(((VBox)scene3d.getParent().getParent()).heightProperty());
-        scene3d.widthProperty().bind(((VBox)scene3d.getParent().getParent()).widthProperty());
-        scene3d.heightProperty().addListener((a,b,c) -> group.setTranslateY(c.floatValue()/2));
-        scene3d.widthProperty().addListener((a,b,c) -> group.setTranslateX(c.floatValue()/2));
-        scene3d.getParent().addEventHandler(ScrollEvent.SCROLL, this::onScrollOnScene);
-        scene3d.getParent().addEventHandler(MouseEvent.MOUSE_PRESSED, this::onStartDragOnScene);
-        scene3d.getParent().addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
-        scene3d.getParent().addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
 
         // Handle ground track list
         groundTrackCombo.setConverter(new StringConverter<>() {
@@ -230,13 +191,14 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
+
+        // Configure 3D scene
+        scene3dController.configure(mainSceneParent);
     }
 
     private void registerNewGroundStation(GroundStation gs) {
         GroundStationGraphics graphics = groundStationPaneController.registerNewGroundStation(gs);
-
-        Group s = graphics.createGraphicItem();
-        groundStationGroup.getChildren().add(s);
+        scene3dController.registerNewGroundStation(graphics);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
         update2Dscene();
     }
@@ -245,8 +207,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Optional<GroundStationGraphics> first = groundStationPaneController.getGraphicsOf(gs);
         if(first.isPresent()) {
             GroundStationGraphics graphics = first.get();
-            groundStationGroup.getChildren().remove(graphics.getGraphicItem());
+            scene3dController.deregisterGroundStation(graphics);
             graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
+            // This call disposes the graphics item
             groundStationPaneController.deregisterGroundStation(graphics);
             update2Dscene();
         }
@@ -254,9 +217,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     private void registerNewOrbit(Orbit o) {
         OrbitGraphics graphics = orbitPaneController.registerNewOrbit(o);
-
-        Group s = graphics.createGraphicItem();
-        orbitGroup.getChildren().add(s);
+        scene3dController.registerNewOrbit(graphics);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
         update2Dscene();
     }
@@ -265,8 +226,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Optional<OrbitGraphics> first = orbitPaneController.getGraphicsOf(orbit);
         if(first.isPresent()) {
             OrbitGraphics graphics = first.get();
-            orbitGroup.getChildren().remove(graphics.getGraphicItem());
+            scene3dController.deregisterOrbit(graphics);
             graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
+            // This call disposes the graphics item
             orbitPaneController.deregisterOrbit(graphics);
             update2Dscene();
             groundStationPaneController.refreshPassTableSelection();
@@ -285,66 +247,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             gs.draw(gc, scene2d.getWidth(), scene2d.getHeight());
         }
         // Done
-    }
-
-    private void onEndDragOnScene(MouseEvent t) {
-        if(t.getButton() == MouseButton.PRIMARY) {
-            dragging = false;
-            dragXStart = 0;
-            dragYStart = 0;
-            initialYangle = currentYangle;
-            initialXangle = currentXangle;
-            currentYangle = 0;
-            currentXangle = 0;
-        }
-    }
-
-    private void onDragOnScene(MouseEvent t) {
-        if(t.getButton() == MouseButton.PRIMARY && dragging) {
-            // compute delta
-            double deltaX = t.getSceneX() - dragXStart;
-            double deltaY = t.getSceneY() - dragYStart;
-            // compute new roll and pitch
-            currentXangle = initialXangle + deltaX * zoomDeltaFactor;
-            currentYangle = initialYangle + deltaY * zoomDeltaFactor;
-            // set rotation
-            Rotate xRotation = new Rotate(currentXangle, new Point3D(0,-1, 0));
-            Point3D yAxis = new Point3D(Math.cos(Math.toRadians(-currentXangle)),0, Math.sin(Math.toRadians(-currentXangle)));
-            Rotate yRotation = new Rotate(currentYangle, yAxis);
-            Transform result = xRotation.createConcatenation(yRotation);
-            group.getTransforms().clear();
-            group.getTransforms().add(result);
-        }
-    }
-
-    private void onStartDragOnScene(MouseEvent t) {
-        if(t.getButton() == MouseButton.PRIMARY) {
-            dragging = true;
-            dragXStart = t.getSceneX();
-            dragYStart = t.getSceneY();
-        }
-    }
-
-    private void onScrollOnScene(ScrollEvent event) {
-        // Prevent super zoom in that cuts the scene
-        if(group.getTranslateZ() <= -1300 && event.getDeltaY() > 0) {
-            return;
-        }
-        int zoomDelta;
-        if(event.getDeltaY() < 0) {
-            zoomDelta =  group.getTranslateZ() < -1200.0 ? 10 : 50;
-            zoomFactor += 1;
-            group.setTranslateZ(group.getTranslateZ() + zoomDelta);
-        } else if(event.getDeltaY() > 0) {
-            zoomDelta =  group.getTranslateZ() <= -1200.0 ? 10 : 50;
-            group.setTranslateZ(group.getTranslateZ() - zoomDelta);
-            zoomFactor -= 1;
-        }
-        if(zoomFactor >= -2) {
-            zoomDeltaFactor = 0.4;
-        } else {
-            zoomDeltaFactor = 0.1;
-        }
     }
 
     public void onActivateTrackingAction(ActionEvent actionEvent) {
