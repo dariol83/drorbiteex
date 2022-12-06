@@ -205,4 +205,14 @@ public class DrawingUtils {
         return meshView;
     }
 
+    public static double[] mapToWidgetCoordinates(double latitude, double longitude, ViewBox widgetViewport, ViewBox latLonViewport) {
+        // Longitude: compute the fraction 0.0 - 0.1 in terms of latLonViewport
+        double deltaLonFromStartXFraction = (longitude - latLonViewport.getStartX())/latLonViewport.getWidth();
+        double posXinWidgetViewport = widgetViewport.getStartX() + (deltaLonFromStartXFraction * widgetViewport.getWidth());
+        // Latitude: same approach
+        double deltaLatFromStartYFraction = (latLonViewport.getStartY() - latitude)/latLonViewport.getHeight();
+        double posYinWidgetViewport = widgetViewport.getStartY() + (deltaLatFromStartYFraction * widgetViewport.getHeight());
+        return new double[] {posXinWidgetViewport, posYinWidgetViewport};
+    }
+
 }

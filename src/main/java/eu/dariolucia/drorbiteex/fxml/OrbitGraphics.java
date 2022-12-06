@@ -37,6 +37,7 @@ import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.bodies.GeodeticPoint;
 
+import javax.swing.text.View;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -143,7 +144,7 @@ public class OrbitGraphics implements IOrbitListener {
         return Arrays.asList(graphicItem, scItem, textItem);
     }
 
-    public void draw(GraphicsContext gc, double width, double height) {
+    public void draw(GraphicsContext gc, ViewBox widgetViewport, ViewBox latLonViewport) {
         if(obj.isVisible()) {
             List<SpacecraftPosition> spacecraftPositions = obj.getSpacecraftPositions();
             List<double[]> latLonPoints = spacecraftPositions.stream().map(o -> new double[] {Math.toDegrees(o.getLatLonHeight().getLatitude()), Math.toDegrees(o.getLatLonHeight().getLongitude())}).collect(Collectors.toList());
@@ -152,12 +153,12 @@ public class OrbitGraphics implements IOrbitListener {
             gc.setLineWidth(1.5);
             if (!latLonPoints.isEmpty()) {
                 double[] previousPoint = latLonPoints.get(0);
-                double[] start = DrawingUtils.toXY(previousPoint[0], previousPoint[1], width, height);
+                double[] start = DrawingUtils.mapToWidgetCoordinates(previousPoint[0], previousPoint[1], widgetViewport, latLonViewport);
                 gc.beginPath();
                 gc.moveTo(start[0], start[1]);
                 for (int i = 1; i < latLonPoints.size(); ++i) {
                     double[] nextPoint = latLonPoints.get(i);
-                    double[] p2 = DrawingUtils.toXY(nextPoint[0], nextPoint[1], width, height);
+                    double[] p2 = DrawingUtils.mapToWidgetCoordinates(nextPoint[0], nextPoint[1], widgetViewport, latLonViewport);
                     // If there is a longitude sign swap with large distance, moveTo instead of lineTo
                     boolean swap = Math.abs(nextPoint[1] - previousPoint[1]) > 45; // ((nextPoint[1] < 0 && previousPoint[1] > 0) || (nextPoint[1] > 0 && previousPoint[1] < 0)) &&
                     if(swap) {
@@ -175,7 +176,7 @@ public class OrbitGraphics implements IOrbitListener {
             }
             GeodeticPoint scLatLon = obj.getCurrentSpacecraftPosition().getLatLonHeight();
             if (scLatLon != null) {
-                double[] scCenter = DrawingUtils.toXY(Math.toDegrees(scLatLon.getLatitude()), Math.toDegrees(scLatLon.getLongitude()), width, height);
+                double[] scCenter = DrawingUtils.mapToWidgetCoordinates(Math.toDegrees(scLatLon.getLatitude()), Math.toDegrees(scLatLon.getLongitude()), widgetViewport, latLonViewport);
                 gc.fillRect(scCenter[0] - 2, scCenter[1] - 2, 4, 4);
                 gc.fillText(obj.getCode(), scCenter[0], scCenter[1] - 5);
             }

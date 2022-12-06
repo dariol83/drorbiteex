@@ -28,15 +28,11 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import org.orekit.data.DataContext;
@@ -76,9 +72,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public ToggleButton timerTrackingButton;
     public Label currentTimeLabel;
     private final Timer tracker = new Timer();
+
     private TimerTask timerTask = null;
 
     public ToggleButton minimapButton;
+    public ToggleButton toggle3DviewButton;
 
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
@@ -89,6 +87,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     // Main scene parent node for 3D/2D views
     public VBox mainSceneParent;
+    public StackPane mainSceneStackPane;
+    public AnchorPane miniPane;
+    public AnchorPane fullPane;
 
     private ModelManager manager;
 
@@ -155,10 +156,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         groundTrackCombo.getSelectionModel().select(0);
 
         // Bind visibility of minimap to toggle button
-        scene2dController.bindVisibilityTo(this.minimapButton.selectedProperty());
+        miniPane.visibleProperty().bind(this.minimapButton.selectedProperty());
 
         // Configure 3D scene
-        scene3dController.configure(mainSceneParent);
+        scene3dController.configure(fullPane);
+        scene2dController.configure(miniPane);
 
         // Create model manager
         this.manager = new ModelManager(orbitFile, gsFile);
@@ -168,7 +170,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Ground Station Pane configuration
         this.orbitPaneController.configure(this.manager);
         this.groundStationPaneController.configure(this.manager, this::getOrbits);
-        this.scene2dController.configure(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
+        this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
 
         // Create graphics objects
         for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
@@ -364,4 +366,47 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         return orbitPaneController.getOrbitGraphics().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
     }
 
+    public void on3DviewButtonAction(ActionEvent actionEvent) {
+        if(this.toggle3DviewButton.isSelected()) {
+            make3DsceneLarger();
+        } else {
+            make2DsceneLarger();
+        }
+    }
+
+    private void make2DsceneLarger() {
+        // Get the 2D scene
+        Node scene2Dmain = this.scene2dController.getMainScene();
+        // Get the 3D scene
+        Node scene3Dmain = this.scene3dController.getMainScene();
+        // Remove the 3D scene from the fullPane
+        fullPane.getChildren().remove(scene3Dmain);
+        // Remove the 2D scene from the miniPane
+        miniPane.getChildren().remove(scene2Dmain);
+        // Swap
+        fullPane.getChildren().add(scene2Dmain);
+        miniPane.getChildren().add(scene3Dmain);
+        // Reconfigure 3D scene
+        this.scene3dController.configure(miniPane);
+        this.scene2dController.configure(fullPane);
+        this.scene2dController.recomputeViewports();
+    }
+
+    private void make3DsceneLarger() {
+        // Get the 2D scene
+        Node scene2Dmain = this.scene2dController.getMainScene();
+        // Get the 3D scene
+        Node scene3Dmain = this.scene3dController.getMainScene();
+        // Remove the 3D scene from the miniPane
+        miniPane.getChildren().remove(scene3Dmain);
+        // Remove the 2D scene from the fullPane
+        fullPane.getChildren().remove(scene2Dmain);
+        // Swap
+        miniPane.getChildren().add(scene2Dmain);
+        fullPane.getChildren().add(scene3Dmain);
+        // Reconfigure 3D scene
+        this.scene3dController.configure(fullPane);
+        this.scene2dController.configure(miniPane);
+        this.scene2dController.recomputeViewports();
+    }
 }

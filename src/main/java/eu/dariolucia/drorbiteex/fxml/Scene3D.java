@@ -18,15 +18,12 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
-import javafx.scene.DepthTest;
-import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.SubScene;
+import javafx.scene.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -81,17 +78,19 @@ public class Scene3D implements Initializable {
         scene3d.setCamera(pc);
         scene3d.heightProperty().addListener((a,b,c) -> group.setTranslateY(c.floatValue()/2));
         scene3d.widthProperty().addListener((a,b,c) -> group.setTranslateX(c.floatValue()/2));
+
+        scene3d.addEventHandler(ScrollEvent.SCROLL, this::onScrollOnScene);
+        scene3d.addEventHandler(MouseEvent.MOUSE_PRESSED, this::onStartDragOnScene);
+        scene3d.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
+        scene3d.addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
     }
 
     public void configure(Region parentRegion) {
-        // ((VBox)scene3d.getParent().getParent())
+        scene3d.heightProperty().unbind();
+        scene3d.widthProperty().unbind();
+
         scene3d.heightProperty().bind(parentRegion.heightProperty());
         scene3d.widthProperty().bind(parentRegion.widthProperty());
-
-        scene3d.getParent().addEventHandler(ScrollEvent.SCROLL, this::onScrollOnScene);
-        scene3d.getParent().addEventHandler(MouseEvent.MOUSE_PRESSED, this::onStartDragOnScene);
-        scene3d.getParent().addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
-        scene3d.getParent().addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
     }
 
     private void onEndDragOnScene(MouseEvent t) {
@@ -171,4 +170,9 @@ public class Scene3D implements Initializable {
     public void deregisterOrbit(OrbitGraphics graphics) {
         orbitGroup.getChildren().remove(graphics.getGraphicItem());
     }
+
+    public Node getMainScene() {
+        return this.scene3d;
+    }
+
 }

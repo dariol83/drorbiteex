@@ -57,8 +57,20 @@
                        <Tooltip text="Toggle minimap" />
                    </tooltip>
                </ToggleButton>
+               <ToggleButton fx:id="toggle3DviewButton" mnemonicParsing="false" onAction="#on3DviewButtonAction" selected="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/earth.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle 3D/2D view" />
+                   </tooltip>
+               </ToggleButton>
                <Separator orientation="VERTICAL" />
-               <Label fx:id="currentTimeLabel" />
+               <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--"/>
                <ToggleButton fx:id="timerTrackingButton" mnemonicParsing="false" onAction="#onActivateTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
@@ -100,16 +112,24 @@
                         </Accordion>
                      </children>
                   </AnchorPane>
-                  <VBox fx:id="mainSceneParent">
+                  <VBox fx:id="mainSceneParent" spacing="5">
                       <children>
-                          <StackPane VBox.vgrow="ALWAYS">
+                          <StackPane fx:id="mainSceneStackPane" VBox.vgrow="ALWAYS">
                               <children>
-                                  <fx:include source="Scene3D.fxml" fx:id="scene3d" />
-                                  <fx:include source="Scene2D.fxml" fx:id="scene2d" />
+                                  <AnchorPane fx:id="fullPane" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
+                                      <children>
+                                          <fx:include fx:id="scene3d" source="Scene3D.fxml" />
+                                      </children>
+                                  </AnchorPane>
+                                  <AnchorPane fx:id="miniPane" maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" StackPane.alignment="BOTTOM_RIGHT">
+                                      <children>
+                                          <fx:include fx:id="scene2d" source="Scene2D.fxml" />
+                                      </children>
+                                     <StackPane.margin>
+                                        <Insets right="5.0" bottom="5.0" />
+                                     </StackPane.margin>
+                                  </AnchorPane>
                               </children>
-                              <padding>
-                                  <Insets bottom="5" left="5" right="5" top="5" />
-                              </padding>
                           </StackPane>
                       </children>
                   </VBox>

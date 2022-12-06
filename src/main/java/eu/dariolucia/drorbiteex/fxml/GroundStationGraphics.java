@@ -133,9 +133,13 @@ public class GroundStationGraphics implements IGroundStationListener {
         }
     }
 
-    public void draw(GraphicsContext gc, OrbitGraphics selectedOrbit, double w, double h) {
+    public void draw(GraphicsContext gc, OrbitGraphics selectedOrbit, ViewBox widgetViewport, ViewBox latLonViewport) {
         if(obj.isVisible()) {
-            double[] xy = DrawingUtils.toXY(obj.getLatitude(), obj.getLongitude(), w, h);
+            // First check: if the ground station is not in the latLonViewport, just return... but if I do this, the visibility circle is not shown, also where it should
+            // if(!isInViewport(latLonViewport)) {
+            //     return;
+            // }
+            double[] xy = DrawingUtils.mapToWidgetCoordinates(obj.getLatitude(), obj.getLongitude(), widgetViewport, latLonViewport);
             Color gsColor = Color.valueOf(obj.getColor());
             gc.setFill(gsColor);
             gc.fillOval(xy[0] - 2, xy[1] - 2, 4, 4);
@@ -149,7 +153,7 @@ public class GroundStationGraphics implements IGroundStationListener {
                 if (vc != null) {
                     List<double[]> visibilityCircleSortedLatLon = vc.getVisibilityCircle().stream().map(gp -> new double[]{Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude())}).collect(Collectors.toCollection(ArrayList::new));
                     // toXY puts the longitude into [0] and the latitude into [1]
-                    List<double[]> toRender = visibilityCircleSortedLatLon.stream().map(gp -> DrawingUtils.toXY(gp[0], gp[1], w, h)).collect(Collectors.toCollection(ArrayList::new));
+                    List<double[]> toRender = visibilityCircleSortedLatLon.stream().map(gp -> DrawingUtils.mapToWidgetCoordinates(gp[0], gp[1], widgetViewport, latLonViewport)).collect(Collectors.toCollection(ArrayList::new));
                     if (vc.isPolarCircle()) {
                         toRender.sort(LONGITUDE_SORTER);
                         // Solution: points ordered according to longitude, draw them, then close the line with the two corners (check latitude)
@@ -163,11 +167,11 @@ public class GroundStationGraphics implements IGroundStationListener {
                         }
                         // Now the main line is draw: we have to close it with two corner points
                         if (obj.getLatitude() > 0) {
-                            gc.lineTo(w, 0); // top right
-                            gc.lineTo(0, 0); // top left
+                            gc.lineTo(widgetViewport.getEndX(), widgetViewport.getStartY()); // top right
+                            gc.lineTo(widgetViewport.getStartX(), widgetViewport.getStartY()); // top left
                         } else {
-                            gc.lineTo(w, h); // bottom right
-                            gc.lineTo(0, h); // bottom left
+                            gc.lineTo(widgetViewport.getEndX(), widgetViewport.getEndY()); // bottom right
+                            gc.lineTo(widgetViewport.getStartX(), widgetViewport.getEndY()); // bottom left
                         }
                         gc.lineTo(p0[0], p0[1]);
                         gc.stroke();
@@ -189,6 +193,11 @@ public class GroundStationGraphics implements IGroundStationListener {
                 }
             }
         }
+    }
+
+    private boolean isInViewport(ViewBox latLonViewport) {
+        return obj.getLongitude() >= latLonViewport.getStartX() && obj.getLongitude() <= latLonViewport.getEndX() &&
+                obj.getLatitude() <= latLonViewport.getStartY() && obj.getLatitude() >= latLonViewport.getEndY();
     }
 
     public void dispose() {
