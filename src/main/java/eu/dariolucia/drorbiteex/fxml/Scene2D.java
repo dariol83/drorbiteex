@@ -17,6 +17,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -27,6 +28,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 
+import javax.swing.text.View;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -45,7 +47,9 @@ public class Scene2D implements Initializable {
     // BMP
     private double widthHeightRatio;
     private ViewBox widgetViewport;
-    private ViewBox latLonViewport;
+    private Point2D lonLatCenter = new Point2D(0,0);
+    private double latRes = 0;
+    private double lonRes = 0;
     private ViewBox imageSourceViewport;
     private int zoomFactor = 0;
 
@@ -59,6 +63,7 @@ public class Scene2D implements Initializable {
     private Supplier<List<GroundStationGraphics>> groundStationsSupplier;
 
     private Supplier<OrbitGraphics> selectedOrbitSupplier;
+    private ViewBox latLonViewport;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -68,7 +73,6 @@ public class Scene2D implements Initializable {
         this.scene2d.widthProperty().addListener((a,b,c) -> recomputeViewports());
         // BMP
         this.widthHeightRatio = this.scene2dImage.getWidth()/this.scene2dImage.getHeight();
-        this.latLonViewport = new ViewBox(-180, 90, 180, -90);
         this.widgetViewport = new ViewBox(0, 0, 0, 0);
         this.imageSourceViewport = new ViewBox(0, 0, 0, 0);
 
@@ -90,21 +94,31 @@ public class Scene2D implements Initializable {
     }
 
     private void onDragOnScene(MouseEvent t) {
+        // TODO: prevent to scroll outside the boundaries
         if(t.getButton() == MouseButton.PRIMARY && dragging) {
             // compute delta
             double deltaX = t.getSceneX() - dragXStart;
             double deltaY = t.getSceneY() - dragYStart;
-            // depending on the zoom factor, compute the new latlon viewport position
-            double deltaLonX = latLonViewport.getWidth()/widgetViewport.getWidth() * -deltaX;
-            double deltaLatY = latLonViewport.getHeight()/widgetViewport.getHeight() * deltaY;
-            // move the latLonViewport
-            latLonViewport.move(deltaLonX, deltaLatY);
+            // depending on the zoom factor, compute the new center view position
+            double deltaLonX = lonRes * -deltaX;
+            double deltaLatY = latRes * deltaY;
             // keep the new point
             dragXStart = t.getSceneX();
             dragYStart = t.getSceneY();
-
-            recomputeViewports();
+            // move the center
+            Point2D newCenter = this.lonLatCenter.add(deltaLonX, deltaLatY);
+            if(isInBoundaries(newCenter)) {
+                this.lonLatCenter = newCenter;
+                recomputeViewports();
+            }
         }
+    }
+
+    private boolean isInBoundaries(Point2D newCenter) {
+        return newCenter.getX() - (180 - zoomFactor * ZOOM_FACTOR_LON) > -180 &&
+                newCenter.getX() + (180 - zoomFactor * ZOOM_FACTOR_LON) < 180 &&
+                newCenter.getY() + (90 - zoomFactor * ZOOM_FACTOR_LAT) < 90 &&
+                newCenter.getY() - (90 - zoomFactor * ZOOM_FACTOR_LAT) > -90;
     }
 
     private void onStartDragOnScene(MouseEvent t) {
@@ -128,17 +142,23 @@ public class Scene2D implements Initializable {
 
         if(event.getDeltaY() > 0) {
             zoomFactor += 1;
-            this.latLonViewport.update(this.latLonViewport.getStartX() + ZOOM_FACTOR_LON, this.latLonViewport.getStartY() - ZOOM_FACTOR_LAT,
-                    this.latLonViewport.getEndX() - ZOOM_FACTOR_LON, this.latLonViewport.getEndY() + ZOOM_FACTOR_LAT);
         } else if(event.getDeltaY() < 0) {
             zoomFactor -= 1;
-            this.latLonViewport.update(this.latLonViewport.getStartX() - ZOOM_FACTOR_LON, this.latLonViewport.getStartY() + ZOOM_FACTOR_LAT,
-                    this.latLonViewport.getEndX() + ZOOM_FACTOR_LON, this.latLonViewport.getEndY() - ZOOM_FACTOR_LAT);
         }
         recomputeViewports();
     }
 
     public void recomputeViewports() {
+        System.out.println("Lon Lat Center: " + this.lonLatCenter);
+
+        // latLonViewport should include the complete earth plus bands
+        this.latLonViewport = new ViewBox(
+                this.lonLatCenter.getX() - (180 - zoomFactor*ZOOM_FACTOR_LON),
+                this.lonLatCenter.getY() + (90 - zoomFactor*ZOOM_FACTOR_LAT),
+                this.lonLatCenter.getX() + (180 - zoomFactor*ZOOM_FACTOR_LON),
+                this.lonLatCenter.getY() - (90 - zoomFactor*ZOOM_FACTOR_LAT)
+        );
+
         // Check ratio
         double widgetRatio = scene2d.getWidth()/scene2d.getHeight();
         if(widgetRatio >= this.widthHeightRatio) {
@@ -151,19 +171,59 @@ public class Scene2D implements Initializable {
             System.out.println("newHeight: " + newHeight + " - scene2d.width: " + scene2d.getWidth() + " - widthHeightRatio: " + this.widthHeightRatio);
             this.widgetViewport.update(0, (scene2d.getHeight() - newHeight) / 2, scene2d.getWidth(), (scene2d.getHeight() - newHeight) / 2 + newHeight);
         }
+        // Compute/update resolution
+        this.lonRes = this.latLonViewport.getWidth()/this.widgetViewport.getWidth();
+        this.latRes = this.latLonViewport.getHeight()/this.widgetViewport.getHeight();
+
+        // Rebuild latLonViewport to match the full widgetViewport
+        this.latLonViewport = new ViewBox(
+                this.lonLatCenter.getX() - this.lonRes * (this.scene2d.getWidth()/2),
+                this.lonLatCenter.getY() + this.latRes * (this.scene2d.getHeight()/2),
+                this.lonLatCenter.getX() + this.lonRes * (this.scene2d.getWidth()/2),
+                this.lonLatCenter.getY() - this.latRes * (this.scene2d.getHeight()/2)
+        );
+
+        // Set the full widgetViewport
+        this.widgetViewport.update(0, 0, scene2d.getWidth(), scene2d.getHeight());
+
+
         // Check latLonViewport validity: if not valid, update the viewport
         if(this.latLonViewport.getStartX() < -180.0) {
             this.latLonViewport.move(Math.abs(this.latLonViewport.getStartX() + 180.0), 0);
         }
+
+        /*
         if(this.latLonViewport.getStartY() > 90.0) {
-            this.latLonViewport.move(0, - Math.abs(this.latLonViewport.getStartY() - 90.0));
+            this.latLonViewport.move(0, - Math.abs(this.latLonViewport.getStartY() - 90.0)/2);
         }
+        */
         if(this.latLonViewport.getEndX() > 180.0) {
             this.latLonViewport.move(- Math.abs(this.latLonViewport.getEndX() - 180.0), 0);
         }
+
+        /*
         if(this.latLonViewport.getEndY() < -90.0) {
             this.latLonViewport.move(0, Math.abs(this.latLonViewport.getEndY() + 90.0));
         }
+        */
+
+        if(this.latLonViewport.getStartY() > 90.0 || this.latLonViewport.getEndY() < -90.0) {
+            // move it so that the center of the viewPort is 0, i.e. startY = half of viewport height
+            this.latLonViewport.move(0,
+                    - this.latLonViewport.getStartY() + this.latLonViewport.getHeight()/2
+            ); // TODO: not perfect
+        }
+
+        // Recompute the center from the latLonViewport
+        Point2D newCenter = new Point2D(
+                this.latLonViewport.getStartX() + (this.latLonViewport.getWidth()/2),
+                this.latLonViewport.getStartY() - (this.latLonViewport.getHeight()/2)
+        );
+        // If the center is good, then set it
+        if(Double.isFinite(newCenter.getX()) && Double.isFinite(newCenter.getY())) {
+            this.lonLatCenter = newCenter;
+        }
+        System.out.println("Lon Lat Center 2: " + this.lonLatCenter);
 
         // Compute source viewport
         double tlx, tly, brx, bry;

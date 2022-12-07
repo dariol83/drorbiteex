@@ -16,6 +16,8 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import javafx.geometry.Point2D;
+
 public class ViewBox {
     private double startX;
     private double startY;
@@ -34,6 +36,13 @@ public class ViewBox {
         this.startY = startY;
         this.endX = endX;
         this.endY = endY;
+    }
+
+    public void update(ViewBox extendedViewport) {
+        this.startX = extendedViewport.startX;
+        this.startY = extendedViewport.startY;
+        this.endX = extendedViewport.endX;
+        this.endY = extendedViewport.endY;
     }
 
     public double getStartX() {
@@ -86,4 +95,19 @@ public class ViewBox {
     public boolean contains(double px, double py) {
         return px >= startX && px <= endX && py >= startY && py <= endY;
     }
+
+    @Override
+    public String toString() {
+        return "ViewBox{" +
+                "startX=" + startX +
+                ", startY=" + startY +
+                ", endX=" + endX +
+                ", endY=" + endY +
+                '}';
+    }
+
+    public double getRatio() {
+        return getWidth()/getHeight();
+    }
+
 }

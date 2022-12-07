@@ -273,8 +273,6 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.eventRaised = true;
         Date eventTime = s.getDate().toDate(TimeScalesFactory.getUTC());
         if (increasing) {
-            System.out.println("\tVisibility on " + getCode() + " of " + currentOrbit.getCode()
-                    + " begins at " + s.getDate());
             if(temporaryPointMap.containsKey(currentOrbit)) {
                 Date previousTime = temporaryPointMap.remove(currentOrbit);
                 VisibilityWindow vw = new VisibilityWindow(currentOrbit, currentOrbit.computeOrbitNumberAt(previousTime), null, previousTime, this);
@@ -283,8 +281,6 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
             temporaryPointMap.put(currentOrbit, eventTime);
             return Action.CONTINUE;
         } else {
-            System.out.println("\tVisibility on " + getCode() + " of " + currentOrbit.getCode()
-                    + " ends at " + s.getDate());
             if(temporaryPointMap.containsKey(currentOrbit)) {
                 Date previousTime = temporaryPointMap.remove(currentOrbit);
                 VisibilityWindow vw = new VisibilityWindow(currentOrbit, currentOrbit.computeOrbitNumberAt(previousTime), previousTime, eventTime, this);
