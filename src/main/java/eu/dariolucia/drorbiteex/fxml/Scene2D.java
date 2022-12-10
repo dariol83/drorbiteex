@@ -16,6 +16,8 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -28,7 +30,6 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 
-import javax.swing.text.View;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -64,19 +65,21 @@ public class Scene2D implements Initializable {
 
     private Supplier<OrbitGraphics> selectedOrbitSupplier;
     private ViewBox latLonViewport;
+    // Orbit to track (if null, no tracking)
+    private Orbit trackingOrbit;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         // Update 2D view
         this.scene2dImage = new Image(this.getClass().getResourceAsStream("/images/earth.jpg"));
-        this.scene2d.heightProperty().addListener((a,b,c) -> recomputeViewports());
-        this.scene2d.widthProperty().addListener((a,b,c) -> recomputeViewports());
+        this.scene2d.heightProperty().addListener((a,b,c) -> recomputeViewports(true));
+        this.scene2d.widthProperty().addListener((a,b,c) -> recomputeViewports(true));
         // BMP
         this.widthHeightRatio = this.scene2dImage.getWidth()/this.scene2dImage.getHeight();
         this.widgetViewport = new ViewBox(0, 0, 0, 0);
         this.imageSourceViewport = new ViewBox(0, 0, 0, 0);
 
-        recomputeViewports();
+        recomputeViewports(true);
 
         scene2d.addEventHandler(ScrollEvent.SCROLL, this::onScrollOnScene);
         scene2d.addEventHandler(MouseEvent.MOUSE_PRESSED, this::onStartDragOnScene);
@@ -86,6 +89,9 @@ public class Scene2D implements Initializable {
     }
 
     private void onEndDragOnScene(MouseEvent t) {
+        if(this.trackingOrbit != null) {
+            return;
+        }
         if(t.getButton() == MouseButton.PRIMARY) {
             dragging = false;
             dragXStart = 0;
@@ -94,6 +100,9 @@ public class Scene2D implements Initializable {
     }
 
     private void onDragOnScene(MouseEvent t) {
+        if(this.trackingOrbit != null) {
+            return;
+        }
         if(t.getButton() == MouseButton.PRIMARY && dragging) {
             // compute delta
             double deltaX = t.getSceneX() - dragXStart;
@@ -114,7 +123,7 @@ public class Scene2D implements Initializable {
         Point2D newCenter = new Point2D(x, y);
         if(isInBoundaries(newCenter)) {
             this.lonLatCenter = newCenter;
-            recomputeViewports();
+            recomputeViewports(true);
         }
     }
 
@@ -126,6 +135,9 @@ public class Scene2D implements Initializable {
     }
 
     private void onStartDragOnScene(MouseEvent t) {
+        if(this.trackingOrbit != null) {
+            return;
+        }
         if(t.getButton() == MouseButton.PRIMARY) {
             dragging = true;
             dragXStart = t.getSceneX();
@@ -143,24 +155,34 @@ public class Scene2D implements Initializable {
         if(zoomFactor == MIN_ZOOM_FACTOR && event.getDeltaY() < 0) {
             return;
         }
+        // If tracking, avoid excessive zoom out
+        if(trackingOrbit != null && zoomFactor == 4 && event.getDeltaY() < 0) {
+            return;
+        }
 
         if(event.getDeltaY() > 0) {
             zoomFactor += 1;
         } else if(event.getDeltaY() < 0) {
             zoomFactor -= 1;
         }
-        recomputeViewports();
+        recomputeViewports(true);
     }
 
-    public void recomputeViewports() {
+    public void recomputeViewports(boolean redrawScene) {
+        if(trackingOrbit != null) {
+            // If you are tracking, easy: the center is the spacecraft position
+            SpacecraftPosition sp = trackingOrbit.getCurrentSpacecraftPosition();
+            if(sp != null) {
+                this.lonLatCenter = new Point2D(Math.toDegrees(sp.getLatLonHeight().getLongitude()), Math.toDegrees(sp.getLatLonHeight().getLatitude()));
+            }
+        }
         // latLonViewport should include the complete earth plus bands
         this.latLonViewport = new ViewBox(
-                this.lonLatCenter.getX() - (180 - zoomFactor*ZOOM_FACTOR_LON),
-                this.lonLatCenter.getY() + (90 - zoomFactor*ZOOM_FACTOR_LAT),
-                this.lonLatCenter.getX() + (180 - zoomFactor*ZOOM_FACTOR_LON),
-                this.lonLatCenter.getY() - (90 - zoomFactor*ZOOM_FACTOR_LAT)
+                this.lonLatCenter.getX() - (180 - zoomFactor * ZOOM_FACTOR_LON),
+                this.lonLatCenter.getY() + (90 - zoomFactor * ZOOM_FACTOR_LAT),
+                this.lonLatCenter.getX() + (180 - zoomFactor * ZOOM_FACTOR_LON),
+                this.lonLatCenter.getY() - (90 - zoomFactor * ZOOM_FACTOR_LAT)
         );
-
         // Check ratio
         double widgetRatio = scene2d.getWidth()/scene2d.getHeight();
         if(widgetRatio >= this.widthHeightRatio) {
@@ -229,7 +251,9 @@ public class Scene2D implements Initializable {
         bry = this.scene2dImage.getHeight()/180.0 * (90 - this.latLonViewport.getEndY());
         this.imageSourceViewport.update(tlx, tly, brx, bry);
 
-        refreshScene();
+        if(redrawScene) {
+            refreshScene();
+        }
     }
 
     public void configure(Region parentRegion) {
@@ -247,6 +271,10 @@ public class Scene2D implements Initializable {
     }
 
     public void refreshScene() {
+        //
+        if(trackingOrbit != null) {
+            recomputeViewports(false);
+        }
         // Handle 2D view
         GraphicsContext gc = scene2d.getGraphicsContext2D();
         gc.setFill(Color.BLACK);
@@ -285,5 +313,23 @@ public class Scene2D implements Initializable {
 
     public Node getMainScene() {
         return this.scene2d;
+    }
+
+    public void activateTracking(OrbitGraphics og) {
+        if(og != null) {
+            this.trackingOrbit = og.getOrbit();
+            // Go directly to the orbit
+            SpacecraftPosition sp = og.getOrbit().getCurrentSpacecraftPosition();
+            if(sp != null) {
+                // Zoom to a decent level, if not good enough
+                if (zoomFactor < 4) {
+                    zoomFactor = 4;
+                }
+                // Center to lon/lat
+                moveCenterTo(Math.toDegrees(sp.getLatLonHeight().getLongitude()), Math.toDegrees(sp.getLatLonHeight().getLatitude()));
+            }
+        } else {
+            this.trackingOrbit = null;
+        }
     }
 }

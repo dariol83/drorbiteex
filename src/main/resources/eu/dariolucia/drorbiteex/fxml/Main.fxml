@@ -44,6 +44,18 @@
                <Label text="Spacecraft" />
                <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
                </ComboBox>
+               <ToggleButton fx:id="satelliteAutotrackButton" mnemonicParsing="false" onAction="#onActivateSatelliteTrackingAction">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/target-variant.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle satellite autotrack" />
+                   </tooltip>
+               </ToggleButton>
                <Separator orientation="VERTICAL" />
                <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
                    <graphic>
