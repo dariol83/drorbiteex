@@ -94,7 +94,6 @@ public class Scene2D implements Initializable {
     }
 
     private void onDragOnScene(MouseEvent t) {
-        // TODO: prevent to scroll outside the boundaries
         if(t.getButton() == MouseButton.PRIMARY && dragging) {
             // compute delta
             double deltaX = t.getSceneX() - dragXStart;
@@ -106,11 +105,16 @@ public class Scene2D implements Initializable {
             dragXStart = t.getSceneX();
             dragYStart = t.getSceneY();
             // move the center
-            Point2D newCenter = this.lonLatCenter.add(deltaLonX, deltaLatY);
-            if(isInBoundaries(newCenter)) {
-                this.lonLatCenter = newCenter;
-                recomputeViewports();
-            }
+            moveCenterTo(deltaLonX + lonLatCenter.getX(), deltaLatY + lonLatCenter.getY());
+
+        }
+    }
+
+    private void moveCenterTo(double x, double y) {
+        Point2D newCenter = new Point2D(x, y);
+        if(isInBoundaries(newCenter)) {
+            this.lonLatCenter = newCenter;
+            recomputeViewports();
         }
     }
 
@@ -149,8 +153,6 @@ public class Scene2D implements Initializable {
     }
 
     public void recomputeViewports() {
-        System.out.println("Lon Lat Center: " + this.lonLatCenter);
-
         // latLonViewport should include the complete earth plus bands
         this.latLonViewport = new ViewBox(
                 this.lonLatCenter.getX() - (180 - zoomFactor*ZOOM_FACTOR_LON),
@@ -168,7 +170,6 @@ public class Scene2D implements Initializable {
         } else {
             // Width/Height < image ratio => set width, compute/shrink height, translate Y
             double newHeight = scene2d.getWidth() * (1/this.widthHeightRatio);
-            System.out.println("newHeight: " + newHeight + " - scene2d.width: " + scene2d.getWidth() + " - widthHeightRatio: " + this.widthHeightRatio);
             this.widgetViewport.update(0, (scene2d.getHeight() - newHeight) / 2, scene2d.getWidth(), (scene2d.getHeight() - newHeight) / 2 + newHeight);
         }
         // Compute/update resolution
@@ -188,30 +189,26 @@ public class Scene2D implements Initializable {
 
 
         // Check latLonViewport validity: if not valid, update the viewport
+
+        // Left-right
         if(this.latLonViewport.getStartX() < -180.0) {
             this.latLonViewport.move(Math.abs(this.latLonViewport.getStartX() + 180.0), 0);
         }
 
-        /*
-        if(this.latLonViewport.getStartY() > 90.0) {
-            this.latLonViewport.move(0, - Math.abs(this.latLonViewport.getStartY() - 90.0)/2);
-        }
-        */
         if(this.latLonViewport.getEndX() > 180.0) {
             this.latLonViewport.move(- Math.abs(this.latLonViewport.getEndX() - 180.0), 0);
         }
 
-        /*
-        if(this.latLonViewport.getEndY() < -90.0) {
-            this.latLonViewport.move(0, Math.abs(this.latLonViewport.getEndY() + 90.0));
-        }
-        */
-
-        if(this.latLonViewport.getStartY() > 90.0 || this.latLonViewport.getEndY() < -90.0) {
+        // Up-down
+        if(this.latLonViewport.getStartY() > 90.0 && this.latLonViewport.getEndY() < -90.0) {
             // move it so that the center of the viewPort is 0, i.e. startY = half of viewport height
             this.latLonViewport.move(0,
                     - this.latLonViewport.getStartY() + this.latLonViewport.getHeight()/2
-            ); // TODO: not perfect
+            );
+        } else if(this.latLonViewport.getStartY() > 90.0) {
+            this.latLonViewport.move(0, - Math.abs(this.latLonViewport.getStartY() - 90.0)/2);
+        } else if(this.latLonViewport.getEndY() < -90.0) {
+            this.latLonViewport.move(0, Math.abs(this.latLonViewport.getEndY() + 90.0));
         }
 
         // Recompute the center from the latLonViewport
@@ -223,7 +220,6 @@ public class Scene2D implements Initializable {
         if(Double.isFinite(newCenter.getX()) && Double.isFinite(newCenter.getY())) {
             this.lonLatCenter = newCenter;
         }
-        System.out.println("Lon Lat Center 2: " + this.lonLatCenter);
 
         // Compute source viewport
         double tlx, tly, brx, bry;

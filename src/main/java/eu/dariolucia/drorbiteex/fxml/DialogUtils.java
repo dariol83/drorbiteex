@@ -17,6 +17,9 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+
+import java.util.Optional;
 
 public class DialogUtils {
 
@@ -34,5 +37,14 @@ public class DialogUtils {
         alert.setHeaderText(headerText);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    public static boolean confirm(String title, String headerText, String content) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        alert.setContentText(content);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
     }
 }

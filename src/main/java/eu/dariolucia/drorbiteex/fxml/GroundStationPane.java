@@ -71,6 +71,7 @@ public class GroundStationPane implements Initializable {
         aosColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getAosString()));
         losColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getLosString()));
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> refreshPassTableSelection(b));
+        groundStationList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
     }
 
@@ -137,16 +138,22 @@ public class GroundStationPane implements Initializable {
     }
 
     public void onDeleteGroundStationAction(ActionEvent actionEvent) {
-        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
-        if(gs != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Ground Station");
-            alert.setHeaderText(null);
-            alert.setContentText("Do you want to delete ground station " + gs.getName() + "?");
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK){
-                BackgroundThread.runLater(() -> manager.getGroundStationManager().removeGroundStation(gs.getGroundStation().getId()));
+        List<GroundStationGraphics> gsGraphics = groundStationList.getSelectionModel().getSelectedItems();
+        if(gsGraphics != null && !gsGraphics.isEmpty()) {
+            boolean confirmed = false;
+            if(gsGraphics.size() == 1) {
+                // One gs
+                confirmed = DialogUtils.confirm("Delete Ground Station", null, "Do you want to delete ground station " + gsGraphics.get(0).getName() + "?");
+            } else {
+                // Multiple gs
+                confirmed = DialogUtils.confirm("Delete Ground Station", null, "Do you want to delete the selected ground stations?");
+            }
+            if (confirmed) {
+                BackgroundThread.runLater(() ->  {
+                    for(GroundStationGraphics og : gsGraphics) {
+                        manager.getGroundStationManager().removeGroundStation(og.getGroundStation().getId());
+                    }
+                });
             }
         }
     }

@@ -70,7 +70,7 @@
                    </tooltip>
                </ToggleButton>
                <Separator orientation="VERTICAL" />
-               <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--"/>
+               <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--" alignment="CENTER" contentDisplay="CENTER" minWidth="120" maxWidth="120"/>
                <ToggleButton fx:id="timerTrackingButton" mnemonicParsing="false" onAction="#onActivateTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
@@ -95,7 +95,12 @@
                        <Tooltip text="Refresh orbits/visibilities" />
                    </tooltip>
                </Button>
-               
+               <Separator orientation="VERTICAL" />
+               <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" minHeight="32" maxHeight="32" maxWidth="80.0" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
+                   <tooltip>
+                       <Tooltip text="Processing status" />
+                   </tooltip>
+               </Label>
            </items>
        </ToolBar>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
@@ -137,14 +142,5 @@
             </SplitPane>
          </children>
       </AnchorPane>
-      <ToolBar maxHeight="24.0" maxWidth="1.7976931348623157E308" minHeight="24.0" prefHeight="24.0">
-         <items>
-            <Region prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
-            <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="100.0" minWidth="100.0" prefWidth="100.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
-                <tooltip>
-                    <Tooltip text="Processing status" />
-                </tooltip>
-            </Label>
-         </items></ToolBar>
    </children>
 </VBox>

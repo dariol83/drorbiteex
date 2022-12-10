@@ -26,6 +26,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -48,6 +49,7 @@ public class OrbitPane implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
         orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(b));
+        orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
     public ObservableList<OrbitGraphics> getOrbitGraphics() {
@@ -121,16 +123,22 @@ public class OrbitPane implements Initializable {
     }
 
     public void onDeleteOrbitAction(ActionEvent actionEvent) {
-        OrbitGraphics orbit = orbitList.getSelectionModel().getSelectedItem();
-        if(orbit != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Orbit");
-            alert.setHeaderText(null);
-            alert.setContentText("Do you want to delete orbit for " + orbit.getName() + "?");
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK){
-                BackgroundThread.runLater(() -> manager.getOrbitManager().removeOrbit(orbit.getOrbit().getId()));
+        List<OrbitGraphics> orbits = orbitList.getSelectionModel().getSelectedItems();
+        if(orbits != null && !orbits.isEmpty()) {
+            boolean confirmed = false;
+            if(orbits.size() == 1) {
+                // One orbit
+                confirmed = DialogUtils.confirm("Delete Orbit", null, "Do you want to delete orbit for " + orbits.get(0).getName() + "?");
+            } else {
+                // Multiple orbits
+                confirmed = DialogUtils.confirm("Delete Orbits", null, "Do you want to delete the selected orbits?");
+            }
+            if (confirmed) {
+                BackgroundThread.runLater(() ->  {
+                    for(OrbitGraphics og : orbits) {
+                        manager.getOrbitManager().removeOrbit(og.getOrbit().getId());
+                    }
+                });
             }
         }
     }
