@@ -266,12 +266,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public void onGroundTrackComboSelected(ActionEvent actionEvent) {
         if(this.satelliteAutotrackButton.isSelected()) {
             Object orbit = groundTrackCombo.getSelectionModel().getSelectedItem();
-            if(orbit.equals(NO_GROUND_TRACK)) {
+            OrbitGraphics graphics = orbit.equals(NO_GROUND_TRACK) ? null : (OrbitGraphics) orbit;
+            if(graphics == null) {
                 this.satelliteAutotrackButton.setSelected(false);
-                this.scene2dController.activateTracking(null);
-            } else {
-                this.scene2dController.activateTracking((OrbitGraphics) orbit);
             }
+            this.scene2dController.activateTracking(graphics);
         }
         update2Dscene();
     }

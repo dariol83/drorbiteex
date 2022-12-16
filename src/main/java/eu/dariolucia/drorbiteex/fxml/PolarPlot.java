@@ -135,6 +135,12 @@ public class PolarPlot implements Initializable {
         drawSpacecraftLocation(gc);
     }
 
+    public void updateSize(double size) {
+        canvas.setHeight(size);
+        canvas.setWidth(size);
+        refresh();
+    }
+
     private void drawSpacecraftLocation(GraphicsContext gc) {
         Point2D location = this.spacecraftPosition.get();
         SpacecraftTrack st = this.spacecraftTrack.get();

@@ -28,10 +28,12 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 import java.net.URL;
@@ -52,8 +54,7 @@ public class GroundStationPane implements Initializable {
 
     // Polar plot
     public PolarPlot polarPlotController;
-    public ProgressIndicator polarPlotProgress;
-
+    public VBox polarPlotParent;
     private ModelManager manager;
     private Supplier<List<Orbit>> orbitSupplier;
 
@@ -64,7 +65,8 @@ public class GroundStationPane implements Initializable {
         // Polar plot color configuration
         polarPlotController.setForegroundColor(Color.LIMEGREEN);
         polarPlotController.setBackgroundColor(Color.BLACK);
-
+        polarPlotParent.widthProperty().addListener((a,b,c) -> updatePolarPlotSize());
+        polarPlotParent.heightProperty().addListener((a,b,c) -> updatePolarPlotSize());
         // Configure pass table
         satelliteColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getOrbit().getName()));
         orbitColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(String.valueOf(o.getValue().getOrbitNumber())));
@@ -73,6 +75,11 @@ public class GroundStationPane implements Initializable {
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> refreshPassTableSelection(b));
         groundStationList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
+    }
+
+    private void updatePolarPlotSize() {
+        double size = Math.min(polarPlotParent.getWidth(), polarPlotParent.getHeight());
+        polarPlotController.updateSize(size - 1);
     }
 
     public void configure(ModelManager manager, Supplier<List<Orbit>> orbitSupplier) {
@@ -243,6 +250,4 @@ public class GroundStationPane implements Initializable {
     public void refreshSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint point) {
         polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
     }
-
-
 }

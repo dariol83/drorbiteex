@@ -96,41 +96,51 @@
                         </Button>
                     </items>
                 </ToolBar>
-                <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" />
-                <Label maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Upcoming passes">
-                    <padding>
-                        <Insets bottom="0" left="5" right="5" top="0" />
-                    </padding>
-                    <VBox.margin>
-                        <Insets />
-                    </VBox.margin>
-                    <font>
-                        <Font name="System Bold" size="12.0" />
-                    </font>
-                </Label>
-                <TableView fx:id="passTable" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="satelliteColumn" prefWidth="120.0" text="Satellite" />
-                        <TableColumn fx:id="orbitColumn" prefWidth="50.0" text="Orbit" />
-                        <TableColumn fx:id="aosColumn" prefWidth="120.0" text="AOS" />
-                        <TableColumn fx:id="losColumn" prefWidth="120.0" text="LOS" />
-                    </columns>
-                </TableView>
-                <Label maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Pass plot">
-                    <padding>
-                        <Insets bottom="0" left="5" right="5" top="0" />
-                    </padding>
-                    <font>
-                        <Font name="System Bold" size="12.0" />
-                    </font>
-                </Label>
-                <StackPane>
-                    <children>
-                        <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
-                        <ProgressIndicator fx:id="polarPlotProgress" visible="false" />
-                    </children>
-                </StackPane>
-
+                <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
+                    <content>
+                        <SplitPane orientation="VERTICAL" dividerPositions="0.25" SplitPane.resizableWithParent="true">
+                            <items>
+                                <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS"  HBox.hgrow="ALWAYS" />
+                                <VBox HBox.hgrow="ALWAYS">
+                                    <children>
+                                        <Label maxWidth="1.7976931348623157E308" minWidth="0" style="-fx-background-color: #e6e6e6;" text="Upcoming passes">
+                                            <padding>
+                                                <Insets bottom="0" left="5" right="5" top="0" />
+                                            </padding>
+                                            <VBox.margin>
+                                                <Insets />
+                                            </VBox.margin>
+                                            <font>
+                                                <Font name="System Bold" size="12.0" />
+                                            </font>
+                                        </Label>
+                                        <TableView fx:id="passTable" VBox.vgrow="ALWAYS" minWidth="0">
+                                            <columns>
+                                                <TableColumn fx:id="satelliteColumn" prefWidth="120.0" text="Satellite" />
+                                                <TableColumn fx:id="orbitColumn" prefWidth="50.0" text="Orbit" />
+                                                <TableColumn fx:id="aosColumn" prefWidth="120.0" text="AOS" />
+                                                <TableColumn fx:id="losColumn" prefWidth="120.0" text="LOS" />
+                                            </columns>
+                                        </TableView>
+                                    </children>
+                                </VBox>
+                                <VBox fx:id="polarPlotParent">
+                                    <children>
+                                        <Label maxWidth="1.7976931348623157E308" minWidth="0" style="-fx-background-color: #e6e6e6;" text="Pass plot">
+                                            <padding>
+                                                <Insets bottom="0" left="5" right="5" top="0" />
+                                            </padding>
+                                            <font>
+                                                <Font name="System Bold" size="12.0" />
+                                            </font>
+                                        </Label>
+                                        <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
+                                    </children>
+                                </VBox>
+                            </items>
+                        </SplitPane>
+                    </content>
+                </ScrollPane>
             </children>
             <padding>
                 <Insets bottom="0" left="0" right="0" top="0" />
