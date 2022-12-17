@@ -38,6 +38,7 @@ import javafx.scene.paint.Color;
 
 import java.net.URL;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
@@ -79,6 +80,8 @@ public class GroundStationPane implements Initializable {
 
     private void updatePolarPlotSize() {
         double size = Math.min(polarPlotParent.getWidth(), polarPlotParent.getHeight());
+        size = Math.min(400, size);
+        size = Math.max(200, size);
         polarPlotController.updateSize(size - 1);
     }
 
@@ -249,5 +252,9 @@ public class GroundStationPane implements Initializable {
 
     public void refreshSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint point) {
         polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
+    }
+
+    public void addSelectionSubscriber(Consumer<GroundStationGraphics> selectionListener) {
+        this.groundStationList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> selectionListener.accept(c));
     }
 }

@@ -133,16 +133,19 @@ public class GroundStationGraphics implements IGroundStationListener {
         }
     }
 
-    public void draw(GraphicsContext gc, OrbitGraphics selectedOrbit, ViewBox widgetViewport, ViewBox latLonViewport) {
+    public void draw(GraphicsContext gc, OrbitGraphics selectedOrbit, ViewBox widgetViewport, ViewBox latLonViewport, boolean isSelected) {
         if(obj.isVisible()) {
-            // First check: if the ground station is not in the latLonViewport, just return... but if I do this, the visibility circle is not shown, also where it should
-            // if(!isInViewport(latLonViewport)) {
-            //     return;
-            // }
             double[] xy = DrawingUtils.mapToWidgetCoordinates(obj.getLatitude(), obj.getLongitude(), widgetViewport, latLonViewport);
             Color gsColor = Color.valueOf(obj.getColor());
+            if(isSelected) {
+                gsColor = gsColor.brighter();
+            }
             gc.setFill(gsColor);
+            gc.setStroke(gsColor);
             gc.fillOval(xy[0] - 2, xy[1] - 2, 4, 4);
+            if(isSelected) {
+                gc.strokeOval(xy[0] - 4, xy[1] - 4, 8, 8);
+            }
             gc.fillText(obj.getCode(), xy[0], xy[1] - 5);
             // Ground track
             gc.setStroke(gsColor);

@@ -30,6 +30,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.Cylinder;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -37,7 +38,6 @@ import javafx.scene.transform.Translate;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.bodies.GeodeticPoint;
 
-import javax.swing.text.View;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,6 +48,8 @@ public class OrbitGraphics implements IOrbitListener {
     private final Orbit obj;
 
     private final SimpleBooleanProperty visibleProperty = new SimpleBooleanProperty(false);
+
+    private final SimpleBooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
     private Group graphicItem;
     private Text textItem;
@@ -60,10 +62,34 @@ public class OrbitGraphics implements IOrbitListener {
         this.obj.addListener(this);
         this.visibleProperty.set(obj.isVisible());
         this.visibleProperty.addListener((source,oldV,newV) -> BackgroundThread.runLater(() -> obj.setVisible(newV)));
+        this.selectedProperty.addListener((source,oldV,newV) -> updateOrbitColor(newV));
+    }
+
+    private void updateOrbitColor(boolean selected) {
+        Color c = selected ? Color.valueOf(obj.getColor()).brighter() : Color.valueOf(obj.getColor());
+        updateElementsColor(c);
+
+    }
+
+    private void updateElementsColor(Color c) {
+        PhongMaterial pm = new PhongMaterial(c);
+        if(!this.graphicItem.getChildren().isEmpty()) {
+            Group orbitGroup = (Group) this.graphicItem.getChildren().get(0);
+            for(Node n : orbitGroup.getChildren()) {
+                Cylinder cil = (Cylinder) n;
+                cil.setMaterial(pm);
+            }
+        }
+        this.textItem.setStroke(c);
+        this.scItem.setMaterial(pm);
     }
 
     public SimpleBooleanProperty visibleProperty() {
         return visibleProperty;
+    }
+
+    public SimpleBooleanProperty selectedProperty() {
+        return selectedProperty;
     }
 
     public String getName() {
@@ -94,6 +120,9 @@ public class OrbitGraphics implements IOrbitListener {
 
     private void renderTrajectory() {
         Color c = Color.valueOf(obj.getColor());
+        if(selectedProperty.get()) {
+            c = c.brighter();
+        }
         // Draw trajectory
         List<SpacecraftPosition> trajectory = obj.getSpacecraftPositions();
         // Transform all points to line
@@ -104,6 +133,9 @@ public class OrbitGraphics implements IOrbitListener {
 
     private void renderSpacecraftLocation() {
         Color c = Color.valueOf(obj.getColor());
+        if(selectedProperty.get()) {
+            c = c.brighter();
+        }
         // Draw SC position
         SpacecraftPosition currentPosition = obj.getCurrentSpacecraftPosition();
         if(currentPosition == null) {
@@ -143,13 +175,19 @@ public class OrbitGraphics implements IOrbitListener {
         return Arrays.asList(graphicItem, scItem, textItem);
     }
 
-    public void draw(GraphicsContext gc, ViewBox widgetViewport, ViewBox latLonViewport) {
+    public void draw(GraphicsContext gc, ViewBox widgetViewport, ViewBox latLonViewport, boolean isSelected) {
         if(obj.isVisible()) {
             List<SpacecraftPosition> spacecraftPositions = obj.getSpacecraftPositions();
             List<double[]> latLonPoints = spacecraftPositions.stream().map(o -> new double[] {Math.toDegrees(o.getLatLonHeight().getLatitude()), Math.toDegrees(o.getLatLonHeight().getLongitude())}).collect(Collectors.toList());
-            gc.setStroke(Color.valueOf(obj.getColor()));
-            gc.setFill(Color.valueOf(obj.getColor()));
-            gc.setLineWidth(1.5);
+            if(!isSelected) {
+                gc.setStroke(Color.valueOf(obj.getColor()));
+                gc.setFill(gc.getStroke());
+                gc.setLineWidth(1.5);
+            } else {
+                gc.setStroke(Color.valueOf(obj.getColor()).brighter());
+                gc.setFill(gc.getStroke());
+                gc.setLineWidth(3.5);
+            }
             if (!latLonPoints.isEmpty()) {
                 double[] previousPoint = latLonPoints.get(0);
                 double[] start = DrawingUtils.mapToWidgetCoordinates(previousPoint[0], previousPoint[1], widgetViewport, latLonViewport);
@@ -176,7 +214,11 @@ public class OrbitGraphics implements IOrbitListener {
             GeodeticPoint scLatLon = obj.getCurrentSpacecraftPosition().getLatLonHeight();
             if (scLatLon != null) {
                 double[] scCenter = DrawingUtils.mapToWidgetCoordinates(Math.toDegrees(scLatLon.getLatitude()), Math.toDegrees(scLatLon.getLongitude()), widgetViewport, latLonViewport);
-                gc.fillRect(scCenter[0] - 2, scCenter[1] - 2, 4, 4);
+                if(isSelected) {
+                    gc.fillRect(scCenter[0] - 4, scCenter[1] - 4, 8, 8);
+                } else {
+                    gc.fillRect(scCenter[0] - 2, scCenter[1] - 2, 4, 4);
+                }
                 gc.fillText(obj.getCode(), scCenter[0], scCenter[1] - 5);
             }
         }

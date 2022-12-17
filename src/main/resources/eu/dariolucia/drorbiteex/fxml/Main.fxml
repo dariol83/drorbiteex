@@ -41,7 +41,7 @@
                <Region HBox.hgrow="ALWAYS" />
 
                <Separator orientation="VERTICAL" />
-               <Label text="Spacecraft" />
+               <Label text="Visibility" />
                <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
                </ComboBox>
                <ToggleButton fx:id="satelliteAutotrackButton" mnemonicParsing="false" onAction="#onActivateSatelliteTrackingAction">

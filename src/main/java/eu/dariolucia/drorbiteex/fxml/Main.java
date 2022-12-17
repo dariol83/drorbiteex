@@ -184,6 +184,10 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             registerNewGroundStation(gs);
         }
 
+        // Subscribe 2D scene to orbit pane for selection
+        this.orbitPaneController.addSelectionSubscriber(this.scene2dController::setSelectedOrbit);
+        this.groundStationPaneController.addSelectionSubscriber(this.scene2dController::setSelectedGroundStation);
+
         // Redraw stuff on the 2D scene
         update2Dscene();
 

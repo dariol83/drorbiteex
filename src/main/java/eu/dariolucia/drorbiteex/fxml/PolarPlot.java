@@ -301,11 +301,13 @@ public class PolarPlot implements Initializable {
                 currentTrack.getWindow().getStation().equals(groundStation) &&
                 currentTrack.getWindow().getOrbit().equals(orbit)) {
             // There is a visibility window selected, replace it
-            for(VisibilityWindow vw : visibilityWindows) {
-                if(vw.getOrbitNumber() == currentTrack.getWindow().getOrbitNumber()) {
-                    // Found
-                    spacecraftTrack.set(new SpacecraftTrack(vw));
-                    return;
+            if(visibilityWindows != null) {
+                for (VisibilityWindow vw : visibilityWindows) {
+                    if (vw.getOrbitNumber() == currentTrack.getWindow().getOrbitNumber()) {
+                        // Found
+                        spacecraftTrack.set(new SpacecraftTrack(vw));
+                        return;
+                    }
                 }
             }
             // At this stage, it means that the visibility window disappeared -> clear plot

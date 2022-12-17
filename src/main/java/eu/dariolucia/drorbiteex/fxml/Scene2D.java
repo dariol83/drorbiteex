@@ -67,6 +67,9 @@ public class Scene2D implements Initializable {
     private ViewBox latLonViewport;
     // Orbit to track (if null, no tracking)
     private Orbit trackingOrbit;
+    // Selected orbit for highlighting
+    private OrbitGraphics selectedOrbit;
+    private GroundStationGraphics selectedGroundStation;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -293,12 +296,12 @@ public class Scene2D implements Initializable {
         // End clipping
         if(groundStationsSupplier != null && selectedOrbitSupplier != null) {
             for (GroundStationGraphics gs : groundStationsSupplier.get()) {
-                gs.draw(gc, selectedOrbitSupplier.get(), widgetViewport, latLonViewport);
+                gs.draw(gc, selectedOrbitSupplier.get(), widgetViewport, latLonViewport, gs.equals(this.selectedGroundStation));
             }
         }
         if(orbitsSupplier != null) {
             for (OrbitGraphics gs : orbitsSupplier.get()) {
-                gs.draw(gc, widgetViewport, latLonViewport);
+                gs.draw(gc, widgetViewport, latLonViewport, gs.equals(this.selectedOrbit));
             }
         }
         gc.restore();
@@ -331,5 +334,15 @@ public class Scene2D implements Initializable {
         } else {
             this.trackingOrbit = null;
         }
+    }
+
+    public void setSelectedOrbit(OrbitGraphics o) {
+        this.selectedOrbit = o;
+        refreshScene();
+    }
+
+    public void setSelectedGroundStation(GroundStationGraphics o) {
+        this.selectedGroundStation = o;
+        refreshScene();
     }
 }

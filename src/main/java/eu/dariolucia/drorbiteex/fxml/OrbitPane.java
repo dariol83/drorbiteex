@@ -35,6 +35,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 public class OrbitPane implements Initializable {
 
@@ -48,7 +49,7 @@ public class OrbitPane implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
-        orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(b));
+        orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(a, b));
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
@@ -203,15 +204,23 @@ public class OrbitPane implements Initializable {
         }
     }
 
-    private void updateOrbitPanelSelection(OrbitGraphics c) {
+    private void updateOrbitPanelSelection(OrbitGraphics old, OrbitGraphics c) {
+        if(old != null) {
+            old.selectedProperty().set(false);
+        }
         if(c == null) {
             this.orbitDetailPanelController.clear();
         } else {
             this.orbitDetailPanelController.update(c.getOrbit());
+            c.selectedProperty().set(true);
         }
     }
 
     public void refreshOrbitList() {
         orbitList.refresh();
+    }
+
+    public void addSelectionSubscriber(Consumer<OrbitGraphics> selectionListener) {
+        this.orbitList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> selectionListener.accept(c));
     }
 }
