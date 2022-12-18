@@ -23,10 +23,7 @@ import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -43,8 +40,11 @@ public class OrbitPane implements Initializable {
 
     // Orbit panel
     public OrbitDetailPanel orbitDetailPanelController;
+    public ToggleButton satelliteAutotrackButton;
+    private Consumer<OrbitGraphics> autotrackSelectionConsumer;
 
     private ModelManager manager;
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -57,8 +57,9 @@ public class OrbitPane implements Initializable {
         return orbitList.getItems();
     }
 
-    public void configure(ModelManager manager) {
+    public void configure(ModelManager manager, Consumer<OrbitGraphics> autotrackSelectionConsumer) {
         this.manager = manager;
+        this.autotrackSelectionConsumer = autotrackSelectionConsumer;
     }
 
     public OrbitGraphics registerNewOrbit(Orbit o) {
@@ -204,15 +205,37 @@ public class OrbitPane implements Initializable {
         }
     }
 
-    private void updateOrbitPanelSelection(OrbitGraphics old, OrbitGraphics c) {
+    private void updateOrbitPanelSelection(OrbitGraphics old, OrbitGraphics graphics) {
         if(old != null) {
             old.selectedProperty().set(false);
         }
-        if(c == null) {
+        if(graphics == null) {
             this.orbitDetailPanelController.clear();
         } else {
-            this.orbitDetailPanelController.update(c.getOrbit());
-            c.selectedProperty().set(true);
+            this.orbitDetailPanelController.update(graphics.getOrbit());
+            graphics.selectedProperty().set(true);
+        }
+        if(this.satelliteAutotrackButton.isSelected()) {
+            if(graphics == null) {
+                this.satelliteAutotrackButton.setSelected(false);
+            }
+            this.autotrackSelectionConsumer.accept(graphics);
+        }
+    }
+
+    public void onActivateSatelliteTrackingAction(ActionEvent actionEvent) {
+        if(this.satelliteAutotrackButton.isSelected()) {
+            OrbitGraphics selectedOrbit = this.orbitList.getSelectionModel().getSelectedItem();
+            if(selectedOrbit == null) {
+                // Deselect, no satellite selected
+                this.satelliteAutotrackButton.setSelected(false);
+                this.autotrackSelectionConsumer.accept(null);
+            } else {
+                // Get the satellite and activate the satellite tracking on the 2D view
+                this.autotrackSelectionConsumer.accept(selectedOrbit);
+            }
+        } else {
+            this.autotrackSelectionConsumer.accept(null);
         }
     }
 

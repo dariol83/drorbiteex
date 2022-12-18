@@ -123,11 +123,8 @@ public class Scene2D implements Initializable {
     }
 
     private void moveCenterTo(double x, double y) {
-        Point2D newCenter = new Point2D(x, y);
-        if(isInBoundaries(newCenter)) {
-            this.lonLatCenter = newCenter;
-            recomputeViewports(true);
-        }
+        this.lonLatCenter = new Point2D(x, y);
+        recomputeViewports(true);
     }
 
     private boolean isInBoundaries(Point2D newCenter) {

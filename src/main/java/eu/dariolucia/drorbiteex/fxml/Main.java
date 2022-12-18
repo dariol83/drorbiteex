@@ -82,7 +82,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
-    public ToggleButton satelliteAutotrackButton;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
     // Label to indicate processing on going
@@ -171,7 +170,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.manager.getGroundStationManager().addListener(this);
 
         // Ground Station Pane configuration
-        this.orbitPaneController.configure(this.manager);
+        this.orbitPaneController.configure(this.manager, (o) -> scene2dController.activateTracking(o));
         this.groundStationPaneController.configure(this.manager, this::getOrbits);
         this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
 
@@ -268,14 +267,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     public void onGroundTrackComboSelected(ActionEvent actionEvent) {
-        if(this.satelliteAutotrackButton.isSelected()) {
-            Object orbit = groundTrackCombo.getSelectionModel().getSelectedItem();
-            OrbitGraphics graphics = orbit.equals(NO_GROUND_TRACK) ? null : (OrbitGraphics) orbit;
-            if(graphics == null) {
-                this.satelliteAutotrackButton.setSelected(false);
-            }
-            this.scene2dController.activateTracking(graphics);
-        }
         update2Dscene();
     }
 
@@ -423,22 +414,5 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.scene3dController.configure(fullPane);
         this.scene2dController.configure(miniPane);
         this.scene2dController.recomputeViewports(true);
-    }
-
-    public void onActivateSatelliteTrackingAction(ActionEvent actionEvent) {
-        if(this.satelliteAutotrackButton.isSelected()) {
-            Object selectedOrbit = this.groundTrackCombo.getSelectionModel().getSelectedItem();
-            if(selectedOrbit.equals(NO_GROUND_TRACK)) {
-                // Deselect, no satellite selected
-                this.satelliteAutotrackButton.setSelected(false);
-                this.scene2dController.activateTracking(null);
-            } else {
-                // Get the satellite and activate the satellite tracking on the 2D view
-                OrbitGraphics og = (OrbitGraphics) selectedOrbit;
-                this.scene2dController.activateTracking(og);
-            }
-        } else {
-            this.scene2dController.activateTracking(null);
-        }
     }
 }
