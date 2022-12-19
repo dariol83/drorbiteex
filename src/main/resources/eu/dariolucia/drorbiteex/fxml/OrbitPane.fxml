@@ -149,7 +149,7 @@
                     </ToggleButton>
                 </items>
                 </ToolBar>
-                <Label maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Orbit Information">
+                <Label fx:id="orbitInfoLabel" maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Orbit Information">
                     <padding>
                         <Insets bottom="0" left="5" right="5" top="0" />
                     </padding>

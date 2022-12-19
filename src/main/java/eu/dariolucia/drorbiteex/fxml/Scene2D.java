@@ -127,12 +127,14 @@ public class Scene2D implements Initializable {
         recomputeViewports(true);
     }
 
+    /*
     private boolean isInBoundaries(Point2D newCenter) {
         return newCenter.getX() - (180 - zoomFactor * ZOOM_FACTOR_LON) > -180 &&
                 newCenter.getX() + (180 - zoomFactor * ZOOM_FACTOR_LON) < 180 &&
                 newCenter.getY() + (90 - zoomFactor * ZOOM_FACTOR_LAT) < 90 &&
                 newCenter.getY() - (90 - zoomFactor * ZOOM_FACTOR_LAT) > -90;
     }
+    */
 
     private void onStartDragOnScene(MouseEvent t) {
         if(this.trackingOrbit != null) {
@@ -341,5 +343,11 @@ public class Scene2D implements Initializable {
     public void setSelectedGroundStation(GroundStationGraphics o) {
         this.selectedGroundStation = o;
         refreshScene();
+    }
+
+    public void deregisterOrbit(OrbitGraphics graphics) {
+        if(this.trackingOrbit != null && this.trackingOrbit.equals(graphics.getOrbit())) {
+            activateTracking(null);
+        }
     }
 }

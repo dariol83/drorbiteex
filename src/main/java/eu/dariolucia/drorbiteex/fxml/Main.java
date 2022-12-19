@@ -170,7 +170,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.manager.getGroundStationManager().addListener(this);
 
         // Ground Station Pane configuration
-        this.orbitPaneController.configure(this.manager, (o) -> scene2dController.activateTracking(o));
+        this.orbitPaneController.configure(this.manager, (o) -> handleOrbitTracking(o));
         this.groundStationPaneController.configure(this.manager, this::getOrbits);
         this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
 
@@ -193,6 +193,13 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Activate satellite tracking
         timerTrackingButton.setSelected(true);
         onActivateTrackingAction(null);
+    }
+
+    private void handleOrbitTracking(OrbitGraphics o) {
+        // Forward to 2D scene controller
+        scene2dController.activateTracking(o);
+        // Forward to 3D scene controller (only to enable/disable mouse drag)
+        scene3dController.activateTracking(o);
     }
 
     private OrbitGraphics getSelectedOrbit() {
@@ -235,6 +242,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         if(first.isPresent()) {
             OrbitGraphics graphics = first.get();
             scene3dController.deregisterOrbit(graphics);
+            scene2dController.deregisterOrbit(graphics);
             graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
             // This call disposes the graphics item
             orbitPaneController.deregisterOrbit(graphics);
@@ -283,6 +291,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
         Platform.runLater(() -> {
+            // If in tracking mode, you have to inform the 3D scene about realigning
+            scene3dController.updateIfTrackingOrbit(orbit, currentPosition);
+            orbitPaneController.updateSpacecraftPosition(orbit, currentPosition);
             orbitPaneController.refreshOrbitList();
             if(!orbitUpdateInProgress) {
                 update2Dscene();
@@ -312,6 +323,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
         Platform.runLater(() -> {
+            // If in tracking mode, you have to inform the 3D scene about realigning
+            scene3dController.updateIfTrackingOrbit(orbit, currentPosition);
+            orbitPaneController.updateSpacecraftPosition(orbit, currentPosition);
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }

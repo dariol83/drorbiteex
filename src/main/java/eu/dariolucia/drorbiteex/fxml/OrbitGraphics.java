@@ -66,7 +66,7 @@ public class OrbitGraphics implements IOrbitListener {
     }
 
     private void updateOrbitColor(boolean selected) {
-        Color c = selected ? Color.valueOf(obj.getColor()).brighter() : Color.valueOf(obj.getColor());
+        Color c = selected ? Color.valueOf(obj.getColor()).brighter().brighter() : Color.valueOf(obj.getColor());
         updateElementsColor(c);
 
     }
@@ -121,7 +121,7 @@ public class OrbitGraphics implements IOrbitListener {
     private void renderTrajectory() {
         Color c = Color.valueOf(obj.getColor());
         if(selectedProperty.get()) {
-            c = c.brighter();
+            c = c.brighter().brighter();
         }
         // Draw trajectory
         List<SpacecraftPosition> trajectory = obj.getSpacecraftPositions();
@@ -134,7 +134,7 @@ public class OrbitGraphics implements IOrbitListener {
     private void renderSpacecraftLocation() {
         Color c = Color.valueOf(obj.getColor());
         if(selectedProperty.get()) {
-            c = c.brighter();
+            c = c.brighter().brighter();
         }
         // Draw SC position
         SpacecraftPosition currentPosition = obj.getCurrentSpacecraftPosition();
@@ -184,7 +184,7 @@ public class OrbitGraphics implements IOrbitListener {
                 gc.setFill(gc.getStroke());
                 gc.setLineWidth(1.5);
             } else {
-                gc.setStroke(Color.valueOf(obj.getColor()).brighter());
+                gc.setStroke(Color.valueOf(obj.getColor()).brighter().brighter());
                 gc.setFill(gc.getStroke());
                 gc.setLineWidth(3.5);
             }

@@ -41,6 +41,7 @@ public class OrbitPane implements Initializable {
     // Orbit panel
     public OrbitDetailPanel orbitDetailPanelController;
     public ToggleButton satelliteAutotrackButton;
+    public Label orbitInfoLabel;
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
 
     private ModelManager manager;
@@ -211,9 +212,11 @@ public class OrbitPane implements Initializable {
         }
         if(graphics == null) {
             this.orbitDetailPanelController.clear();
+            this.orbitInfoLabel.setText("Orbit Information");
         } else {
             this.orbitDetailPanelController.update(graphics.getOrbit());
             graphics.selectedProperty().set(true);
+            this.orbitInfoLabel.setText("Orbit Information - " + graphics.getName());
         }
         if(this.satelliteAutotrackButton.isSelected()) {
             if(graphics == null) {
@@ -245,5 +248,9 @@ public class OrbitPane implements Initializable {
 
     public void addSelectionSubscriber(Consumer<OrbitGraphics> selectionListener) {
         this.orbitList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> selectionListener.accept(c));
+    }
+
+    public void updateSpacecraftPosition(Orbit orbit, SpacecraftPosition currentPosition) {
+        this.orbitDetailPanelController.updatePosition(orbit, currentPosition);
     }
 }

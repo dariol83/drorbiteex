@@ -16,17 +16,19 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point3D;
 import javafx.scene.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
+import org.orekit.bodies.GeodeticPoint;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -59,6 +61,7 @@ public class Scene3D implements Initializable {
 
     // Orbits node
     private Group orbitGroup;
+    private OrbitGraphics trackedOrbit;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -94,6 +97,10 @@ public class Scene3D implements Initializable {
     }
 
     private void onEndDragOnScene(MouseEvent t) {
+        if(this.trackedOrbit != null) {
+            // Tracking, do not do anything
+            return;
+        }
         if(t.getButton() == MouseButton.PRIMARY) {
             dragging = false;
             dragXStart = 0;
@@ -106,6 +113,10 @@ public class Scene3D implements Initializable {
     }
 
     private void onDragOnScene(MouseEvent t) {
+        if(this.trackedOrbit != null) {
+            // Tracking, do not do anything
+            return;
+        }
         if(t.getButton() == MouseButton.PRIMARY && dragging) {
             // compute delta
             double deltaX = t.getSceneX() - dragXStart;
@@ -123,7 +134,24 @@ public class Scene3D implements Initializable {
         }
     }
 
+    public void moveToLonLat(double lon, double lat) {
+        // lon/lat are in degrees
+        currentXangle = lon;
+        currentYangle = lat;
+        // set rotation
+        Rotate xRotation = new Rotate(currentXangle, new Point3D(0,-1, 0));
+        Point3D yAxis = new Point3D(Math.cos(Math.toRadians(-currentXangle)),0, Math.sin(Math.toRadians(-currentXangle)));
+        Rotate yRotation = new Rotate(currentYangle, yAxis);
+        Transform result = xRotation.createConcatenation(yRotation);
+        group.getTransforms().clear();
+        group.getTransforms().add(result);
+    }
+
     private void onStartDragOnScene(MouseEvent t) {
+        if(this.trackedOrbit != null) {
+            // Tracking, do not do anything
+            return;
+        }
         if(t.getButton() == MouseButton.PRIMARY) {
             dragging = true;
             dragXStart = t.getSceneX();
@@ -169,10 +197,28 @@ public class Scene3D implements Initializable {
 
     public void deregisterOrbit(OrbitGraphics graphics) {
         orbitGroup.getChildren().remove(graphics.getGraphicItem());
+        if(graphics.equals(this.trackedOrbit)) {
+            activateTracking(null);
+        }
     }
 
     public Node getMainScene() {
         return this.scene3d;
     }
 
+    public void activateTracking(OrbitGraphics o) {
+        this.trackedOrbit = o;
+        if(o != null) {
+            GeodeticPoint latLonHeight = o.getOrbit().getCurrentSpacecraftPosition().getLatLonHeight();
+            moveToLonLat(-Math.toDegrees(latLonHeight.getLongitude()), Math.toDegrees(latLonHeight.getLatitude()));
+        }
+    }
+
+    public void updateIfTrackingOrbit(Orbit orbit, SpacecraftPosition currentPosition) {
+        if(this.trackedOrbit != null && this.trackedOrbit.getOrbit().equals(orbit)) {
+            // 3D scene is tracking, update lon/lat
+            GeodeticPoint latLonHeight = currentPosition.getLatLonHeight();
+            moveToLonLat(-Math.toDegrees(latLonHeight.getLongitude()), Math.toDegrees(latLonHeight.getLatitude()));
+        }
+    }
 }

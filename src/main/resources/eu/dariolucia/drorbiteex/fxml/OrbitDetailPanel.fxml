@@ -121,5 +121,19 @@
                </Label>
            </children>
        </HBox>
+       <HBox maxWidth="1.7976931348623157E308">
+           <children>
+               <Label maxHeight="24.0" maxWidth="130.0" minHeight="24.0" minWidth="130.0" prefHeight="24.0" prefWidth="130.0" text="Current position (lat,lon,height)">
+                   <padding>
+                       <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                   </padding>
+               </Label>
+               <Label fx:id="positionLabel" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" maxHeight="24.0" minHeight="24.0" minWidth="130.0" prefHeight="24.0" prefWidth="130.0" text="---" HBox.hgrow="ALWAYS">
+                   <padding>
+                       <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                   </padding>
+               </Label>
+           </children>
+       </HBox>
    </children>
 </VBox>

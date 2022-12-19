@@ -20,8 +20,10 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
+import org.orekit.bodies.GeodeticPoint;
 
 import java.net.URL;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 public class OrbitDetailPanel implements Initializable {
@@ -33,6 +35,9 @@ public class OrbitDetailPanel implements Initializable {
     public Label orbitTypeLabel;
     public Label refFrameLabel;
     public Label periodLabel;
+    public Label positionLabel;
+
+    private Orbit currentOrbit;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -40,6 +45,7 @@ public class OrbitDetailPanel implements Initializable {
     }
 
     public void update(Orbit o) {
+        this.currentOrbit = o;
         SpacecraftPosition sp = o.getCurrentSpacecraftPosition();
         if(sp != null) {
             semiMajorAxisLabel.setText(String.format("%.3f km", sp.getSpacecraftState().getOrbit().getA() / 1000.0));
@@ -49,6 +55,15 @@ public class OrbitDetailPanel implements Initializable {
             orbitTypeLabel.setText(String.valueOf(sp.getSpacecraftState().getOrbit().getType()));
             refFrameLabel.setText(String.valueOf(sp.getSpacecraftState().getOrbit().getFrame()));
             periodLabel.setText(toPeriodString(sp.getSpacecraftState().getOrbit().getKeplerianPeriod()));
+            GeodeticPoint position = sp.getLatLonHeight();
+            positionLabel.setText(String.format("%.4f,%.4f,%d", Math.toDegrees(position.getLatitude()), Math.toDegrees(position.getLongitude()), (int) position.getAltitude()));
+        }
+    }
+
+    public void updatePosition(Orbit o, SpacecraftPosition sp) {
+        if(Objects.equals(this.currentOrbit, o) && sp != null) {
+            GeodeticPoint position = sp.getLatLonHeight();
+            positionLabel.setText(String.format("%.4f,%.4f,%d", Math.toDegrees(position.getLatitude()), Math.toDegrees(position.getLongitude()), (int) position.getAltitude()));
         }
     }
 
@@ -87,5 +102,6 @@ public class OrbitDetailPanel implements Initializable {
         orbitTypeLabel.setText("---");
         refFrameLabel.setText("---");
         periodLabel.setText("---");
+        positionLabel.setText("---");
     }
 }
