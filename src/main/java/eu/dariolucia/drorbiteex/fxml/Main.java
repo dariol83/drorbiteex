@@ -44,7 +44,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-// TODO: implement 2d/3d satellite tracking (with toggle button to activate)
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
 
     private static final String DEFAULT_CONFIG_FOLDER = System.getProperty("user.home") + File.separator + "drorbiteex";
