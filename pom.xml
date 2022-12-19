@@ -42,6 +42,7 @@
         <maven.jacoco.version>0.8.5</maven.jacoco.version>
         <maven.jar.version>2.4</maven.jar.version>
         <maven.javadoc.version>3.1.0</maven.javadoc.version>
+        <maven.assembly.version>2.5.5</maven.assembly.version>
         <maven.source.version>3.1.0</maven.source.version>
         <maven.surefire.version>3.0.0-M5</maven.surefire.version>
         <maven.compiler.version>3.8.1</maven.compiler.version>
@@ -109,6 +110,26 @@
                     </archive>
                     <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
+            </plugin>
+            <!-- Assembly plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven.assembly.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/main/assembly/drorbiteex-assembly-zip.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

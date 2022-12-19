@@ -20,12 +20,15 @@ CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
 ![AND](img/drorbiteex1.png "Dr. Orbiteex main window")
 
 ## Getting started
+Make sure you have Java >= 11 and Apache Maven installed.
+
 In order to have Dr. Orbiteex up and running from scratch, run the following steps:
 1. Download the Orekit Data from https://gitlab.orekit.org/orekit/orekit-data/-/archive/master/orekit-data-master.zip
 2. Extract the contents
 3. Rename the extracted folder from "orekit-data-master" to "orekit-data"
 4. Create a folder named "drorbiteex" inside your home folder (e.g. "C:\Users\<your username>\drorbiteex" on Windows or "/home/<your username>/drorbiteex" on Linux)
-5. Copy the "orekit-data" folder inside the "drorbiteex" folder created in step 4.
+5. Copy the "orekit-data" folder inside the "drorbiteex" folder created in step 4
 6. Clone Dr. Orbiteex from GitHub and checkout the master branch
 7. Perform a "mvn clean install" from the fetched version
-8. Go inside the "scripts" folder and run start.bat (Windows) or start.sh (Linux)
+8. In the "target" folder, a zip file will be generated
+9. Decompress the zip file anywhere on your filesystem, and run the start.bat (Windows) or start.sh (Linux) inside
