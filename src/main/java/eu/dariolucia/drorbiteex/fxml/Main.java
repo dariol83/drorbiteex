@@ -113,9 +113,21 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             orekitData = new File(DEFAULT_CONFIG_FOLDER + File.separator + OREKIT_FOLDER_NAME);
         }
         // Orekit initialisation
-        DataProvidersManager orekitManager = DataContext.getDefault().getDataProvidersManager();
-        orekitManager.addProvider(new DirectoryCrawler(orekitData));
-
+        try {
+            DataProvidersManager orekitManager = DataContext.getDefault().getDataProvidersManager();
+            orekitManager.addProvider(new DirectoryCrawler(orekitData));
+        } catch (Exception e) {
+            // You have to quit
+            System.err.println("Orekit initialisation data not found. Steps to fix the problem:\n" +
+                    "1) download https://gitlab.orekit.org/orekit/orekit-data/-/archive/master/orekit-data-master.zip\n" +
+                    "2) extract the archive and rename the resulting extracted folder to 'orekit-data'\n" +
+                    "3) either copy the 'orekit-data' folder\n" +
+                    "\t3a) inside " + DEFAULT_CONFIG_FOLDER + " or \n" +
+                    "\t3b) inside another folder of your choice and " +
+                    "start Dr. Orbiteex JVM with the system property -D" + CONFIG_FOLDER_LOCATION_KEY + "=<path to your folder>");
+            e.printStackTrace();
+            System.exit(-1);
+        }
         // Handle ground track list
         groundTrackCombo.setConverter(new StringConverter<>() {
             @Override
