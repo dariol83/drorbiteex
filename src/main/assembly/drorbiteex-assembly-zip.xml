@@ -26,11 +26,19 @@
     <files>
         <file>
             <source> ${project.basedir}/scripts/start.bat</source>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
         </file>
         <file>
             <source> ${project.basedir}/scripts/start.sh</source>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
+        </file>
+        <file>
+            <source> ${project.basedir}/LICENSE</source>
+            <outputDirectory>./about</outputDirectory>
+        </file>
+        <file>
+            <source> ${project.basedir}/NOTICE</source>
+            <outputDirectory>./about</outputDirectory>
         </file>
     </files>
     <dependencySets>
