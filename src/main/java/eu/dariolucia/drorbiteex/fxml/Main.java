@@ -35,25 +35,12 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
-import org.orekit.data.DataContext;
-import org.orekit.data.DataProvidersManager;
-import org.orekit.data.DirectoryCrawler;
 
-import java.io.File;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
-
-    private static final String DEFAULT_CONFIG_FOLDER = System.getProperty("user.home") + File.separator + "drorbiteex";
-    private static final String DEFAULT_ORBIT_CONFIG_FILE_NAME = "orbits.xml";
-    private static final String DEFAULT_ORBIT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_ORBIT_CONFIG_FILE_NAME;
-    private static final String DEFAULT_GS_CONFIG_FILE_NAME = "groundstations.xml";
-    private static final String DEFAULT_GS_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_GS_CONFIG_FILE_NAME;
-
-    private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
-    private static final String OREKIT_FOLDER_NAME = "orekit-data";
     private static final String NO_GROUND_TRACK = "             ";
 
     // Ground Station Pane
@@ -98,36 +85,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Load old configuration if available
-        String configLocation = System.getProperty(CONFIG_FOLDER_LOCATION_KEY);
-        File orekitData;
-        String orbitFile;
-        String gsFile;
-        if(configLocation != null && !configLocation.isBlank()) {
-            orbitFile = configLocation + File.separator + DEFAULT_ORBIT_CONFIG_FILE_NAME;
-            gsFile = configLocation + File.separator + DEFAULT_GS_CONFIG_FILE_NAME;
-            orekitData = new File(configLocation + File.separator + OREKIT_FOLDER_NAME);
-        } else {
-            orbitFile = DEFAULT_ORBIT_CONFIG_LOCATION;
-            gsFile = DEFAULT_GS_CONFIG_LOCATION;
-            orekitData = new File(DEFAULT_CONFIG_FOLDER + File.separator + OREKIT_FOLDER_NAME);
-        }
-        // Orekit initialisation
-        try {
-            DataProvidersManager orekitManager = DataContext.getDefault().getDataProvidersManager();
-            orekitManager.addProvider(new DirectoryCrawler(orekitData));
-        } catch (Exception e) {
-            // You have to quit
-            System.err.println("Orekit initialisation data not found. Steps to fix the problem:\n" +
-                    "1) download https://gitlab.orekit.org/orekit/orekit-data/-/archive/master/orekit-data-master.zip\n" +
-                    "2) extract the archive and rename the resulting extracted folder to 'orekit-data'\n" +
-                    "3) either copy the 'orekit-data' folder\n" +
-                    "\t3a) inside " + DEFAULT_CONFIG_FOLDER + " or \n" +
-                    "\t3b) inside another folder of your choice and " +
-                    "start Dr. Orbiteex JVM with the system property -D" + CONFIG_FOLDER_LOCATION_KEY + "=<path to your folder>");
-            e.printStackTrace();
-            System.exit(-1);
-        }
         // Handle ground track list
         groundTrackCombo.setConverter(new StringConverter<>() {
             @Override
@@ -174,36 +131,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Configure 3D scene
         scene3dController.configure(fullPane);
         scene2dController.configure(miniPane);
-
-        // Create model manager
-        this.manager = new ModelManager(orbitFile, gsFile);
-        this.manager.getOrbitManager().addListener(this);
-        this.manager.getGroundStationManager().addListener(this);
-
-        // Ground Station Pane configuration
-        this.orbitPaneController.configure(this.manager, (o) -> handleOrbitTracking(o));
-        this.groundStationPaneController.configure(this.manager, this::getOrbits);
-        this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
-
-        // Create graphics objects
-        for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
-            registerNewOrbit(o);
-        }
-
-        for(GroundStation gs : this.manager.getGroundStationManager().getGroundStations().values()) {
-            registerNewGroundStation(gs);
-        }
-
-        // Subscribe 2D scene to orbit pane for selection
-        this.orbitPaneController.addSelectionSubscriber(this.scene2dController::setSelectedOrbit);
-        this.groundStationPaneController.addSelectionSubscriber(this.scene2dController::setSelectedGroundStation);
-
-        // Redraw stuff on the 2D scene
-        update2Dscene();
-
-        // Activate satellite tracking
-        timerTrackingButton.setSelected(true);
-        onActivateTrackingAction(null);
     }
 
     private void handleOrbitTracking(OrbitGraphics o) {
@@ -439,5 +366,39 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.scene3dController.configure(fullPane);
         this.scene2dController.configure(miniPane);
         this.scene2dController.recomputeViewports(true);
+    }
+
+    public void configure(ModelManager manager, Runnable onFinish) {
+        this.manager = manager;
+        // Register to the model manager
+        this.manager.getOrbitManager().addListener(this);
+        this.manager.getGroundStationManager().addListener(this);
+
+        // Ground Station Pane configuration
+        this.orbitPaneController.configure(this.manager, this::handleOrbitTracking);
+        this.groundStationPaneController.configure(this.manager, this::getOrbits);
+        this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
+
+        // Create graphics objects
+        for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
+            registerNewOrbit(o);
+        }
+
+        for(GroundStation gs : this.manager.getGroundStationManager().getGroundStations().values()) {
+            registerNewGroundStation(gs);
+        }
+
+        // Subscribe 2D scene to orbit pane for selection
+        this.orbitPaneController.addSelectionSubscriber(this.scene2dController::setSelectedOrbit);
+        this.groundStationPaneController.addSelectionSubscriber(this.scene2dController::setSelectedGroundStation);
+
+        // Redraw stuff on the 2D scene
+        update2Dscene();
+
+        // Activate satellite tracking
+        timerTrackingButton.setSelected(true);
+        onActivateTrackingAction(null);
+
+        onFinish.run();
     }
 }
