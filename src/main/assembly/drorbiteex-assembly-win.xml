@@ -17,7 +17,7 @@
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-    <id>zip</id>
+    <id>win</id>
     <includeBaseDirectory>true</includeBaseDirectory>
 
     <formats>
@@ -27,10 +27,7 @@
         <file>
             <source> ${project.basedir}/scripts/start.bat</source>
             <outputDirectory>./</outputDirectory>
-        </file>
-        <file>
-            <source> ${project.basedir}/scripts/start.sh</source>
-            <outputDirectory>./</outputDirectory>
+            <lineEnding>windows</lineEnding>
         </file>
         <file>
             <source> ${project.basedir}/LICENSE</source>
@@ -44,6 +41,10 @@
     <dependencySets>
         <dependencySet>
             <outputDirectory>bin</outputDirectory>
+            <excludes>
+                <exclude>org.openjfx:*:jar:mac:*</exclude>
+                <exclude>org.openjfx:*:jar:linux:*</exclude>
+            </excludes>
         </dependencySet>
     </dependencySets>
 </assembly>

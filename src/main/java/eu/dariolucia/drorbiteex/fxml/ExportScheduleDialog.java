@@ -42,25 +42,25 @@ import java.util.stream.Collectors;
 
 public class ExportScheduleDialog implements Initializable {
 
-    private static StatusEnum LAST_STATUS = StatusEnum.OPERATIONAL;
-    private static Date LAST_START_DATE = new Date(); // now
-    private static Date LAST_END_DATE = new Date(LAST_START_DATE.getTime() + (7 * 24 * 3600 * 1000)); // 7 days
+    private static StatusEnum lastStatus = StatusEnum.OPERATIONAL;
+    private static Date lastStartDate = new Date(); // now
+    private static Date lastEndDate = new Date(lastStartDate.getTime() + (7 * 24 * 3600 * 1000)); // 7 days
 
-    private static List<String> LAST_SELECTED_ORBIT_NAMES = new LinkedList<>();
+    private static final List<String> lastSelectedOrbitNames = new LinkedList<>();
 
-    private static List<Pair<ServiceTypeEnum, FrequencyEnum>> LAST_SELECTED_SERVICES = new LinkedList<>();
+    private static final List<Pair<ServiceTypeEnum, FrequencyEnum>> lastSelectedServices = new LinkedList<>();
 
-    private static String LAST_ORIG_ENTITY_ID = "";
+    private static String lastOrigEntityId = "";
 
-    private static int LAST_DELTA_PERIOD = 0;
+    private static int lastDeltaPeriod = 0;
 
-    private static String LAST_SELECTED_EXPORTER = null;
-    private static String LAST_SELECTED_GENERATOR = null;
+    private static String lastSelectedExporter = null;
+    private static String lastSelectedGenerator = null;
 
-    private static String LAST_FILE_PATH = "";
-    private static String LAST_FOLDER_PATH = "";
+    private static String lastFilePath = "";
+    private static String lastFolderPath = "";
 
-    private static boolean LAST_FILE_RADIO = true;
+    private static boolean lastFileRadio = true;
 
     public TextField startDateText;
     public TextField startTimeText;
@@ -202,19 +202,19 @@ public class ExportScheduleDialog implements Initializable {
         try {
             Date start = getDate(startDateText, startTimeText);
             Date end = getDate(endDateText, endTimeText);
-            LAST_START_DATE = start;
-            LAST_END_DATE = end;
+            lastStartDate = start;
+            lastEndDate = end;
             List<Orbit> orbits = orbitList.getItems().stream().filter(OrbitWrapper::isSelected).map(OrbitWrapper::getOrbit).collect(Collectors.toList());
-            LAST_SELECTED_ORBIT_NAMES.clear();
-            LAST_SELECTED_ORBIT_NAMES.addAll(orbits.stream().map(Orbit::getName).collect(Collectors.toList()));
-            LAST_DELTA_PERIOD = Integer.parseInt(startEndActivityDeltaText.getText());
-            LAST_FILE_PATH = filePathText.getText();
-            LAST_ORIG_ENTITY_ID = originatingEntityText.getText();
-            LAST_STATUS = statusCombo.getValue();
-            LAST_SELECTED_EXPORTER = exporterCombo.getValue();
-            LAST_SELECTED_GENERATOR = fileGeneratorCombo.getValue();
-            LAST_FOLDER_PATH = folderPathText.getText();
-            LAST_FILE_RADIO = filePathRadio.isSelected();
+            lastSelectedOrbitNames.clear();
+            lastSelectedOrbitNames.addAll(orbits.stream().map(Orbit::getName).collect(Collectors.toList()));
+            lastDeltaPeriod = Integer.parseInt(startEndActivityDeltaText.getText());
+            lastFilePath = filePathText.getText();
+            lastOrigEntityId = originatingEntityText.getText();
+            lastStatus = statusCombo.getValue();
+            lastSelectedExporter = exporterCombo.getValue();
+            lastSelectedGenerator = fileGeneratorCombo.getValue();
+            lastFolderPath = folderPathText.getText();
+            lastFileRadio = filePathRadio.isSelected();
 
             return new ScheduleGenerationRequest(this.groundStation, orbits, start, end, originatingEntityText.getText(), statusCombo.getValue(),
                     buildServiceRequests(), exporterCombo.getValue(), Integer.parseInt(startEndActivityDeltaText.getText()),
@@ -228,23 +228,23 @@ public class ExportScheduleDialog implements Initializable {
     }
 
     private List<ServiceInfoRequest> buildServiceRequests() {
-        LAST_SELECTED_SERVICES.clear();
+        lastSelectedServices.clear();
         List<ServiceInfoRequest> reqs = new LinkedList<>();
         if(service1Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type1Combo.getValue(), service1Combo.getValue()));
-            LAST_SELECTED_SERVICES.add(new Pair<>(type1Combo.getValue(), service1Combo.getValue()));
+            lastSelectedServices.add(new Pair<>(type1Combo.getValue(), service1Combo.getValue()));
         }
         if(service2Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type2Combo.getValue(), service2Combo.getValue()));
-            LAST_SELECTED_SERVICES.add(new Pair<>(type2Combo.getValue(), service2Combo.getValue()));
+            lastSelectedServices.add(new Pair<>(type2Combo.getValue(), service2Combo.getValue()));
         }
         if(service3Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type3Combo.getValue(), service3Combo.getValue()));
-            LAST_SELECTED_SERVICES.add(new Pair<>(type3Combo.getValue(), service3Combo.getValue()));
+            lastSelectedServices.add(new Pair<>(type3Combo.getValue(), service3Combo.getValue()));
         }
         if(service4Check.isSelected()) {
             reqs.add(new ServiceInfoRequest(type4Combo.getValue(), service4Combo.getValue()));
-            LAST_SELECTED_SERVICES.add(new Pair<>(type4Combo.getValue(), service4Combo.getValue()));
+            lastSelectedServices.add(new Pair<>(type4Combo.getValue(), service4Combo.getValue()));
         }
         return reqs;
     }
@@ -285,44 +285,46 @@ public class ExportScheduleDialog implements Initializable {
 
     private void initialise(GroundStation gs, List<Orbit> orbits) {
         this.groundStation = gs;
-        this.startDateText.setText(toDateText(LAST_START_DATE));
-        this.startTimeText.setText(toTimeText(LAST_START_DATE));
-        this.endDateText.setText(toDateText(LAST_END_DATE));
-        this.endTimeText.setText(toTimeText(LAST_END_DATE));
-        this.originatingEntityText.setText(LAST_ORIG_ENTITY_ID);
-        if(LAST_FILE_RADIO) {
+        this.startDateText.setText(toDateText(lastStartDate));
+        this.startTimeText.setText(toTimeText(lastStartDate));
+        this.endDateText.setText(toDateText(lastEndDate));
+        this.endTimeText.setText(toTimeText(lastEndDate));
+        this.originatingEntityText.setText(lastOrigEntityId);
+        if(lastFileRadio) {
             this.filePathRadio.setSelected(true);
         } else {
             this.folderPathRadio.setSelected(true);
         }
-        this.filePathText.setText(LAST_FILE_PATH);
-        this.folderPathText.setText(LAST_FOLDER_PATH);
+        this.filePathText.setText(lastFilePath);
+        this.folderPathText.setText(lastFolderPath);
 
-        this.statusCombo.setValue(LAST_STATUS);
-        this.startEndActivityDeltaText.setText(String.valueOf(LAST_DELTA_PERIOD));
+        this.statusCombo.setValue(lastStatus);
+        this.startEndActivityDeltaText.setText(String.valueOf(lastDeltaPeriod));
         for(Orbit o : orbits) {
             OrbitWrapper ow = new OrbitWrapper(o);
-            if(LAST_SELECTED_ORBIT_NAMES.contains(ow.getOrbit().getName())) {
+            if(lastSelectedOrbitNames.contains(ow.getOrbit().getName())) {
                 ow.selectedProperty().set(true);
             }
             this.orbitList.getItems().add(ow);
         }
-        if(LAST_SELECTED_EXPORTER != null) {
-            this.exporterCombo.setValue(LAST_SELECTED_EXPORTER);
+        if(lastSelectedExporter != null) {
+            this.exporterCombo.setValue(lastSelectedExporter);
         } else {
             this.exporterCombo.getSelectionModel().select(0);
         }
-        if(LAST_SELECTED_GENERATOR != null) {
-            this.fileGeneratorCombo.setValue(LAST_SELECTED_GENERATOR);
+        if(lastSelectedGenerator != null) {
+            this.fileGeneratorCombo.setValue(lastSelectedGenerator);
         } else {
             this.fileGeneratorCombo.getSelectionModel().select(0);
         }
 
         CheckBox[] selection = new CheckBox[] {service1Check, service2Check, service3Check, service4Check};
+        @SuppressWarnings("unchecked") // Elements are hardcoded, exact type is provided
         ComboBox<FrequencyEnum>[] services = new ComboBox[] {service1Combo, service2Combo, service3Combo, service4Combo};
+        @SuppressWarnings("unchecked") // Elements are hardcoded, exact type is provided
         ComboBox<ServiceTypeEnum>[] frequencies = new ComboBox[] {type1Combo, type2Combo, type3Combo, type4Combo};
         int i = 0;
-        for(Pair<ServiceTypeEnum, FrequencyEnum> p : LAST_SELECTED_SERVICES) {
+        for(Pair<ServiceTypeEnum, FrequencyEnum> p : lastSelectedServices) {
             services[i].getSelectionModel().select(p.getValue());
             frequencies[i].getSelectionModel().select(p.getKey());
             selection[i].setSelected(true);
