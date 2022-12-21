@@ -16,6 +16,7 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.application.DrOrbiteex;
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.IOrbitListener;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
@@ -400,5 +401,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         onActivateTrackingAction(null);
 
         onFinish.run();
+    }
+
+    public void onAboutAction(ActionEvent actionEvent) {
+        DialogUtils.info("About " + DrOrbiteex.APPLICATION_NAME + "...", DrOrbiteex.APPLICATION_NAME + " " + DrOrbiteex.VERSION,
+                String.format("%s %s\n\nOrbit visualisation and processing application\n\nCopyright (c) 2022 Dario Lucia\n\nhttps://www.dariolucia.eu\n" +
+                        "https://github.com/dariol83/drorbiteex", DrOrbiteex.APPLICATION_NAME, DrOrbiteex.VERSION));
     }
 }

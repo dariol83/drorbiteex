@@ -38,13 +38,6 @@
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
            <items>
-               <Region HBox.hgrow="ALWAYS" />
-
-               <Separator orientation="VERTICAL" />
-               <Label text="Visibility" />
-               <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
-               </ComboBox>
-               <Separator orientation="VERTICAL" />
                <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
@@ -69,6 +62,13 @@
                        <Tooltip text="Toggle 3D/2D view" />
                    </tooltip>
                </ToggleButton>
+               <Separator orientation="VERTICAL" />
+               <Label text="Visibility" />
+               <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
+               </ComboBox>
+               <Separator orientation="VERTICAL" />
+
+               <Region HBox.hgrow="ALWAYS" />
                <Separator orientation="VERTICAL" />
                <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--" alignment="CENTER" contentDisplay="CENTER" minWidth="120" maxWidth="120"/>
                <ToggleButton fx:id="timerTrackingButton" mnemonicParsing="false" onAction="#onActivateTrackingAction">
@@ -101,6 +101,19 @@
                        <Tooltip text="Processing status" />
                    </tooltip>
                </Label>
+               <Separator orientation="VERTICAL" />
+               <Button mnemonicParsing="false" onAction="#onAboutAction">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/information-outline.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="About Dr. Orbiteex..." />
+                   </tooltip>
+               </Button>
            </items>
        </ToolBar>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
