@@ -32,3 +32,31 @@ In order to have Dr. Orbiteex up and running from scratch, run the following ste
 7. Perform a "mvn clean install -Prelease" from the fetched version
 8. In the "target" folder, zip and tar.gz files will be generated for Windows, Linux, Mac
 9. Decompress the zip/tar.gz file anywhere on your filesystem, and run the start.bat (Windows) or start.sh (Linux/Mac) inside
+
+## Extensions
+Dr. Orbiteex can export CCSDS OEM files and CCSDS Simple Schedule Files. There is a way to customise some aspects of this 
+export process, by means of extensions. An extension is an implementation of a specific Dr. Orbiteex Java interface, to be
+exposed to Dr. Orbiteex via the standard Java Module system.
+
+### CCSDS OEM
+Two interfaces can be implemented:
+
+- IOemNameGenerator: if a target directory is selected, this extension allows to programmatically generate a name for the exported file. 
+- IOemPostProcessor: the specific implementation will be called after the generation of the OEM file. 
+
+In order to use the implementations, they must be announced in the module-info file of the corresponding module, e.g.:
+
+- provides eu.dariolucia.drorbiteex.model.oem.IOemPostProcessor with [implementation];
+- provides eu.dariolucia.drorbiteex.model.oem.IOemNameGenerator with [implementation];
+
+### CCSDS Simple Schedule
+Two interfaces can be implemented:
+
+- IScheduleNameGenerator: if a target directory is selected, this extension allows to programmatically generate a name for the exported file.
+- IScheduleExporter: the specific implementation during the export process. 
+
+In order to use the implementations, they must be announced in the module-info file of the corresponding module, e.g.:
+
+- provides eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter with [implementation];
+- provides eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator with [implementation];
+

@@ -350,7 +350,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
                 // Spacecraft is not visible: remove information
                 this.currentVisibilityMap.remove(currentOrbit);
             }
-            // Compute visibility circle (AOS at GS_ELEVATION in radians) using the orbit semiaxis major
+            // Compute visibility circle (AOS at GS_ELEVATION in radians) using the orbit semiaxis major // TODO: use current SC altitude instead, make it configurable
             List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
             double gsElevation = Math.toRadians(configuration.getElevationThreshold());
             for (int i = 0; i < 180; ++i) {

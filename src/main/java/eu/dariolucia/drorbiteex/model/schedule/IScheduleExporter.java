@@ -23,8 +23,16 @@ import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+/**
+ * Exporter implementation for CCSDS Simple Schedule files.
+ */
 public interface IScheduleExporter {
 
+    /**
+     * Name of the implementation.
+     *
+     * @return implementation name
+     */
     String getName();
 
     LinkedHashMap<String, String> getSimpleScheduleRootAttributes();

@@ -18,9 +18,23 @@ package eu.dariolucia.drorbiteex.model.oem;
 
 import java.util.Date;
 
+/**
+ * Name generator implementation for CCSDS OEM files.
+ */
 public interface IOemNameGenerator {
-
+    /**
+     * Name of the implementation.
+     *
+     * @return implementation name
+     */
     String getName();
 
+    /**
+     * Method called to request the generation of a file name, linked to the provided request.
+     *
+     * @param request the request
+     * @param generationDate the generation date of the file
+     * @return the file name to be used
+     */
     String generateFileName(OemGenerationRequest request, Date generationDate);
 }
