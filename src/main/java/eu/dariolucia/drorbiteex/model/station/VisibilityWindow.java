@@ -24,13 +24,14 @@ import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
+    public static final int GROUND_TRACK_POINT_INTERVAL_MS = 10000; // TODO: externalise?
     private final Orbit orbit;
     private final int orbitNumber;
     private final Date aos;
@@ -38,12 +39,19 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
     private final GroundStation station;
     private final List<TrackPoint> azimuthElevationTrack = new LinkedList<>();
 
+    private final UUID id;
+
     VisibilityWindow(Orbit orbit, int orbitNumber, Date aos, Date los, GroundStation station) {
+        this.id = UUID.randomUUID();
         this.orbitNumber = orbitNumber;
         this.aos = aos;
         this.los = los;
         this.station = station;
         this.orbit = orbit;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     void initialiseGroundTrack(Orbit orbit, Propagator propagator) {
@@ -66,7 +74,7 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
                     double[] azElPoint = this.station.getAzimuthElevationOf(next);
                     this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
                     // Next point, 10 seconds after
-                    currentDate = new Date(currentDate.getTime() + 10000);
+                    currentDate = new Date(currentDate.getTime() + GROUND_TRACK_POINT_INTERVAL_MS);
                 }
                 // End date
                 SpacecraftState next = propagator.propagate(new AbsoluteDate(endDate, TimeScalesFactory.getUTC()));
@@ -175,5 +183,36 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
         } else {
             return time.after(this.aos) && time.before(this.los);
         }
+    }
+
+    public void exportVisibilityInfoTo(OutputStream outputStream) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        // CVS format: gs code, orbit code, orbit number, AOS, AOS EL, AOS AZ, LOS, LOS EL, LOS AZ
+        sb.append(station.getCode().replace(',', '_')).append(",");
+        sb.append(orbit.getCode().replace(',', '_')).append(",");
+        sb.append(orbitNumber).append(",");
+        sb.append(TimeUtils.formatDate(getGroundTrack().get(0).getTime())).append(",");
+        sb.append(getGroundTrack().get(0).getElevation()).append(",");
+        sb.append(getGroundTrack().get(0).getAzimuth()).append(",");
+        sb.append(TimeUtils.formatDate(getGroundTrack().get(getGroundTrack().size() - 1).getTime())).append(",");
+        sb.append(getGroundTrack().get(getGroundTrack().size() - 1).getElevation()).append(",");
+        sb.append(getGroundTrack().get(getGroundTrack().size() - 1).getAzimuth());
+        sb.append("\n");
+        outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public void exportGroundTrackingInfoTo(OutputStream outputStream) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        // CVS format: gs code, orbit code, orbit number, Time, EL, AZ
+        for(int i = 0; i < getGroundTrack().size(); ++i) {
+            sb.append(station.getCode().replace(',', '_')).append(",");
+            sb.append(orbit.getCode().replace(',', '_')).append(",");
+            sb.append(orbitNumber).append(",");
+            sb.append(TimeUtils.formatDate(getGroundTrack().get(i).getTime())).append(",");
+            sb.append(getGroundTrack().get(i).getElevation()).append(",");
+            sb.append(getGroundTrack().get(i).getAzimuth());
+            sb.append("\n");
+        }
+        outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 }

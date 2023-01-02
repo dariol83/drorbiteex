@@ -262,6 +262,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
         Platform.runLater(() -> {
+            if(currentPosition != null) {
+                this.currentTimeLabel.setText(TimeUtils.formatDate(currentPosition.getTime()));
+            }
             // If in tracking mode, you have to inform the 3D scene about realigning
             scene3dController.updateIfTrackingOrbit(orbit, currentPosition);
             orbitPaneController.updateSpacecraftPosition(orbit, currentPosition);
@@ -405,7 +408,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     public void onAboutAction(ActionEvent actionEvent) {
         DialogUtils.info("About " + DrOrbiteex.APPLICATION_NAME + "...", DrOrbiteex.APPLICATION_NAME + " " + DrOrbiteex.VERSION,
-                String.format("%s %s\n\nOrbit visualisation and processing application\n\nCopyright (c) 2022 Dario Lucia\n\nhttps://www.dariolucia.eu\n" +
+                String.format("%s %s\n\nOrbit visualisation and processing application\n\nCopyright (c) 2022-2023 Dario Lucia\n\nhttps://www.dariolucia.eu\n" +
                         "https://github.com/dariol83/drorbiteex", DrOrbiteex.APPLICATION_NAME, DrOrbiteex.VERSION));
     }
 }

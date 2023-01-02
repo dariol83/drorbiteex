@@ -126,4 +126,22 @@ public class GroundStationManager {
         }
     }
 
+    public void exportVisibilityPasses(UUID groundStationID, OutputStream outputStream) throws IOException {
+        exportVisibilityPasses(groundStationID, outputStream, null);
+    }
+    public void exportVisibilityPasses(UUID groundStationID, OutputStream outputStream, List<UUID> orbitsId) throws IOException {
+        GroundStation gs = getGroundStation(groundStationID);
+        if(gs == null) {
+            throw new IOException("Ground station with ID " + groundStationID + " not found");
+        }
+        gs.exportVisibilityPasses(outputStream, orbitsId);
+    }
+
+    public void exportTrackingInfo(UUID groundStationID, OutputStream outputStream, UUID orbitId, UUID visibilityWindowId) throws IOException {
+        GroundStation gs = getGroundStation(groundStationID);
+        if(gs == null) {
+            throw new IOException("Ground station with ID " + groundStationID + " not found");
+        }
+        gs.exportTrackingInfo(outputStream, orbitId, visibilityWindowId);
+    }
 }

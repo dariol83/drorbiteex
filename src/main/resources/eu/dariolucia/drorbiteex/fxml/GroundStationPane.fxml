@@ -57,6 +57,30 @@
                                 <Tooltip text="Generate schedule..." />
                             </tooltip>
                         </Button>
+                        <Button mnemonicParsing="false" onAction="#onExportVisibilityWindowsAction">
+                            <graphic>
+                                <ImageView pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@/view-list.png" />
+                                    </image>
+                                </ImageView>
+                            </graphic>
+                            <tooltip>
+                                <Tooltip text="Export currently computed visibility windows..." />
+                            </tooltip>
+                        </Button>
+                        <Button mnemonicParsing="false" onAction="#onExportGroundTrackAction">
+                            <graphic>
+                                <ImageView pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@/radar.png" />
+                                    </image>
+                                </ImageView>
+                            </graphic>
+                            <tooltip>
+                                <Tooltip text="Export currently computed ground track..." />
+                            </tooltip>
+                        </Button>
                         <Button mnemonicParsing="false" onAction="#onEditGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">

@@ -24,22 +24,27 @@ import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.GroundStationParameterConfiguration;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 public class GroundStationPane implements Initializable {
@@ -58,6 +63,11 @@ public class GroundStationPane implements Initializable {
     public VBox polarPlotParent;
     private ModelManager manager;
     private Supplier<List<Orbit>> orbitSupplier;
+
+    // Exporters variables
+    private String visibilityCsvFolder;
+    private String trackingCsvFolder;
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -256,5 +266,90 @@ public class GroundStationPane implements Initializable {
 
     public void addSelectionSubscriber(Consumer<GroundStationGraphics> selectionListener) {
         this.groundStationList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> selectionListener.accept(c));
+    }
+
+    public void onExportVisibilityWindowsAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            List<Orbit> orbits = orbitSupplier.get();
+            // filter only currently visible orbits
+            List<UUID> filteredOrbits = orbits.stream().filter(Orbit::isVisible).map(Orbit::getId).collect(Collectors.toList());
+            // open file dialog
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Save CSV visibility windows for ground station " + gs.getGroundStation().getCode());
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
+            fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+            if(this.visibilityCsvFolder != null) {
+                fc.setInitialDirectory(new File(this.visibilityCsvFolder));
+            }
+            File selected = fc.showSaveDialog(this.groundStationList.getScene().getWindow());
+            if(selected != null) {
+                this.visibilityCsvFolder = selected.getParentFile().getAbsolutePath();
+                // Export
+                UUID gsId = gs.getGroundStation().getId();
+                BackgroundThread.runLater(() -> {
+                    try {
+                        if (!selected.exists()) {
+                            selected.createNewFile();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "Cannot create file: " + e.getMessage()));
+                        return;
+                    }
+                    try(FileOutputStream fs = new FileOutputStream(selected)) {
+                        manager.getGroundStationManager().exportVisibilityPasses(gsId, fs, filteredOrbits);
+                        Platform.runLater(() -> DialogUtils.info("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " exported", "file: " + selected.getAbsolutePath()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
+                    }
+                });
+            }
+        }
+    }
+
+    public void onExportGroundTrackAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = this.groundStationList.getSelectionModel().getSelectedItem();
+        VisibilityWindow vw = this.passTable.getSelectionModel().getSelectedItem();
+        if(gs != null && vw != null) {
+            // open file dialog
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Save CSV ground track for ground station " + gs.getGroundStation().getCode() + " - Orbit: " + vw.getOrbit() + " - AOS: " + TimeUtils.formatDate(vw.getAos()));
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
+            fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+            if(this.trackingCsvFolder != null) {
+                fc.setInitialDirectory(new File(this.trackingCsvFolder));
+            }
+            File selected = fc.showSaveDialog(this.groundStationList.getScene().getWindow());
+            if(selected != null) {
+                this.trackingCsvFolder = selected.getParentFile().getAbsolutePath();
+
+                // Export
+                UUID gsId = gs.getGroundStation().getId();
+                UUID vwId = vw.getId();
+                UUID orbitId = vw.getOrbit().getId();
+                BackgroundThread.runLater(() -> {
+                    try {
+                        if (!selected.exists()) {
+                            selected.createNewFile();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "Cannot create file: " + e.getMessage()));
+                        return;
+                    }
+                    try(FileOutputStream fs = new FileOutputStream(selected)) {
+                        manager.getGroundStationManager().exportTrackingInfo(gsId, fs, orbitId, vwId);
+                        Platform.runLater(() -> DialogUtils.info("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " exported", "file: " + selected.getAbsolutePath()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
+                    }
+                });
+            }
+        }
     }
 }

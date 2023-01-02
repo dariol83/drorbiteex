@@ -38,6 +38,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -488,5 +490,27 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
                 l.groundStationUpdated(this);
             }
         });
+    }
+
+    public void exportVisibilityPasses(OutputStream outputStream, List<UUID> orbitsId) throws IOException {
+        for(Map.Entry<Orbit, List<VisibilityWindow>> entry : visibilityWindows.entrySet()) {
+            if(orbitsId == null || orbitsId.contains(entry.getKey().getId())) {
+                for(VisibilityWindow vw : entry.getValue()) {
+                    vw.exportVisibilityInfoTo(outputStream);
+                }
+            }
+        }
+    }
+
+    public void exportTrackingInfo(OutputStream outputStream, UUID orbitId, UUID visibilityWindowId) throws IOException {
+        for(Map.Entry<Orbit, List<VisibilityWindow>> entry : visibilityWindows.entrySet()) {
+            if(orbitId.equals(entry.getKey().getId())) {
+                for(VisibilityWindow vw : entry.getValue()) {
+                    if(vw.getId().equals(visibilityWindowId)) {
+                        vw.exportGroundTrackingInfoTo(outputStream);
+                    }
+                }
+            }
+        }
     }
 }
