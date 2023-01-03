@@ -16,7 +16,6 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
 import eu.dariolucia.drorbiteex.model.station.GroundStationParameterConfiguration;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -38,12 +37,14 @@ public class GroundStationConfigurationDialog implements Initializable {
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     public TextField elevationText;
+    public TextField trackingIntervalText;
 
     private String error;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         elevationText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        trackingIntervalText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
     }
@@ -51,7 +52,7 @@ public class GroundStationConfigurationDialog implements Initializable {
     private void validate() {
         try {
             Integer.parseInt(elevationText.getText());
-
+            Integer.parseInt(trackingIntervalText.getText());
             error = null;
             validData.setValue(true);
         } catch (Exception e) {
@@ -62,11 +63,12 @@ public class GroundStationConfigurationDialog implements Initializable {
 
     private void initialise(GroundStationParameterConfiguration p) {
         elevationText.setText(String.valueOf(p.getElevationThreshold()));
-
+        trackingIntervalText.setText(String.valueOf(p.getTrackingInterval()));
     }
 
     public GroundStationParameterConfiguration getResult() {
-        return new GroundStationParameterConfiguration(Integer.parseInt(elevationText.getText()));
+        return new GroundStationParameterConfiguration(Integer.parseInt(elevationText.getText()),
+                Integer.parseInt(trackingIntervalText.getText()));
     }
 
     public static GroundStationParameterConfiguration openDialog(Window owner, GroundStationParameterConfiguration p) {

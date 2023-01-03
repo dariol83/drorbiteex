@@ -29,20 +29,26 @@
          <children>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Propagation Steps (before)" />
-                  <TextField fx:id="beforePropagationStepsText" minWidth="150.0" prefWidth="150.0" promptText="50" />
+                  <Label minWidth="250.0" prefHeight="24.0" prefWidth="250.0" text="Propagation Steps (before)" />
+                  <TextField fx:id="beforePropagationStepsText" minWidth="100.0" prefWidth="100.0" promptText="50" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Propagation Steps (after)" />
-                  <TextField fx:id="afterPropagationStepsText" minWidth="150.0" prefWidth="150.0" promptText="150" />
+                  <Label minWidth="250.0" prefHeight="24.0" prefWidth="250.0" text="Propagation Steps (after)" />
+                  <TextField fx:id="afterPropagationStepsText" minWidth="100.0" prefWidth="100.0" promptText="150" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Propagation Step Interval (seconds)" />
-                  <TextField fx:id="propagationStepPeriodText" minWidth="150.0" prefWidth="150.0" promptText="120" />
+                  <Label minWidth="250.0" prefHeight="24.0" prefWidth="250.0" text="Propagation Step Interval (seconds)" />
+                  <TextField fx:id="propagationStepPeriodText" minWidth="100.0" prefWidth="100.0" promptText="120" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="250.0" prefHeight="24.0" prefWidth="250.0" text="Recompute Full Data Interval (seconds)" />
+                  <TextField fx:id="recomputeFullDataIntervalText" minWidth="100.0" prefWidth="100.0" promptText="600" />
                </children>
             </HBox>
          </children>

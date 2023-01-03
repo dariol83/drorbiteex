@@ -16,9 +16,9 @@
 
 package eu.dariolucia.drorbiteex.model.station;
 
-import eu.dariolucia.drorbiteex.model.util.TimeUtils;
-import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
@@ -31,7 +31,6 @@ import java.util.*;
 
 public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
-    public static final int GROUND_TRACK_POINT_INTERVAL_MS = 10000; // TODO: externalise?
     private final Orbit orbit;
     private final int orbitNumber;
     private final Date aos;
@@ -55,34 +54,32 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
     }
 
     void initialiseGroundTrack(Orbit orbit, Propagator propagator) {
-        if(this.azimuthElevationTrack.isEmpty()) {
-            if (propagator != null) {
-                Date currentDate = this.aos;
-                // If you don't have AOS, then use the current time
-                if (currentDate == null) {
-                    currentDate = new Date();
-                }
-                Date endDate = this.los;
-                // If you don't have LOS, then use currentDate + 20 minutes
-                if (endDate == null) {
-                    endDate = new Date(currentDate.getTime() + 20 * 60 * 1000);
-                }
-                // Start propagation from currentDate to endDate: 10 seconds interval
-                while (currentDate.before(endDate)) {
-                    SpacecraftState next = propagator.propagate(new AbsoluteDate(currentDate, TimeScalesFactory.getUTC()));
-                    // Convert spacecraft point to azimuth/elevation
-                    double[] azElPoint = this.station.getAzimuthElevationOf(next);
-                    this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
-                    // Next point, 10 seconds after
-                    currentDate = new Date(currentDate.getTime() + GROUND_TRACK_POINT_INTERVAL_MS);
-                }
-                // End date
-                SpacecraftState next = propagator.propagate(new AbsoluteDate(endDate, TimeScalesFactory.getUTC()));
+        if(this.azimuthElevationTrack.isEmpty() && propagator != null) {
+            Date currentDate = this.aos;
+            // If you don't have AOS, then use the current time
+            if (currentDate == null) {
+                currentDate = new Date();
+            }
+            Date endDate = this.los;
+            // If you don't have LOS, then use currentDate + 20 minutes
+            if (endDate == null) {
+                endDate = new Date(currentDate.getTime() + 20 * 60 * 1000);
+            }
+            // Start propagation from currentDate to endDate: 10 seconds interval
+            while (currentDate.before(endDate)) {
+                SpacecraftState next = propagator.propagate(new AbsoluteDate(currentDate, TimeScalesFactory.getUTC()));
                 // Convert spacecraft point to azimuth/elevation
                 double[] azElPoint = this.station.getAzimuthElevationOf(next);
-                //
                 this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
+                // Next point, XXX seconds after (check configuration)
+                currentDate = new Date(currentDate.getTime() + station.getConfiguration().getTrackingInterval() * 1000L);
             }
+            // End date
+            SpacecraftState next = propagator.propagate(new AbsoluteDate(endDate, TimeScalesFactory.getUTC()));
+            // Convert spacecraft point to azimuth/elevation
+            double[] azElPoint = this.station.getAzimuthElevationOf(next);
+            //
+            this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
         }
     }
 
@@ -115,6 +112,19 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
                 ", los=" + los +
                 ", station=" + station +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VisibilityWindow that = (VisibilityWindow) o;
+        return orbitNumber == that.orbitNumber && Objects.equals(orbit, that.orbit) && Objects.equals(aos, that.aos) && Objects.equals(los, that.los) && Objects.equals(station, that.station);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(orbit, orbitNumber, aos, los, station);
     }
 
     @Override
@@ -151,21 +161,6 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
             return "---";
         } else {
             return TimeUtils.formatDate(this.los);
-        }
-    }
-
-    public boolean isInThePast(Date d) {
-        if(this.aos == null && this.los == null) {
-            return false;
-        } else if(this.aos == null) {
-            // los is not null
-            return this.los.before(d);
-        } else if(this.los == null) {
-            // aos is not null, pass end unknown
-            return false;
-        } else {
-            // aos and los are not null
-            return this.los.before(d);
         }
     }
 

@@ -24,21 +24,24 @@ public class OrbitParameterConfiguration {
 
     private int beforePropagationSteps = 50;
     private int afterPropagationSteps = 150;
-    private int stepInterval = 120;
+    private int stepInterval = 120; // Seconds
+    private int recomputeFullDataInterval = 600; // Seconds
 
     public OrbitParameterConfiguration() {
     }
 
-    public OrbitParameterConfiguration(int beforePropagationSteps, int afterPropagationSteps, int stepInterval) {
+    public OrbitParameterConfiguration(int beforePropagationSteps, int afterPropagationSteps, int stepInterval, int recomputeFullDataInterval) {
         this.beforePropagationSteps = beforePropagationSteps;
         this.afterPropagationSteps = afterPropagationSteps;
         this.stepInterval = stepInterval;
+        this.recomputeFullDataInterval = recomputeFullDataInterval;
     }
 
     public void update(OrbitParameterConfiguration p) {
         this.beforePropagationSteps = p.beforePropagationSteps;
         this.afterPropagationSteps = p.afterPropagationSteps;
         this.stepInterval = p.stepInterval;
+        this.recomputeFullDataInterval = p.recomputeFullDataInterval;
     }
 
     public int getBeforePropagationSteps() {
@@ -65,16 +68,25 @@ public class OrbitParameterConfiguration {
         this.stepInterval = stepInterval;
     }
 
+    public int getRecomputeFullDataInterval() {
+        return recomputeFullDataInterval;
+    }
+
+    public void setRecomputeFullDataInterval(int recomputeFullDataInterval) {
+        this.recomputeFullDataInterval = recomputeFullDataInterval;
+    }
+
     @Override
     public String toString() {
         return "OrbitParameterConfiguration{" +
                 "beforePropagationSteps=" + beforePropagationSteps +
                 ", afterPropagationSteps=" + afterPropagationSteps +
                 ", stepInterval=" + stepInterval +
+                ", recomputeFullDataInterval=" + recomputeFullDataInterval +
                 '}';
     }
 
     public OrbitParameterConfiguration copy() {
-        return new OrbitParameterConfiguration(this.beforePropagationSteps, this.afterPropagationSteps, this.stepInterval);
+        return new OrbitParameterConfiguration(this.beforePropagationSteps, this.afterPropagationSteps, this.stepInterval, this.recomputeFullDataInterval);
     }
 }

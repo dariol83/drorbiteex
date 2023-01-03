@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Orbit {
+
     // Subject to serialisation
     private volatile UUID id;
     private volatile String code = "";
@@ -236,40 +237,6 @@ public class Orbit {
         notifyDataUpdate();
     }
 
-    public void propagate(Date start, Date end) {
-        AbsoluteDate startDate = TimeUtils.toAbsoluteDate(start);
-        AbsoluteDate endDate = TimeUtils.toAbsoluteDate(end);
-        this.modelPropagator.propagate(startDate);
-        // Future, register event detectors from listeners
-        List<IOrbitVisibilityProcessor> detectors = this.listeners.stream().map(o -> {
-            IOrbitListener l = o.get();
-            if(l instanceof IOrbitVisibilityProcessor) {
-                return (IOrbitVisibilityProcessor) l;
-            } else {
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-        // Add detectors
-        detectors.forEach(o -> {
-            EventDetector detector = o.getEventDetector();
-            this.modelPropagator.addEventDetector(detector);
-            o.initVisibilityComputation(this, startDate.toDate(TimeScalesFactory.getUTC()));
-        });
-        // Propagate to end date
-        this.modelPropagator.propagate(endDate);
-        // Declare end for detectors, clear detectors
-        detectors.forEach(o -> o.finalizeVisibilityComputation(this, this.currentSpacecraftPosition));
-        this.modelPropagator.clearEventsDetectors();
-        // Now: for every listener, move back the model propagation to the current date and offer the propagator to
-        // each listener for visibility use (GroundStation) or other use.
-
-        // Reset the propagator after every use
-        for(IOrbitVisibilityProcessor vd : detectors) {
-            this.modelPropagator.propagate(startDate);
-            vd.propagationModelAvailable(this, start, this.modelPropagator);
-        }
-    }
-
     private void notifyDataUpdate() {
         // Notify listeners
         this.listeners.forEach(o -> {
@@ -308,7 +275,7 @@ public class Orbit {
 
     public synchronized SpacecraftState updateOrbitTime(Date time, boolean forceUpdate) {
         this.currentPositionTime = time;
-        if(forceUpdate || this.modelPropagator == null || this.lastOrbitUpdateTime == null || Duration.between(this.lastOrbitUpdateTime.toInstant(), time.toInstant()).getSeconds() > 60 * 30) {
+        if(forceUpdate || this.modelPropagator == null || this.lastOrbitUpdateTime == null || Duration.between(this.lastOrbitUpdateTime.toInstant(), time.toInstant()).getSeconds() > orbitConfiguration.getRecomputeFullDataInterval()) {
             recomputeData(this.currentPositionTime);
         } else {
             // Compute only the position of the spacecraft, notify listeners about new spacecraft position

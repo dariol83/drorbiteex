@@ -352,12 +352,12 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
                 // Spacecraft is not visible: remove information
                 this.currentVisibilityMap.remove(currentOrbit);
             }
-            // Compute visibility circle (AOS at GS_ELEVATION in radians) using the orbit semiaxis major // TODO: use current SC altitude instead, make it configurable
+            // Compute visibility circle (AOS at GS_ELEVATION in radians) using the current S/C height
             List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
             double gsElevation = Math.toRadians(configuration.getElevationThreshold());
             for (int i = 0; i < 180; ++i) {
                 double azimuth = i * (2.0 * Math.PI / 180);
-                visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(currentSpacecraftPosition.getSpacecraftState().getOrbit().getA(), azimuth, gsElevation));
+                visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(currentSpacecraftPosition.getLatLonHeight().getAltitude() + EarthReferenceUtils.REAL_EARTH_RADIUS_METERS, azimuth, gsElevation));
             }
             this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
             // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified

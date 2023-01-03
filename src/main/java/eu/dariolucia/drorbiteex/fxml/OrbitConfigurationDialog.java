@@ -40,6 +40,7 @@ public class OrbitConfigurationDialog implements Initializable {
     public TextField beforePropagationStepsText;
     public TextField afterPropagationStepsText;
     public TextField propagationStepPeriodText;
+    public TextField recomputeFullDataIntervalText;
 
     private String error;
 
@@ -48,6 +49,7 @@ public class OrbitConfigurationDialog implements Initializable {
         beforePropagationStepsText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         afterPropagationStepsText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         propagationStepPeriodText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        recomputeFullDataIntervalText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
     }
@@ -57,6 +59,7 @@ public class OrbitConfigurationDialog implements Initializable {
             Integer.parseInt(beforePropagationStepsText.getText());
             Integer.parseInt(afterPropagationStepsText.getText());
             Integer.parseInt(propagationStepPeriodText.getText());
+            Integer.parseInt(recomputeFullDataIntervalText.getText());
 
             error = null;
             validData.setValue(true);
@@ -70,12 +73,14 @@ public class OrbitConfigurationDialog implements Initializable {
         beforePropagationStepsText.setText(String.valueOf(p.getBeforePropagationSteps()));
         afterPropagationStepsText.setText(String.valueOf(p.getAfterPropagationSteps()));
         propagationStepPeriodText.setText(String.valueOf(p.getStepInterval()));
+        recomputeFullDataIntervalText.setText(String.valueOf(p.getRecomputeFullDataInterval()));
     }
 
     public OrbitParameterConfiguration getResult() {
         return new OrbitParameterConfiguration(Integer.parseInt(beforePropagationStepsText.getText()),
                 Integer.parseInt(afterPropagationStepsText.getText()),
-                Integer.parseInt(propagationStepPeriodText.getText())
+                Integer.parseInt(propagationStepPeriodText.getText()),
+                Integer.parseInt(recomputeFullDataIntervalText.getText())
                 );
     }
 

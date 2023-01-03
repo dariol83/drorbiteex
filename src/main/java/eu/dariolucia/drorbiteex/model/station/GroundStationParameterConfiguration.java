@@ -23,16 +23,19 @@ import javax.xml.bind.annotation.XmlAccessorType;
 public class GroundStationParameterConfiguration {
 
     private int elevationThreshold = 5;
+    private int trackingInterval = 10;
 
     public GroundStationParameterConfiguration() {
     }
 
-    public GroundStationParameterConfiguration(int elevationThreshold) {
+    public GroundStationParameterConfiguration(int elevationThreshold, int trackingInterval) {
         this.elevationThreshold = elevationThreshold;
+        this.trackingInterval = trackingInterval;
     }
 
     public void update(GroundStationParameterConfiguration p) {
         this.elevationThreshold = p.elevationThreshold;
+        this.trackingInterval = p.trackingInterval;
     }
 
     public int getElevationThreshold() {
@@ -43,14 +46,23 @@ public class GroundStationParameterConfiguration {
         this.elevationThreshold = elevationThreshold;
     }
 
+    public int getTrackingInterval() {
+        return trackingInterval;
+    }
+
+    public void setTrackingInterval(int trackingInterval) {
+        this.trackingInterval = trackingInterval;
+    }
+
     public GroundStationParameterConfiguration copy() {
-        return new GroundStationParameterConfiguration(this.elevationThreshold);
+        return new GroundStationParameterConfiguration(this.elevationThreshold, this.trackingInterval);
     }
 
     @Override
     public String toString() {
         return "GroundStationParameterConfiguration{" +
                 "elevationThreshold=" + elevationThreshold +
+                "trackingInterval=" + trackingInterval +
                 '}';
     }
 }
