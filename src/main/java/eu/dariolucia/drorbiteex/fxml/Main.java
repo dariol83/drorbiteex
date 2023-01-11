@@ -60,6 +60,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public ToggleButton timerTrackingButton;
     public Label currentTimeLabel;
     private final Timer tracker = new Timer();
+    public ToggleButton toggle3DvisibilityLineButton;
 
 
     private TimerTask timerTask = null;
@@ -154,6 +155,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         GroundStationGraphics graphics = groundStationPaneController.registerNewGroundStation(gs);
         scene3dController.registerNewGroundStation(graphics);
         graphics.visibleProperty().addListener(this.visibilityUpdateListener);
+        graphics.visibilityLineProperty().bind(this.toggle3DvisibilityLineButton.selectedProperty());
         update2Dscene();
     }
 
@@ -185,6 +187,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             graphics.visibleProperty().removeListener(this.visibilityUpdateListener);
             // This call disposes the graphics item
             orbitPaneController.deregisterOrbit(graphics);
+            groundStationPaneController.deregisterOrbit(graphics);
             update2Dscene();
             groundStationPaneController.refreshPassTableSelection();
         }
@@ -234,6 +237,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             scene3dController.updateIfTrackingOrbit(orbit, currentPosition);
             orbitPaneController.updateSpacecraftPosition(orbit, currentPosition);
             orbitPaneController.refreshOrbitList();
+            // Check if the ground station objects in the 3D view must hide visibility connections
+            groundStationPaneController.orbitUpdated(orbit);
             if(!orbitUpdateInProgress) {
                 update2Dscene();
             }
@@ -411,4 +416,5 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                 String.format("%s %s\n\nOrbit visualisation and processing application\n\nCopyright (c) 2022-2023 Dario Lucia\n\nhttps://www.dariolucia.eu\n" +
                         "https://github.com/dariol83/drorbiteex", DrOrbiteex.APPLICATION_NAME, DrOrbiteex.VERSION));
     }
+
 }

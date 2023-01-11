@@ -38,6 +38,10 @@ public class DrawingUtils {
     public static final double EARTH_SCALE_FACTOR = (double) EARTH_RADIUS / (double) REAL_EARTH_RADIUS_METERS;
 
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color) {
+        return createConnection(origin, target, color, 1.0);
+    }
+
+    public static Cylinder createConnection(Point3D origin, Point3D target, Color color, double size) {
         Point3D yAxis = new Point3D(0, 1, 0);
         Point3D diff = target.subtract(origin);
         double height = diff.magnitude();
@@ -49,8 +53,9 @@ public class DrawingUtils {
         double angle = Math.acos(diff.normalize().dotProduct(yAxis));
         Rotate rotateAroundCenter = new Rotate(-Math.toDegrees(angle), axisOfRotation);
 
-        Cylinder line = new Cylinder(1, height, 8);
-        line.setMaterial(new PhongMaterial(color));
+        Cylinder line = new Cylinder(size, height, 8);
+        PhongMaterial m = new PhongMaterial(color);
+        line.setMaterial(m);
         line.getTransforms().addAll(moveToMidpoint, rotateAroundCenter);
 
         return line;
@@ -166,43 +171,6 @@ public class DrawingUtils {
         // x (lon): -180: 0 +180: w
         // y (lat): 90: 0 -90: h
         return new double[] { ((longitude + 180) / 360) * width,  ((90 - latitude) / 180) * height };
-    }
-
-    public static MeshView createVisibilityMesh(double latitude, double longitude, List<double[]> visibilityCircleSortedLatLon, double scHeight) {
-        TriangleMesh mesh = new TriangleMesh(VertexFormat.POINT_NORMAL_TEXCOORD);
-        float radius = EARTH_RADIUS + (float) (scHeight * EARTH_SCALE_FACTOR);
-        // Point3D gsPoint = TimeUtils.latLonToScreenPoint(latitude, longitude, radius);
-        Point3D gsPoint = latLonToScreenPoint(latitude, longitude, 0);
-        mesh.getPoints().addAll((float) gsPoint.getX(), (float) gsPoint.getY(), (float) gsPoint.getZ()); // Center (0)
-        // The normal is the normalisation of the point
-        Point3D gsNormal = gsPoint.normalize();
-        mesh.getNormals().addAll((float) gsNormal.getX(), (float) gsNormal.getY(), (float) gsNormal.getZ()); // Center (0)
-        mesh.getTexCoords().addAll(0,0);
-        for(int i = 0; i < visibilityCircleSortedLatLon.size() - 1; ++i) {
-            double[] latLon1 = visibilityCircleSortedLatLon.get(i);
-            double[] latLon2 = visibilityCircleSortedLatLon.get(i + 1);
-            // Make a triangle
-            Point3D p1 = latLonToScreenPoint(latLon1[0], latLon1[1], radius);
-            Point3D p2 = latLonToScreenPoint(latLon2[0], latLon2[1], radius);
-            mesh.getPoints().addAll((float) p1.getX(), (float) p1.getY(), (float) p1.getZ()); // P1 (i * 0 + 1)
-            mesh.getPoints().addAll((float) p2.getX(), (float) p2.getY(), (float) p2.getZ()); // P2 (i * 0 + 2)
-            Point3D pn1 = computeNormal(p1, p2, gsPoint); // 1
-            Point3D pn2 = computeNormal(p2, gsPoint, p1); // 2
-            mesh.getNormals().addAll((float) pn1.getX(), (float) pn1.getY(), (float) pn1.getZ()); // P1
-            mesh.getNormals().addAll((float) pn2.getX(), (float) pn2.getY(), (float) pn2.getZ()); // P2
-
-            mesh.getFaces().addAll(0, 0, 0,
-                    (i * 2 + 1), (i * 2 + 1), 0,
-                    (i * 2 + 2), (i * 2 + 2), 0);
-        }
-        // Last face to close the base
-        mesh.getFaces().addAll(0, 0, 0,
-                mesh.getPoints().size()/3 - 1, mesh.getNormals().size()/3 - 1, 0,
-                1, 1, 0);
-
-        MeshView meshView = new MeshView(mesh);
-        meshView.setCullFace(CullFace.NONE);
-        return meshView;
     }
 
     public static double[] mapToWidgetCoordinates(double latitude, double longitude, ViewBox widgetViewport, ViewBox latLonViewport) {

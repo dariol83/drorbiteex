@@ -66,8 +66,19 @@
                <Label text="Visibility" />
                <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
                </ComboBox>
+               <ToggleButton fx:id="toggle3DvisibilityLineButton" mnemonicParsing="false" selected="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/eye-outline.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle ground station 3D visibility lines" />
+                   </tooltip>
+               </ToggleButton>
                <Separator orientation="VERTICAL" />
-
                <Region HBox.hgrow="ALWAYS" />
                <Separator orientation="VERTICAL" />
                <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--" alignment="CENTER" contentDisplay="CENTER" minWidth="120" maxWidth="120"/>

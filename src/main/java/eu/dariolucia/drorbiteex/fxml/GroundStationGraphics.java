@@ -18,6 +18,7 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.station.*;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -26,16 +27,15 @@ import javafx.scene.Group;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.MeshView;
+import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
+import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GroundStationGraphics implements IGroundStationListener {
@@ -46,13 +46,14 @@ public class GroundStationGraphics implements IGroundStationListener {
     private final ModelManager manager;
 
     private final SimpleBooleanProperty visibleProperty = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty visibilityLineProperty = new SimpleBooleanProperty(false);
 
     private transient Sphere graphicItem;
     private transient Group visibilityItem;
+
+    private transient Map<Orbit, Cylinder> orbit2visibility = new HashMap<>();
     private transient Text textItem;
     private transient Group groupItem;
-
-    private transient OrbitGraphics selectedOrbit = null;
 
     public GroundStationGraphics(ModelManager manager, GroundStation obj) {
         this.manager = manager;
@@ -60,6 +61,14 @@ public class GroundStationGraphics implements IGroundStationListener {
         this.obj.addListener(this);
         this.visibleProperty.set(obj.isVisible());
         this.visibleProperty.addListener((source,oldV,newV) -> BackgroundThread.runLater(() -> obj.setVisible(newV)));
+        this.visibilityLineProperty.addListener((source, oldV, newV) -> updateVisibility());
+    }
+
+    private void updateVisibility() {
+        for (Map.Entry<Orbit, Cylinder> e : orbit2visibility.entrySet()) {
+            // Override
+            e.getValue().setVisible(visibilityLineProperty.get() && visibleProperty.get() && e.getKey().isVisible());
+        }
     }
 
     public SimpleBooleanProperty visibleProperty() {
@@ -88,10 +97,6 @@ public class GroundStationGraphics implements IGroundStationListener {
     private void updateGraphicItems() {
         PhongMaterial m = new PhongMaterial(Color.valueOf(obj.getColor()));
         this.graphicItem.setMaterial(m);
-        if(!this.visibilityItem.getChildren().isEmpty()) {
-            Color originalFill = Color.valueOf(obj.getColor());
-            ((MeshView) this.visibilityItem.getChildren().get(0)).setMaterial(new PhongMaterial(new Color(originalFill.getRed(), originalFill.getGreen(), originalFill.getBlue(), originalFill.getOpacity()/3)));
-        }
         // Compute the absolute position of the sphere in the space
         Point3D location = DrawingUtils.latLonToScreenPoint(obj.getLatitude(), obj.getLongitude(), DrawingUtils.EARTH_RADIUS);
         this.graphicItem.setTranslateX(location.getX());
@@ -107,30 +112,6 @@ public class GroundStationGraphics implements IGroundStationListener {
         result = result.createConcatenation(new Rotate(obj.getLongitude(), new Point3D(0, -1, 0)));
         this.textItem.getTransforms().clear();
         this.textItem.getTransforms().add(result);
-    }
-
-    public void setSelectedOrbit(OrbitGraphics selectedOrbit) {
-        this.selectedOrbit = selectedOrbit;
-        updateVisibilityCircle();
-    }
-
-    private void updateVisibilityCircle() {
-        if(this.selectedOrbit == null) {
-            this.visibilityItem.getChildren().clear();
-        } else {
-            VisibilityCircle vc = obj.getVisibilityCircleOf(selectedOrbit.getOrbit());
-            if (vc != null) {
-                List<double[]> visibilityCircleSortedLatLon = vc.getVisibilityCircle().stream().map(gp -> new double[]{Math.toDegrees(gp.getLatitude()), Math.toDegrees(gp.getLongitude())}).collect(Collectors.toCollection(ArrayList::new));
-                // Create mesh for 3D map:
-                this.visibilityItem.getChildren().clear();
-                MeshView visibility = DrawingUtils.createVisibilityMesh(obj.getLatitude(), obj.getLongitude(), visibilityCircleSortedLatLon, selectedOrbit.getOrbit().getCurrentSpacecraftPosition().getLatLonHeight().getAltitude());
-                Color originalFill = Color.valueOf(obj.getColor());
-                visibility.setMaterial(new PhongMaterial(new Color(originalFill.getRed(), originalFill.getGreen(), originalFill.getBlue(), originalFill.getOpacity() / 3)));
-                this.visibilityItem.getChildren().add(visibility);
-            } else {
-                this.visibilityItem.getChildren().clear();
-            }
-        }
     }
 
     public void draw(GraphicsContext gc, OrbitGraphics selectedOrbit, ViewBox widgetViewport, ViewBox latLonViewport, boolean isSelected) {
@@ -198,11 +179,6 @@ public class GroundStationGraphics implements IGroundStationListener {
         }
     }
 
-    private boolean isInViewport(ViewBox latLonViewport) {
-        return obj.getLongitude() >= latLonViewport.getStartX() && obj.getLongitude() <= latLonViewport.getEndX() &&
-                obj.getLatitude() <= latLonViewport.getStartY() && obj.getLatitude() >= latLonViewport.getEndY();
-    }
-
     public void dispose() {
         this.obj.removeListener(this);
         this.graphicItem.visibleProperty().unbind();
@@ -240,7 +216,34 @@ public class GroundStationGraphics implements IGroundStationListener {
 
     @Override
     public void spacecraftPositionUpdated(GroundStation groundStation, Orbit orbit, TrackPoint point) {
-        // Nothing
+        if(!groundStation.equals(this.obj)) {
+            return;
+        }
+        Platform.runLater(() -> {
+            // Remove the old line
+            Cylinder visibilityLine = this.orbit2visibility.remove(orbit);
+            if(visibilityLine != null) {
+                this.visibilityItem.getChildren().remove(visibilityLine);
+            }
+            // Add the new line, in case the elevation justifies it
+            if(point != null && point.getElevation() > 0) {
+                // Satellite position
+                Point3D scPos = transform(point.getSpacecraftPosition());
+                Point3D gsPos = DrawingUtils.latLonToScreenPoint(obj.getLatitude(), obj.getLongitude(), DrawingUtils.EARTH_RADIUS);
+                Cylinder connection = DrawingUtils.createConnection(scPos, gsPos, Color.valueOf(obj.getColor()), 0.2);
+                connection.setVisible(visibilityLineProperty.get() && visibleProperty.get() && orbit.isVisible());
+                this.visibilityItem.getChildren().add(connection);
+                this.orbit2visibility.put(orbit, connection);
+            }
+        });
+    }
+
+    private Point3D transform(SpacecraftPosition ss) {
+        Vector3D position = ss.getPositionVector();
+        // ECEF to screen
+        return new Point3D(position.getY() * DrawingUtils.EARTH_SCALE_FACTOR,
+                - position.getZ() * DrawingUtils.EARTH_SCALE_FACTOR,
+                - position.getX() * DrawingUtils.EARTH_SCALE_FACTOR);
     }
 
     public GroundStation getGroundStation() {
@@ -256,6 +259,10 @@ public class GroundStationGraphics implements IGroundStationListener {
         return this.obj.getCode();
     }
 
+    public SimpleBooleanProperty visibilityLineProperty() {
+        return visibilityLineProperty;
+    }
+
     private static final Comparator<double[]> LONGITUDE_SORTER = (o1, o2) -> {
         if(o1[0] == o2[0]) {
             return Double.compare(o1[1], o2[1]);
@@ -263,4 +270,19 @@ public class GroundStationGraphics implements IGroundStationListener {
             return Double.compare(o1[0], o2[0]);
         }
     };
+
+    public void informOrbitUpdated(Orbit orbit) {
+        Cylinder visibilityLine = this.orbit2visibility.get(orbit);
+        if(visibilityLine != null) {
+            visibilityLine.setVisible(visibilityLineProperty.get() && visibleProperty.get() && orbit.isVisible());
+        }
+    }
+
+    public void informOrbitRemoved(Orbit orbit) {
+        Cylinder visibilityLine = this.orbit2visibility.get(orbit);
+        if(visibilityLine != null) {
+            visibilityLine = this.orbit2visibility.remove(orbit);
+            this.visibilityItem.getChildren().remove(visibilityLine);
+        }
+    }
 }

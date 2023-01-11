@@ -352,4 +352,16 @@ public class GroundStationPane implements Initializable {
             }
         }
     }
+
+    public void orbitUpdated(Orbit orbit) {
+        for(GroundStationGraphics g : getGroundStationGraphics()) {
+            g.informOrbitUpdated(orbit);
+        }
+    }
+
+    public void deregisterOrbit(OrbitGraphics graphics) {
+        for(GroundStationGraphics g : getGroundStationGraphics()) {
+            g.informOrbitRemoved(graphics.getOrbit());
+        }
+    }
 }
