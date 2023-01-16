@@ -81,6 +81,18 @@
                                 <Tooltip text="Export currently computed ground track..." />
                             </tooltip>
                         </Button>
+                        <Button mnemonicParsing="false" onAction="#onCollinearityAnalysisAction">
+                            <graphic>
+                                <ImageView pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@/angle-acute.png" />
+                                    </image>
+                                </ImageView>
+                            </graphic>
+                            <tooltip>
+                                <Tooltip text="Compute collinearity events..." />
+                            </tooltip>
+                        </Button>
                         <Button mnemonicParsing="false" onAction="#onEditGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">

@@ -16,7 +16,13 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.fxml.progress.IProgressMonitor;
+import eu.dariolucia.drorbiteex.fxml.progress.ProgressDialog;
 import eu.dariolucia.drorbiteex.model.ModelManager;
+import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalyser;
+import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.collinearity.CollinearityEvent;
+import eu.dariolucia.drorbiteex.model.collinearity.ICollinearityProgressMonitor;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
@@ -306,6 +312,56 @@ public class GroundStationPane implements Initializable {
                         Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
                     }
                 });
+            }
+        }
+    }
+
+    public void onCollinearityAnalysisAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            List<Orbit> orbits = orbitSupplier.get(); //
+            // open dialog
+            CollinearityAnalysisRequest sgr = CollinearityAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
+            if(sgr != null) {
+                ProgressDialog.InterruptibleCallable<List<CollinearityEvent>> task = new ProgressDialog.InterruptibleCallable<>() {
+                    private CollinearityAnalyser collinearityAnalyser;
+                    private ICollinearityProgressMonitor monitorBridge;
+
+                    @Override
+                    public void monitor(IProgressMonitor monitor) {
+                        this.monitorBridge = (current, total, message) -> monitor.progress("Collinearity Analysis", current, total, message);
+                    }
+
+                    @Override
+                    public void cancel() {
+                        if (collinearityAnalyser != null) {
+                            collinearityAnalyser.cancel();
+                        }
+                    }
+
+                    @Override
+                    public List<CollinearityEvent> call() {
+                        try {
+                            collinearityAnalyser = new CollinearityAnalyser();
+                            List<CollinearityEvent> events = collinearityAnalyser.analyse(sgr, this.monitorBridge);
+                            if (events != null) {
+                                collinearityAnalyser.generateCSV(sgr.getFilePath(), events);
+                            }
+                            return events;
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    }
+                };
+                List<CollinearityEvent> events = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Collinearity Analysis", task);
+                if(events != null) {
+                    Platform.runLater(() -> DialogUtils.info("Collinearity Analysis", events.size() + " events found for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
+                            "File " + sgr.getFilePath() + " generated.\n " + events.size() + " collinearity events detected."));
+                } else {
+                    Platform.runLater(() -> DialogUtils.alert("Collinearity Analysis", "Collinearity events found for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
+                            "Analysis cancelled"));
+                }
             }
         }
     }

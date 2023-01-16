@@ -307,4 +307,14 @@ public class Orbit {
     public synchronized void setOrbitConfiguration(OrbitParameterConfiguration param) {
         this.orbitConfiguration = param.copy();
     }
+
+    public OrbitParameterConfiguration getOrbitConfiguration() {
+        return orbitConfiguration;
+    }
+
+    public Orbit copy() {
+        Orbit o = new Orbit(getId(), getCode(), getName(), getColor(), isVisible(), getModel().copy());
+        o.setOrbitConfiguration(this.orbitConfiguration.copy());
+        return o;
+    }
 }
