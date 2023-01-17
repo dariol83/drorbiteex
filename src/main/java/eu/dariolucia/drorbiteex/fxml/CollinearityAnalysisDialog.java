@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,13 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
-import java.io.File;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -44,21 +41,23 @@ public class CollinearityAnalysisDialog implements Initializable {
     private static String lastSelectedOrbitNames = null;
 
     private static double lastMinAngularSeparation = 5.0; // in degrees
+    private static int lastPointInterval = 5; // in seconds
 
-    private static String lastFilePath = "";
+    private static int lastNbOfCores = 1;
 
     public TextField startDateText;
     public TextField startTimeText;
     public TextField endDateText;
     public TextField endTimeText;
-    public TextField filePathText;
 
     public ListView<Orbit> orbitList;
     public TextField minAngularSeparationText;
-    public Button filePathButton;
-    private SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-    private SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
-    private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
+    public TextField intervalPeriodText;
+    public Slider coreSlide;
+
+    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
+    private final SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
 
@@ -70,6 +69,13 @@ public class CollinearityAnalysisDialog implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
+        coreSlide.setMin(1);
+        coreSlide.setMax(Runtime.getRuntime().availableProcessors());
+        coreSlide.setMajorTickUnit(1);
+        coreSlide.setMinorTickCount(0);
+        coreSlide.setSnapToTicks(true);
+        coreSlide.setBlockIncrement(1.0);
+
         dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         timeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -78,8 +84,9 @@ public class CollinearityAnalysisDialog implements Initializable {
         startTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         endDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         endTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        filePathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        coreSlide.valueProperty().addListener((prop, oldVal, newVal) -> validate());
         minAngularSeparationText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        intervalPeriodText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
     }
@@ -100,6 +107,7 @@ public class CollinearityAnalysisDialog implements Initializable {
             }
 
             Double.parseDouble(minAngularSeparationText.getText());
+            Integer.parseInt(intervalPeriodText.getText());
 
             getDate(startDateText, startTimeText);
             getDate(endDateText, endTimeText);
@@ -122,10 +130,12 @@ public class CollinearityAnalysisDialog implements Initializable {
             lastSelectedOrbitNames = orbit.getName();
             double minAngSep = Double.parseDouble(minAngularSeparationText.getText());
             lastMinAngularSeparation = minAngSep;
-            lastFilePath = filePathText.getText();
-
+            int pointInterval = Integer.parseInt(intervalPeriodText.getText());
+            lastPointInterval = pointInterval;
+            int nbCores = (int) coreSlide.getValue();
+            lastNbOfCores = nbCores;
             return new CollinearityAnalysisRequest(this.groundStation, orbit, start, end, minAngSep,
-                    filePathText.getText());
+                    pointInterval, nbCores);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -172,8 +182,9 @@ public class CollinearityAnalysisDialog implements Initializable {
         this.startTimeText.setText(toTimeText(lastStartDate));
         this.endDateText.setText(toDateText(lastEndDate));
         this.endTimeText.setText(toTimeText(lastEndDate));
-        this.filePathText.setText(lastFilePath);
+        this.intervalPeriodText.setText(String.valueOf(lastPointInterval));
         this.minAngularSeparationText.setText(String.valueOf(lastMinAngularSeparation));
+        this.coreSlide.setValue(lastNbOfCores);
         Orbit selectedOrbit = null;
         for(Orbit o : orbits) {
             this.orbitList.getItems().add(o);
@@ -195,16 +206,4 @@ public class CollinearityAnalysisDialog implements Initializable {
         return dateFormatter.format(date);
     }
 
-    public void onSelectFileAction(ActionEvent actionEvent) {
-        FileChooser fc = new FileChooser();
-        fc.setTitle("Save Analysis File");
-        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV file","*.csv","*.txt"));
-        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
-        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("CSV file","*.csv","*.txt"));
-
-        File selected = fc.showSaveDialog(filePathText.getScene().getWindow());
-        if(selected != null) {
-            filePathText.setText(selected.getAbsolutePath());
-        }
-    }
 }

@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package eu.dariolucia.drorbiteex.model.schedule;
+package eu.dariolucia.drorbiteex.model.util;
 
-public enum ActivityStatusEnum {
-    COMMITTED,
-    TENTATIVE,
-    AVAILABLE,
-    UNAVAILABLE
+public interface ITaskProgressMonitor {
+
+    default void progress(long current, long total, String message) {
+        // Nothing
+    }
+
+    default boolean isCancelled() {
+        return false;
+    }
 }

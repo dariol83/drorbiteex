@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.fxml.progress.IProgressMonitor;
+import eu.dariolucia.drorbiteex.fxml.progress.IMonitorableCallable;
 import eu.dariolucia.drorbiteex.fxml.progress.ProgressDialog;
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalyser;
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityEvent;
-import eu.dariolucia.drorbiteex.model.collinearity.ICollinearityProgressMonitor;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
@@ -208,15 +208,34 @@ public class GroundStationPane implements Initializable {
             // open dialog
             ScheduleGenerationRequest sgr = ExportScheduleDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
             if(sgr != null) {
-                BackgroundThread.runLater(() -> {
+                IMonitorableCallable<String> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("CCSDS Simple Schedule Export", current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+
                     try {
-                        final String finalPath = manager.exportSchedule(sgr);
-                        Platform.runLater(() -> DialogUtils.info("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " exported", "Schedule file: " + finalPath));
+                        return manager.exportSchedule(sgr, monitorBridge);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Platform.runLater(() -> DialogUtils.alert("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " not exported", "Error: " + e.getMessage()));
+                        throw e;
                     }
-                });
+                };
+                ProgressDialog.Result<String> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "CCSDS Simple Schedule Export", task, BackgroundThread.getExecutor());
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    DialogUtils.info("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " exported", "Schedule file: " + taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " not exported", "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("CCSDS Simple Schedule Export", "Schedule of " + gs.getGroundStation().getName() + " not exported", "Error during file generation");
+                }
             }
         }
     }
@@ -323,44 +342,36 @@ public class GroundStationPane implements Initializable {
             // open dialog
             CollinearityAnalysisRequest sgr = CollinearityAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
             if(sgr != null) {
-                ProgressDialog.InterruptibleCallable<List<CollinearityEvent>> task = new ProgressDialog.InterruptibleCallable<>() {
-                    private CollinearityAnalyser collinearityAnalyser;
-                    private ICollinearityProgressMonitor monitorBridge;
-
-                    @Override
-                    public void monitor(IProgressMonitor monitor) {
-                        this.monitorBridge = (current, total, message) -> monitor.progress("Collinearity Analysis", current, total, message);
-                    }
-
-                    @Override
-                    public void cancel() {
-                        if (collinearityAnalyser != null) {
-                            collinearityAnalyser.cancel();
+                IMonitorableCallable<List<CollinearityEvent>> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Collinearity Analysis", current, total, message);
                         }
-                    }
 
-                    @Override
-                    public List<CollinearityEvent> call() {
-                        try {
-                            collinearityAnalyser = new CollinearityAnalyser();
-                            List<CollinearityEvent> events = collinearityAnalyser.analyse(sgr, this.monitorBridge);
-                            if (events != null) {
-                                collinearityAnalyser.generateCSV(sgr.getFilePath(), events);
-                            }
-                            return events;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            return null;
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
                         }
+                    };
+                    try {
+                        return CollinearityAnalyser.analyse(sgr, monitorBridge);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw e;
                     }
                 };
-                List<CollinearityEvent> events = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Collinearity Analysis", task);
-                if(events != null) {
-                    Platform.runLater(() -> DialogUtils.info("Collinearity Analysis", events.size() + " events found for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
-                            "File " + sgr.getFilePath() + " generated.\n " + events.size() + " collinearity events detected."));
+                ProgressDialog.Result<List<CollinearityEvent>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Collinearity Analysis", task);
+                // TODO: implement view of events (which allows the export in CSV): table with events, and polar plot to show the two points upon selection
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    DialogUtils.info("Collinearity Analysis", taskResult.getResult().size() + " events found for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
+                            taskResult.getResult().size() + " collinearity events detected.");
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Collinearity Analysis", "Collinearity events for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
+                            "Task cancelled by user");
                 } else {
-                    Platform.runLater(() -> DialogUtils.alert("Collinearity Analysis", "Collinearity events found for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
-                            "Analysis cancelled"));
+                    DialogUtils.alert("Collinearity Analysis", "Collinearity events for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
+                            "Error: " + taskResult.getError().getMessage());
                 }
             }
         }

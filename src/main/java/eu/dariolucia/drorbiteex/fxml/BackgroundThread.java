@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,10 @@ public class BackgroundThread {
         t.setName("Dr Orbiteex - Model Manager Thread");
         return t;
     });
+
+    public static ExecutorService getExecutor() {
+        return THREAD_EXECUTOR;
+    }
 
     public static void runLater(Runnable r) {
         THREAD_EXECUTOR.submit(r);

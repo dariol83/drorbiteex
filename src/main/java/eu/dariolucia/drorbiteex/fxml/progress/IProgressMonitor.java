@@ -18,4 +18,6 @@ package eu.dariolucia.drorbiteex.fxml.progress;
 
 public interface IProgressMonitor {
     void progress(String name, long current, long total, String message);
+
+    boolean isCancelled();
 }

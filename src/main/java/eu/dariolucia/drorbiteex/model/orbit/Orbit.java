@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ public class Orbit {
 
     @Override
     public synchronized String toString() {
-        return this.code + " - " + this.name;
+        return this.name;
     }
 
     @Override

@@ -17,6 +17,7 @@ open module eu.dariolucia.drorbiteex {
     requires hipparchus.ode;
 
     exports eu.dariolucia.drorbiteex.fxml;
+    exports eu.dariolucia.drorbiteex.fxml.progress;
     exports eu.dariolucia.drorbiteex.application;
     exports eu.dariolucia.drorbiteex.model;
     exports eu.dariolucia.drorbiteex.model.orbit;
@@ -24,6 +25,7 @@ open module eu.dariolucia.drorbiteex {
     exports eu.dariolucia.drorbiteex.model.util;
     exports eu.dariolucia.drorbiteex.model.schedule;
     exports eu.dariolucia.drorbiteex.model.oem;
+    exports eu.dariolucia.drorbiteex.model.collinearity;
 
     uses eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;
     uses eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator;

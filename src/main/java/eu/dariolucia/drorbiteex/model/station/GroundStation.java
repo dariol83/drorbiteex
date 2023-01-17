@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -389,7 +389,12 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     }
 
     public synchronized List<VisibilityWindow> getVisibilityWindowsOf(Orbit o) {
-        return List.copyOf(this.visibilityWindows.get(o));
+        List<VisibilityWindow> toReturn = this.visibilityWindows.get(o);
+        if(toReturn != null) {
+            return List.copyOf(toReturn);
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     public synchronized Map<Orbit, TrackPoint> getAllCurrentVisibilities() {

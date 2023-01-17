@@ -19,7 +19,6 @@ package eu.dariolucia.drorbiteex.fxml.progress;
 import eu.dariolucia.drorbiteex.fxml.ExportScheduleDialog;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
@@ -33,20 +32,18 @@ import javafx.stage.Window;
 import java.net.URL;
 import java.util.Date;
 import java.util.ResourceBundle;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class ProgressDialog implements Initializable, IProgressMonitor {
     public Label messageText;
     public ProgressBar progress;
     public Label ectText;
-    private volatile InterruptibleCallable task;
+    private volatile MonitorableTask task;
 
     private volatile boolean wasInterrupted = false;
-    private volatile Stage stage;
 
+    private volatile Exception detectedError;
+    private volatile Stage stage;
     private volatile Date startTime;
 
     @Override
@@ -56,35 +53,45 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
 
     public void onCancelButtonAction(ActionEvent actionEvent) {
         this.wasInterrupted = true;
-        if(task != null) {
-            task.cancel();
+        if(stage != null) {
             stage.close(); // unblock the showAndWait call
         }
     }
 
-    private <V> Future<V> runTask(InterruptibleCallable<V> task, Stage stage) {
+    private <V> Future<V> runTask(IMonitorableCallable<V> task, Stage stage, ExecutorService executorService) {
         this.stage = stage;
-        this.task = task;
-        task.monitor(this);
-        ExecutorService service = Executors.newSingleThreadExecutor((r) -> {
-            Thread t = new Thread(r, "Progress Task");
-            t.setDaemon(true);
-            return t;
-        });
+        this.task = new MonitorableTask<>(task);
+        this.task.setMonitor(this);
         this.startTime = new Date();
-        Future<V> future = service.submit(task);
-        service.shutdown();
+        boolean shutdownAfterSubmit = executorService == null;
+        if(executorService == null) {
+            executorService = Executors.newSingleThreadExecutor((r) -> {
+                Thread t = new Thread(r, "Progress Task");
+                t.setDaemon(true);
+                return t;
+            });
+        }
+        Future<V> future = executorService.submit(this.task);
+        if(shutdownAfterSubmit) {
+            executorService.shutdown();
+        }
         return future;
     }
 
-    public static <V> V openProgress(Window owner, String name, InterruptibleCallable<V> task) {
+    public static <V> Result<V> openProgress(Window owner, String name, IMonitorableCallable<V> task) {
+        return openProgress(owner, name, task, null);
+    }
+
+    public static <V> Result<V> openProgress(Window owner, String name, IMonitorableCallable<V> task, ExecutorService executorService) {
         try {
             // Create the popup
             Stage d = new Stage();
             d.setTitle(name);
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
-            d.initStyle(StageStyle.UTILITY);
+            //d.initStyle(StageStyle.UTILITY);
+            d.setResizable(false);
+
 
             URL dataSelectionDialogFxmlUrl = ExportScheduleDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/progress/ProgressDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
@@ -92,7 +99,7 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
             d.setScene(new Scene(root));
 
             ProgressDialog controller = loader.getController();
-            Future<V> future = controller.runTask(task, d);
+            Future<V> future = controller.runTask(task, d, executorService);
             d.setOnCloseRequest(e -> {
                 controller.onCancelButtonAction(null);
                 e.consume();
@@ -100,14 +107,20 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
             d.showAndWait();
 
             V value = future.get();
-            if(controller.wasInterrupted) {
-                return null;
+            if (controller.wasInterrupted) {
+                return new Result<>(TaskStatus.CANCELLED, null, null);
+            } else if (controller.task != null && controller.task.getDetectedError() != null) {
+                return new Result<>(TaskStatus.ERROR, controller.task.getDetectedError(), null);
             } else {
-                return value;
+                return new Result<>(TaskStatus.COMPLETED, null, value);
             }
+        } catch (CancellationException e) {
+            return new Result<>(TaskStatus.CANCELLED, null, null);
+        } catch (ExecutionException e) {
+            return new Result<>(TaskStatus.ERROR, e.getCause(), null);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return new Result<>(TaskStatus.ERROR, e, null);
         }
     }
 
@@ -148,6 +161,11 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
         });
     }
 
+    @Override
+    public boolean isCancelled() {
+        return this.wasInterrupted;
+    }
+
     private long computeECT(Date timestamp, long current, long total) {
         // Compute the difference between start time and timestamp
         long msDiff = timestamp.getTime() - startTime.getTime();
@@ -156,9 +174,33 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
         return Math.round(estimated) / 1000;
     }
 
-    public interface InterruptibleCallable<V> extends Callable<V> {
-        void monitor(IProgressMonitor monitor);
+    public static class Result<V> {
+        private final TaskStatus status;
+        private final Throwable error;
+        private final V result;
 
-        void cancel();
+        public Result(TaskStatus status, Throwable error, V result) {
+            this.status = status;
+            this.error = error;
+            this.result = result;
+        }
+
+        public TaskStatus getStatus() {
+            return status;
+        }
+
+        public Throwable getError() {
+            return error;
+        }
+
+        public V getResult() {
+            return result;
+        }
+    }
+
+    public enum TaskStatus {
+        COMPLETED,
+        CANCELLED,
+        ERROR
     }
 }

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package eu.dariolucia.drorbiteex.model.schedule;
+package eu.dariolucia.drorbiteex.fxml.progress;
 
-public enum ActivityStatusEnum {
-    COMMITTED,
-    TENTATIVE,
-    AVAILABLE,
-    UNAVAILABLE
+public interface IMonitorableCallable<V> {
+
+    V run(IProgressMonitor monitor) throws Exception;
+
 }

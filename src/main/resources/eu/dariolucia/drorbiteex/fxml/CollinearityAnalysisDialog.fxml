@@ -29,7 +29,7 @@
          <children>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Orbits" />
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Reference Orbit" />
                   <ListView fx:id="orbitList" prefHeight="150.0" prefWidth="255.0" />
                </children>
             </HBox>
@@ -50,13 +50,21 @@
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Min. angular separation" />
-                  <TextField fx:id="minAngularSeparationText" minWidth="150.0" promptText="5.0" text="5.0"/>
+                  <TextField fx:id="minAngularSeparationText" minWidth="150.0" promptText="5.0" text="5.0" />
+                  <Label minWidth="50.0" prefHeight="24.0" prefWidth="50.0" text="degrees" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <TextField fx:id="filePathText" minWidth="315.0" prefWidth="315.0" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="filePathButton" minWidth="80.0" onAction="#onSelectFileAction" prefWidth="80.0" text="Select..." />
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Point interval period" />
+                  <TextField fx:id="intervalPeriodText" minWidth="150.0" promptText="5" text="5" />
+                  <Label minWidth="50.0" prefHeight="24.0" prefWidth="50.0" text="seconds" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Parallel Processing Cores" />
+                  <Slider fx:id="coreSlide" showTickLabels="true" showTickMarks="true" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
          </children>

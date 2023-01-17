@@ -27,7 +27,7 @@
          <children>
             <Label fx:id="messageText" maxWidth="1.7976931348623157E308" text="---" VBox.vgrow="NEVER" />
             <ProgressBar fx:id="progress" maxWidth="1.7976931348623157E308" />
-            <Label fx:id="ectText" alignment="CENTER_RIGHT" maxWidth="1.7976931348623157E308" text="ECT: ---" textAlignment="RIGHT" />
+            <Label fx:id="ectText" maxWidth="1.7976931348623157E308" text="ECT: ---" />
             <HBox>
                <children>
                   <Region HBox.hgrow="ALWAYS" />

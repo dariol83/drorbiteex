@@ -17,10 +17,10 @@
 package eu.dariolucia.drorbiteex.model.schedule;
 
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.orbit.OrbitConfiguration;
 import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
@@ -35,12 +35,14 @@ import java.util.stream.Collectors;
 public class ScheduleExporterProcess {
 
     private final OrbitParameterConfiguration configuration;
+    private final ScheduleGenerationRequest request;
 
-    public ScheduleExporterProcess(OrbitParameterConfiguration configuration) {
+    public ScheduleExporterProcess(OrbitParameterConfiguration configuration, ScheduleGenerationRequest request) {
         this.configuration = configuration;
+        this.request = request;
     }
 
-    public String exportSchedule(ScheduleGenerationRequest request) throws IOException {
+    public String exportSchedule(ITaskProgressMonitor monitor) throws IOException {
         // For all the provided orbits, get a copy of the model and compute the visibility windows between the dates
         IScheduleExporter externalExporter = ScheduleExporterRegistry.instance().getExporter(request.getExporterToUse());
         // Compute generation time and check filename
@@ -59,9 +61,17 @@ public class ScheduleExporterProcess {
         }
         exporter.writeHeader(request, genDate);
         // Go for passes
+        int progress = 0;
         for(Orbit o : request.getOrbits()) {
             List<VisibilityWindow> passes = computePasses(request.getGroundStation(), o, request.getStartTime(), request.getEndTime());
+            if(monitor != null && monitor.isCancelled()) {
+                return null;
+            }
             exporter.writeScheduledPackage(request, request.getGroundStation(), o, passes);
+            ++progress;
+            if(monitor != null) {
+                monitor.progress(progress, request.getOrbits().size(), "Processed " + o.getName());
+            }
         }
         exporter.close();
         return generatedFile;

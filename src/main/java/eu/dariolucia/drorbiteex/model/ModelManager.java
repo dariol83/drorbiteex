@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package eu.dariolucia.drorbiteex.model;
 import eu.dariolucia.drorbiteex.model.orbit.*;
 import eu.dariolucia.drorbiteex.model.schedule.*;
 import eu.dariolucia.drorbiteex.model.station.*;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
@@ -94,8 +95,8 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
         return groundStationManager;
     }
 
-    public String exportSchedule(ScheduleGenerationRequest request) throws IOException {
-        return new ScheduleExporterProcess(orbitManager.getConfiguration().copy()).exportSchedule(request);
+    public String exportSchedule(ScheduleGenerationRequest request, ITaskProgressMonitor monitor) throws IOException {
+        return new ScheduleExporterProcess(orbitManager.getConfiguration().copy(), request).exportSchedule(monitor);
     }
 
     @Override

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package eu.dariolucia.drorbiteex.model.collinearity;
 
 import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
@@ -6,26 +22,28 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class CollinearityAnalyser {
 
-    private static final long ORBIT_POINT_INTERVAL = 5000; // in milliseconds
-    private static final long ORBIT_COMPUTATION_CHUNK = 100; // max number of ORBIT_POINT_INTERVAL periods computed
-
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-    public void cancel() {
-        this.cancelled.set(true);
+    private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
+    public static List<CollinearityEvent> analyse(CollinearityAnalysisRequest request) throws IOException {
+        return analyse(request, DUMMY_MONITOR);
     }
-    public List<CollinearityEvent> analyse(CollinearityAnalysisRequest request, ICollinearityProgressMonitor monitor) throws IOException {
-        if(cancelled.get()) {
+    public static List<CollinearityEvent> analyse(CollinearityAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
+        if(monitor == null) {
+            throw new NullPointerException("Monitor implementation cannot be null");
+        }
+        if(monitor.isCancelled()) {
             return null;
         }
         List<CollinearityEvent> events;
@@ -36,7 +54,7 @@ public class CollinearityAnalyser {
         if(active == null) {
             throw new IOException("Cannot fetch Celestrak data for 'active' satellites");
         }
-        if(cancelled.get()) {
+        if(monitor.isCancelled()) {
             return null;
         }
         // Create the orbits, remove the reference orbit if Celestrak based or same name
@@ -60,10 +78,7 @@ public class CollinearityAnalyser {
         }
 
         // One chunk, one thread: use thread pool
-        int threadsToUse = Runtime.getRuntime().availableProcessors()/2;
-        if(threadsToUse <= 0) {
-            threadsToUse = 1;
-        }
+        int threadsToUse = request.getCores();
         System.out.println("Using " + threadsToUse + " threads");
         ExecutorService service = Executors.newFixedThreadPool(threadsToUse, (r) -> {
             Thread t = new Thread(r, "Collinearity Job");
@@ -99,11 +114,11 @@ public class CollinearityAnalyser {
 
         // Start satellite based division
         for(Orbit tOrbit : targetOrbits) {
-            if(cancelled.get()) {
+            if(monitor.isCancelled()) {
                 service.shutdownNow();
                 return null;
             }
-            futures.add(service.submit(new Worker(groundStation, refOrbit, request.getStartTime(), request.getEndTime(), Collections.singletonList(tOrbit), request.getMinAngularSeparation())));
+            futures.add(service.submit(new Worker(groundStation, refOrbit, request.getStartTime(), request.getEndTime(), Collections.singletonList(tOrbit), request.getMinAngularSeparation(), request.getIntervalPeriod())));
         }
         System.out.println("Items to process: " + futures.size());
 
@@ -115,7 +130,7 @@ public class CollinearityAnalyser {
         for(Future<List<CollinearityEvent>> f : futures) {
             try {
                 List<CollinearityEvent> subEventList = f.get();
-                if(cancelled.get()) {
+                if(monitor.isCancelled()) {
                     service.shutdownNow();
                     return null;
                 }
@@ -125,9 +140,7 @@ public class CollinearityAnalyser {
                 return Collections.emptyList();
             }
             ++progress;
-            if(monitor != null) {
-                monitor.progress(progress, futures.size(), "Analysis for " + targetOrbits.get((int) (progress - 1)).getName() + " completed");
-            }
+            monitor.progress(progress, futures.size(), "Analysis for " + targetOrbits.get((int) (progress - 1)).getName() + " completed");
         }
 
         // Compute progress information:
@@ -139,10 +152,7 @@ public class CollinearityAnalyser {
         return events;
     }
 
-    public void generateCSV(String filePath, List<CollinearityEvent> events) throws IOException {
-        if(cancelled.get()) {
-            return;
-        }
+    public static void generateCSV(String filePath, List<CollinearityEvent> events) throws IOException {
         File toGenerate = new File(filePath);
         if(toGenerate.exists()) {
             toGenerate.delete();
@@ -162,7 +172,6 @@ public class CollinearityAnalyser {
     }
 
     private static class Worker implements Callable<List<CollinearityEvent>> {
-
         private final GroundStation groundStation;
         private final Orbit referenceOrbit;
         private final Date start;
@@ -170,8 +179,9 @@ public class CollinearityAnalyser {
 
         private final List<Orbit> targetOrbits;
         private final double minAngularSeparation;
+        private final int pointInterval;
 
-        public Worker(GroundStation groundStation, Orbit referenceOrbit, Date start, Date end, List<Orbit> targetOrbits, double minAngularSeparation) {
+        public Worker(GroundStation groundStation, Orbit referenceOrbit, Date start, Date end, List<Orbit> targetOrbits, double minAngularSeparation, int pointInterval) {
             this.groundStation = groundStation.copy();
             this.groundStation.setConfiguration(groundStation.getConfiguration());
             this.referenceOrbit = referenceOrbit.copy();
@@ -181,6 +191,7 @@ public class CollinearityAnalyser {
             this.targetOrbits = targetOrbits.stream().map(Orbit::copy).collect(Collectors.toList());
             this.targetOrbits.forEach(o -> o.setOrbitConfiguration(referenceOrbit.getOrbitConfiguration()));
             this.minAngularSeparation = minAngularSeparation;
+            this.pointInterval = pointInterval * 1000;
         }
 
         @Override
@@ -188,7 +199,6 @@ public class CollinearityAnalyser {
             // Register the ground station to the orbits
             this.targetOrbits.forEach(o -> o.addListener(this.groundStation));
             this.referenceOrbit.addListener(this.groundStation);
-
             // Instantiate the data collector
             CollinearityDataCollector dataCollector = new CollinearityDataCollector(this.referenceOrbit, this.minAngularSeparation);
             this.groundStation.addListener(dataCollector);
@@ -197,22 +207,12 @@ public class CollinearityAnalyser {
             while(currentDate.before(end)) {
                 // Propagate the reference orbit
                 referenceOrbit.updateOrbitTime(currentDate, false);
-                // Progress
-                // ++currentProgress;
-                // if(monitor != null) {
-                //     monitor.progress(currentProgress, numPoints, currentDate + " - " + refOrbit.getName());
-                // }
                 // Propagate the target orbits
                 for(Orbit o : targetOrbits) {
                     o.updateOrbitTime(currentDate, false);
-                    // Progress
-                    // ++currentProgress;
-                    // if(monitor != null) {
-                    //    monitor.progress(currentProgress, numPoints, currentDate + " - " + o.getName());
-                    // }
                 }
                 // Next step
-                currentDate = new Date(currentDate.getTime() + ORBIT_POINT_INTERVAL);
+                currentDate = new Date(currentDate.getTime() + this.pointInterval);
             }
             // Get the events
             return dataCollector.getEvents();

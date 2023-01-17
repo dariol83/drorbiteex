@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+ * Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
 import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
@@ -32,9 +31,12 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.net.URL;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.UUID;
 import java.util.stream.Collectors;
-
+// TODO add textfield to filter results
 public class CelestrakDialog implements Initializable {
 
     public ComboBox<String> groupCombo;
