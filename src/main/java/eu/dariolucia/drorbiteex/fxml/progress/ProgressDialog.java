@@ -92,7 +92,6 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
             //d.initStyle(StageStyle.UTILITY);
             d.setResizable(false);
 
-
             URL dataSelectionDialogFxmlUrl = ExportScheduleDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/progress/ProgressDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();

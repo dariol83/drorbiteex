@@ -71,8 +71,10 @@ public class CollinearityAnalyser {
         }).collect(Collectors.toList());
         // Set configuration to all orbits
         OrbitParameterConfiguration orbitConf = refOrbit.getOrbitConfiguration().copy();
-        // Never recompute orbit
+        // Never recompute orbit and do not propagate every time
         orbitConf.setRecomputeFullDataInterval(Integer.MAX_VALUE);
+        orbitConf.setAfterPropagationSteps(0);
+        orbitConf.setBeforePropagationSteps(0);
         for(Orbit o : targetOrbits) {
             o.setOrbitConfiguration(orbitConf);
         }
@@ -135,9 +137,10 @@ public class CollinearityAnalyser {
                     return null;
                 }
                 events.addAll(subEventList);
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
-                return Collections.emptyList();
+                service.shutdownNow();
+                throw new IOException(e);
             }
             ++progress;
             monitor.progress(progress, futures.size(), "Analysis for " + targetOrbits.get((int) (progress - 1)).getName() + " completed");
@@ -176,11 +179,9 @@ public class CollinearityAnalyser {
         private final Orbit referenceOrbit;
         private final Date start;
         private final Date end;
-
         private final List<Orbit> targetOrbits;
         private final double minAngularSeparation;
         private final int pointInterval;
-
         public Worker(GroundStation groundStation, Orbit referenceOrbit, Date start, Date end, List<Orbit> targetOrbits, double minAngularSeparation, int pointInterval) {
             this.groundStation = groundStation.copy();
             this.groundStation.setConfiguration(groundStation.getConfiguration());

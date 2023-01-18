@@ -20,6 +20,9 @@ import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
 import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -31,22 +34,35 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.net.URL;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
-// TODO add textfield to filter results
+
 public class CelestrakDialog implements Initializable {
 
     public ComboBox<String> groupCombo;
     public ListView<CelestrakTleData> satelliteList;
     public ProgressIndicator progressIndicator;
+    public TextField filterText;
+
+    private FilteredList<CelestrakTleData> filteredList;
+    private ObservableList<CelestrakTleData> dataList;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         satelliteList.setCellFactory(CheckBoxListCell.forListView(CelestrakTleData::selectedProperty));
+        dataList = FXCollections.observableList(new LinkedList<>());
+        filteredList = new FilteredList<>(dataList, s -> true);
+        satelliteList.setItems(filteredList);
         groupCombo.getItems().addAll("last-30-days", "weather", "dmc", "sarsar", "noaa", "resource", "gps-ops", "galileo", "geo", "cubesat", "active");
+        filterText.textProperty().addListener(observable -> {
+            String filter = filterText.getText();
+            if(filter == null || filter.length() == 0) {
+                filteredList.setPredicate(s -> true);
+            }
+            else {
+                filteredList.setPredicate(s -> s.getName().contains(filter));
+            }
+        });
     }
 
     private List<Orbit> getResult() {
@@ -65,16 +81,18 @@ public class CelestrakDialog implements Initializable {
         if(group != null) {
             satelliteList.setDisable(true);
             progressIndicator.setVisible(true);
+            filterText.setDisable(true);
             BackgroundThread.runLater(() -> {
                 List<CelestrakTleData> sats = CelestrakTleData.retrieveSpacecraftList(group);
                 Platform.runLater(() -> {
                     if(sats != null) {
-                        satelliteList.getItems().clear();
-                        satelliteList.getItems().addAll(sats);
+                        dataList.clear();
+                        dataList.addAll(sats);
                         satelliteList.refresh();
                     }
                     satelliteList.setDisable(false);
                     progressIndicator.setVisible(false);
+                    filterText.setDisable(false);
                 });
             });
         }
@@ -105,5 +123,13 @@ public class CelestrakDialog implements Initializable {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public void onSelectAllAction(ActionEvent actionEvent) {
+        satelliteList.getItems().forEach(o -> o.selectedProperty().set(true));
+    }
+
+    public void onDeselectAllAction(ActionEvent actionEvent) {
+        satelliteList.getItems().forEach(o -> o.selectedProperty().set(false));
     }
 }

@@ -105,7 +105,9 @@ public class CollinearityAnalysisDialog implements Initializable {
             if(endTimeText.getText().isBlank()) {
                 throw new IllegalStateException("End time field is blank");
             }
-
+            if(orbitList.getSelectionModel().getSelectedItem() == null) {
+                throw new IllegalStateException("Orbit not selected");
+            }
             Double.parseDouble(minAngularSeparationText.getText());
             Integer.parseInt(intervalPeriodText.getText());
 
