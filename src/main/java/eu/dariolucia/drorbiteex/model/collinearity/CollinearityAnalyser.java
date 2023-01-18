@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 public class CollinearityAnalyser {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
+    private static final long DAY_MS = 3600 * 24000;
+
     public static List<CollinearityEvent> analyse(CollinearityAnalysisRequest request) throws IOException {
         return analyse(request, DUMMY_MONITOR);
     }
@@ -114,13 +116,20 @@ public class CollinearityAnalyser {
         */
         // End chunk based division
 
-        // Start satellite based division
-        for(Orbit tOrbit : targetOrbits) {
-            if(monitor.isCancelled()) {
-                service.shutdownNow();
-                return null;
+        // Start time (day) and satellite based division
+        Date currentTime = request.getStartTime();
+        Date endTime = request.getEndTime();
+        while(currentTime.getTime() <= endTime.getTime()) {
+            Date currentEndTime = (currentTime.getTime() + DAY_MS < endTime.getTime()) ? new Date(currentTime.getTime() + DAY_MS) : endTime;
+            for (Orbit tOrbit : targetOrbits) {
+                if (monitor.isCancelled()) {
+                    service.shutdownNow();
+                    return null;
+                }
+                // TODO: Change Worker to FutureTask and remember it instead of futures
+                futures.add(service.submit(new Worker(groundStation, refOrbit, currentTime, currentEndTime, Collections.singletonList(tOrbit), request.getMinAngularSeparation(), request.getIntervalPeriod())));
             }
-            futures.add(service.submit(new Worker(groundStation, refOrbit, request.getStartTime(), request.getEndTime(), Collections.singletonList(tOrbit), request.getMinAngularSeparation(), request.getIntervalPeriod())));
+            currentTime = new Date(currentEndTime.getTime() + 1);
         }
         System.out.println("Items to process: " + futures.size());
 
@@ -143,7 +152,7 @@ public class CollinearityAnalyser {
                 throw new IOException(e);
             }
             ++progress;
-            monitor.progress(progress, futures.size(), "Analysis for " + targetOrbits.get((int) (progress - 1)).getName() + " completed");
+            monitor.progress(progress, futures.size(), "TODO with future task");
         }
 
         // Compute progress information:
@@ -184,6 +193,7 @@ public class CollinearityAnalyser {
         private final int pointInterval;
         public Worker(GroundStation groundStation, Orbit referenceOrbit, Date start, Date end, List<Orbit> targetOrbits, double minAngularSeparation, int pointInterval) {
             this.groundStation = groundStation.copy();
+            this.groundStation.setReducedProcessing();
             this.groundStation.setConfiguration(groundStation.getConfiguration());
             this.referenceOrbit = referenceOrbit.copy();
             this.referenceOrbit.setOrbitConfiguration(referenceOrbit.getOrbitConfiguration());

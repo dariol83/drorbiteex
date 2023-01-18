@@ -78,6 +78,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     private volatile GroundStationParameterConfiguration configuration;
 
+    private volatile boolean reducedProcessing = false;
+
     public GroundStation() {
         //
     }
@@ -93,6 +95,10 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.latitude = latitude;
         this.longitude = longitude;
         this.height = height;
+    }
+
+    public void setReducedProcessing() {
+        this.reducedProcessing = true;
     }
 
     public GroundStationParameterConfiguration getConfiguration() {
@@ -325,52 +331,56 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
 
     @Override
     public synchronized void finalizeVisibilityComputation(Orbit orbit, SpacecraftPosition currentSpacecraftPosition) {
-        Date previousTime = this.temporaryPointMap.remove(orbit);
-        // Pass start but not complete: null end date
-        if(previousTime != null) {
-            VisibilityWindow vw = new VisibilityWindow(orbit, orbit.computeOrbitNumberAt(previousTime), previousTime, null, this);
-            visibilityWindows.computeIfAbsent(orbit, o -> new ArrayList<>()).add(vw);
-        }
-        // Verify current visibility
-        // As from https://www.orekit.org/mailing-list-archives/orekit-users/msg00625.html
-        if(currentSpacecraftPosition != null) {
-            SpacecraftState spacecraftState = currentSpacecraftPosition.getSpacecraftState();
-            Date sTime = spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
-            PVCoordinates pv = spacecraftState.getFrame().getTransformTo(this.stationFrame, spacecraftState.getDate()).transformPVCoordinates(spacecraftState.getPVCoordinates());
-            Vector3D p = pv.getPosition();
-            if (p.getDelta() > 0) {
-                // Spacecraft is visible: update information
-                int orbitNumber = currentSpacecraftPosition.getOrbitNumber();
-                double[] azimuthElevation = getAzimuthElevationOf(spacecraftState);
-                this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
-                if (!eventRaised) {
-                    // Create a fake visibility window
-                    VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this);
-                    visibilityWindows.computeIfAbsent(currentOrbit, o -> new ArrayList<>()).add(0, vw);
+        if(!reducedProcessing) {
+            Date previousTime = this.temporaryPointMap.remove(orbit);
+            // Pass start but not complete: null end date
+            if (previousTime != null) {
+                VisibilityWindow vw = new VisibilityWindow(orbit, orbit.computeOrbitNumberAt(previousTime), previousTime, null, this);
+                visibilityWindows.computeIfAbsent(orbit, o -> new ArrayList<>()).add(vw);
+            }
+            // Verify current visibility
+            // As from https://www.orekit.org/mailing-list-archives/orekit-users/msg00625.html
+            if (currentSpacecraftPosition != null) {
+                SpacecraftState spacecraftState = currentSpacecraftPosition.getSpacecraftState();
+                Date sTime = spacecraftState.getDate().toDate(TimeScalesFactory.getUTC());
+                PVCoordinates pv = spacecraftState.getFrame().getTransformTo(this.stationFrame, spacecraftState.getDate()).transformPVCoordinates(spacecraftState.getPVCoordinates());
+                Vector3D p = pv.getPosition();
+                if (p.getDelta() > 0) {
+                    // Spacecraft is visible: update information
+                    int orbitNumber = currentSpacecraftPosition.getOrbitNumber();
+                    double[] azimuthElevation = getAzimuthElevationOf(spacecraftState);
+                    this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
+                    if (!eventRaised) {
+                        // Create a fake visibility window
+                        VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this);
+                        visibilityWindows.computeIfAbsent(currentOrbit, o -> new ArrayList<>()).add(0, vw);
+                    }
+                } else {
+                    // Spacecraft is not visible: remove information
+                    this.currentVisibilityMap.remove(currentOrbit);
                 }
-            } else {
-                // Spacecraft is not visible: remove information
-                this.currentVisibilityMap.remove(currentOrbit);
+                // Compute visibility circle (AOS at GS_ELEVATION in radians) using the current S/C height
+                List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
+                double gsElevation = Math.toRadians(configuration.getElevationThreshold());
+                for (int i = 0; i < 180; ++i) {
+                    double azimuth = i * (2.0 * Math.PI / 180);
+                    visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(currentSpacecraftPosition.getLatLonHeight().getAltitude() + EarthReferenceUtils.REAL_EARTH_RADIUS_METERS, azimuth, gsElevation));
+                }
+                this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
+                // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified
+                this.currentOrbit = null;
+                this.temporaryPointMap.clear();
             }
-            // Compute visibility circle (AOS at GS_ELEVATION in radians) using the current S/C height
-            List<GeodeticPoint> visibilityCircle = new ArrayList<>(180);
-            double gsElevation = Math.toRadians(configuration.getElevationThreshold());
-            for (int i = 0; i < 180; ++i) {
-                double azimuth = i * (2.0 * Math.PI / 180);
-                visibilityCircle.add(getStationFrame().computeLimitVisibilityPoint(currentSpacecraftPosition.getLatLonHeight().getAltitude() + EarthReferenceUtils.REAL_EARTH_RADIUS_METERS, azimuth, gsElevation));
-            }
-            this.visibilityCircles.put(orbit, new VisibilityCircle(visibilityCircle));
-            // Process finished, the endVisibilityComputation() method will be called by Orbit, and the listeners will be notified
-            this.currentOrbit = null;
-            this.temporaryPointMap.clear();
         }
     }
 
     @Override
     public synchronized void propagationModelAvailable(Orbit orbit, Date referenceDate, Propagator modelPropagator) {
-        List<VisibilityWindow> windows = this.visibilityWindows.get(orbit);
-        if(windows != null) {
-            windows.forEach(o -> o.initialiseGroundTrack(orbit, modelPropagator));
+        if(!reducedProcessing) {
+            List<VisibilityWindow> windows = this.visibilityWindows.get(orbit);
+            if (windows != null) {
+                windows.forEach(o -> o.initialiseGroundTrack(orbit, modelPropagator));
+            }
         }
     }
 
