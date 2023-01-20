@@ -23,6 +23,7 @@ import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
 import java.io.File;
@@ -81,41 +82,17 @@ public class CollinearityAnalyser {
             o.setOrbitConfiguration(orbitConf);
         }
 
-        // One chunk, one thread: use thread pool
+        // One chunk (time span and satellite), one thread: use thread pool
         int threadsToUse = request.getCores();
         System.out.println("Using " + threadsToUse + " threads");
         ExecutorService service = Executors.newFixedThreadPool(threadsToUse, (r) -> {
-            Thread t = new Thread(r, "Collinearity Job");
+            Thread t = new Thread(r, "Collinearity Analyser Task");
             t.setDaemon(true);
             return t;
         });
 
-        List<Future<List<CollinearityEvent>>> futures = new LinkedList<>();
-        // Start chunk based division
-        // Calculate the chunks in terms of times, and create the jobs to execute
-        /*
-        long chunkDuration = ORBIT_POINT_INTERVAL * ORBIT_COMPUTATION_CHUNK; // in milliseconds
-        long startChunkTime = request.getStartTime().getTime();
-        long endComputationTime = request.getEndTime().getTime();
-        while(startChunkTime < endComputationTime) {
-            // Compute the end chunk time
-            long endChunkTime = startChunkTime + chunkDuration;
-            if(endChunkTime < endComputationTime) {
-                // This is a chunk
-                futures.add(service.submit(new Worker(groundStation, refOrbit, new Date(startChunkTime), new Date(endChunkTime), targetOrbits, request.getMinAngularSeparation())));
-                // Move the startChunkTime
-                startChunkTime = endChunkTime;
-            } else {
-                // Chunk is startChunkTime - endComputationTime
-                futures.add(service.submit(new Worker(groundStation, refOrbit, new Date(startChunkTime), new Date(endComputationTime), targetOrbits, request.getMinAngularSeparation())));
-                // Move the startChunkTime
-                startChunkTime = endComputationTime;
-            }
-        }
-        System.out.println(futures.size() + " chunks prepared for analysis");
-        */
-        // End chunk based division
-
+        List<FutureTask<List<CollinearityEvent>>> futures = new LinkedList<>();
+        List<Worker> linkedWorkers = new LinkedList<>();
         // Start time (day) and satellite based division
         Date currentTime = request.getStartTime();
         Date endTime = request.getEndTime();
@@ -126,8 +103,12 @@ public class CollinearityAnalyser {
                     service.shutdownNow();
                     return null;
                 }
-                // TODO: Change Worker to FutureTask and remember it instead of futures
-                futures.add(service.submit(new Worker(groundStation, refOrbit, currentTime, currentEndTime, Collections.singletonList(tOrbit), request.getMinAngularSeparation(), request.getIntervalPeriod())));
+                // TODO: make an extension class of FutureTask, which provides  access to Worker toString and/or properties, to have a single list, instead of two
+                Worker chunkWorker = new Worker(groundStation, refOrbit, currentTime, currentEndTime, Collections.singletonList(tOrbit), request.getMinAngularSeparation(), request.getIntervalPeriod());
+                FutureTask<List<CollinearityEvent>> futureTask = new FutureTask<>(chunkWorker);
+                service.submit(futureTask);
+                futures.add(futureTask);
+                linkedWorkers.add(chunkWorker);
             }
             currentTime = new Date(currentEndTime.getTime() + 1);
         }
@@ -138,7 +119,8 @@ public class CollinearityAnalyser {
         // Get the results of the futures
         events = new LinkedList<>();
         long progress = 0;
-        for(Future<List<CollinearityEvent>> f : futures) {
+        Iterator<Worker> it = linkedWorkers.iterator();
+        for(FutureTask<List<CollinearityEvent>> f : futures) {
             try {
                 List<CollinearityEvent> subEventList = f.get();
                 if(monitor.isCancelled()) {
@@ -151,14 +133,11 @@ public class CollinearityAnalyser {
                 service.shutdownNow();
                 throw new IOException(e);
             }
+            // Get the linked worker
+            Worker justCompleted = it.next();
             ++progress;
-            monitor.progress(progress, futures.size(), "TODO with future task");
+            monitor.progress(progress, futures.size(), justCompleted.toString());
         }
-
-        // Compute progress information:
-        // total is <number of points> x <number of target orbits + 1>
-        // long numPoints = ((request.getEndTime().getTime() - request.getStartTime().getTime()) / ORBIT_POINT_INTERVAL) * (targetOrbits.size() + 1);
-        // long currentProgress = 0;
 
         // Return the events
         return events;
@@ -203,6 +182,11 @@ public class CollinearityAnalyser {
             this.targetOrbits.forEach(o -> o.setOrbitConfiguration(referenceOrbit.getOrbitConfiguration()));
             this.minAngularSeparation = minAngularSeparation;
             this.pointInterval = pointInterval * 1000;
+        }
+
+        @Override
+        public String toString() {
+            return TimeUtils.formatDate(start) + " - " + TimeUtils.formatDate(end) + ": " + targetOrbits.get(0);
         }
 
         @Override
