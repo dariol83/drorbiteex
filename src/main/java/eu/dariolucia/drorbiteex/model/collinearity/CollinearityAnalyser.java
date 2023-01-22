@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class CollinearityAnalyser {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
-    private static final long DAY_MS = 3600 * 24000;
+    private static final long DAY_MS = 3600L * 24000L;
 
     public static List<CollinearityEvent> analyse(CollinearityAnalysisRequest request) throws IOException {
         return analyse(request, DUMMY_MONITOR);
@@ -91,8 +91,7 @@ public class CollinearityAnalyser {
             return t;
         });
 
-        List<FutureTask<List<CollinearityEvent>>> futures = new LinkedList<>();
-        List<Worker> linkedWorkers = new LinkedList<>();
+        List<WorkerFutureTask> futures = new LinkedList<>();
         // Start time (day) and satellite based division
         Date currentTime = request.getStartTime();
         Date endTime = request.getEndTime();
@@ -103,12 +102,10 @@ public class CollinearityAnalyser {
                     service.shutdownNow();
                     return null;
                 }
-                // TODO: make an extension class of FutureTask, which provides  access to Worker toString and/or properties, to have a single list, instead of two
                 Worker chunkWorker = new Worker(groundStation, refOrbit, currentTime, currentEndTime, Collections.singletonList(tOrbit), request.getMinAngularSeparation(), request.getIntervalPeriod());
-                FutureTask<List<CollinearityEvent>> futureTask = new FutureTask<>(chunkWorker);
+                WorkerFutureTask futureTask = new WorkerFutureTask(chunkWorker);
                 service.submit(futureTask);
                 futures.add(futureTask);
-                linkedWorkers.add(chunkWorker);
             }
             currentTime = new Date(currentEndTime.getTime() + 1);
         }
@@ -119,8 +116,7 @@ public class CollinearityAnalyser {
         // Get the results of the futures
         events = new LinkedList<>();
         long progress = 0;
-        Iterator<Worker> it = linkedWorkers.iterator();
-        for(FutureTask<List<CollinearityEvent>> f : futures) {
+        for(WorkerFutureTask f : futures) {
             try {
                 List<CollinearityEvent> subEventList = f.get();
                 if(monitor.isCancelled()) {
@@ -133,10 +129,8 @@ public class CollinearityAnalyser {
                 service.shutdownNow();
                 throw new IOException(e);
             }
-            // Get the linked worker
-            Worker justCompleted = it.next();
             ++progress;
-            monitor.progress(progress, futures.size(), justCompleted.toString());
+            monitor.progress(progress, futures.size(), f.getDescription());
         }
 
         // Return the events
@@ -214,8 +208,21 @@ public class CollinearityAnalyser {
         }
     }
 
-    private static class CollinearityDataCollector implements IGroundStationListener {
+    private static class WorkerFutureTask extends FutureTask<List<CollinearityEvent>> {
 
+        private final String description;
+
+        public WorkerFutureTask(Worker callable) {
+            super(callable);
+            this.description = callable.toString();
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    private static class CollinearityDataCollector implements IGroundStationListener {
         private final List<CollinearityEvent> events = new LinkedList<>();
         private final Orbit referenceOrbit;
         private final double minAngularSeparation; // in degrees

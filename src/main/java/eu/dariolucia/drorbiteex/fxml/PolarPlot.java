@@ -35,6 +35,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 
+// TODO: move into separate package, make it more customisable:
+//  - multiple points/colors/lines,
+//  - customise lines/text in all 4 corners,
+//  - tooltip with coordinates on mouse over,
+//  - height/width easy definition/stretching
 public class PolarPlot implements Initializable {
 
     private static final double MAX_RADIUS_FACTOR = 0.85;

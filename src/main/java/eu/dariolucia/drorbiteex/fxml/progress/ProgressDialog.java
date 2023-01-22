@@ -45,6 +45,7 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
     private volatile Exception detectedError;
     private volatile Stage stage;
     private volatile Date startTime;
+    private volatile Future<?> futureTask;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -52,9 +53,21 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
     }
 
     public void onCancelButtonAction(ActionEvent actionEvent) {
-        this.wasInterrupted = true;
-        if(stage != null) {
-            stage.close(); // unblock the showAndWait call
+        if(!this.wasInterrupted) {
+            ((Button) actionEvent.getSource()).setDisable(true);
+            this.wasInterrupted = true;
+            // Someone must really close the stage
+            new Thread(() -> {
+                Future<?> f = futureTask;
+                if (f != null) {
+                    try {
+                        f.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Platform.runLater(() -> stage.close());
+            }).start();
         }
     }
 
@@ -71,11 +84,11 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
                 return t;
             });
         }
-        Future<V> future = executorService.submit(this.task);
+        futureTask = executorService.submit(this.task);
         if(shutdownAfterSubmit) {
             executorService.shutdown();
         }
-        return future;
+        return (Future<V>) futureTask;
     }
 
     public static <V> Result<V> openProgress(Window owner, String name, IMonitorableCallable<V> task) {
@@ -89,7 +102,6 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
             d.setTitle(name);
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
-            //d.initStyle(StageStyle.UTILITY);
             d.setResizable(false);
 
             URL dataSelectionDialogFxmlUrl = ExportScheduleDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/progress/ProgressDialog.fxml");
