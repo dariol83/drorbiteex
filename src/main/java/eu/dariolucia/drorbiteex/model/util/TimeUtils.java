@@ -20,6 +20,7 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -32,8 +33,15 @@ public class TimeUtils {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 
     public static String formatDate(Date d) {
+        if(d == null) {
+            return "N/A";
+        }
         DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
         return DATE_FORMAT.format(d);
     }
 
+    public static String formatDate(Instant time) {
+        Date d = time != null ? new Date(time.toEpochMilli()) : null;
+        return formatDate(d);
+    }
 }

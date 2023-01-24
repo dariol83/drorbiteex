@@ -29,15 +29,12 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.util.Pair;
 
 import java.net.URL;
-import java.util.Date;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 // TODO: move into separate package, make it more customisable:
-//  - multiple points/colors/lines,
-//  - customise lines/text in all 4 corners,
 //  - tooltip with coordinates on mouse over,
 //  - height/width easy definition/stretching
 public class PolarPlot implements Initializable {
@@ -48,10 +45,11 @@ public class PolarPlot implements Initializable {
 
     private SimpleObjectProperty<Color> backgroundColor;
     private SimpleObjectProperty<Color> foregroundColor;
-    private SimpleObjectProperty<Color> trackColor;
-    private SimpleObjectProperty<Color> spacecraftColor;
-    private SimpleObjectProperty<SpacecraftTrack> spacecraftTrack;
-    private SimpleObjectProperty<Point2D> spacecraftPosition;
+
+    private final Map<UUID, SpacecraftTrack> trackMap = new LinkedHashMap<>();
+    private final Map<UUID, SpacecraftTrackPoint> positionMap = new LinkedHashMap<>();
+    private final Map<UUID, Color> colorMap = new HashMap<>();
+    private final Map<PlotPosition, Pair<Color, String>> textMap = new EnumMap<>(PlotPosition.class);
     private ChangeListener<Object> refresher;
 
     @Override
@@ -60,27 +58,15 @@ public class PolarPlot implements Initializable {
 
         this.backgroundColor = new SimpleObjectProperty<>(Color.WHITE);
         this.foregroundColor = new SimpleObjectProperty<>(Color.BLACK);
-        this.trackColor = new SimpleObjectProperty<>(Color.RED);
-        this.spacecraftColor = new SimpleObjectProperty<>(Color.RED);
-        this.spacecraftTrack = new SimpleObjectProperty<>(null);
-        this.spacecraftPosition = new SimpleObjectProperty<>(null);
 
         this.backgroundColor.addListener(this.refresher);
         this.foregroundColor.addListener(this.refresher);
-        this.trackColor.addListener(this.refresher);
-        this.spacecraftColor.addListener(this.refresher);
-        this.spacecraftTrack.addListener(this.refresher);
-        this.spacecraftPosition.addListener(this.refresher);
 
         refresh();
     }
 
     public Color getBackgroundColor() {
         return backgroundColor.get();
-    }
-
-    public SimpleObjectProperty<Color> backgroundColorProperty() {
-        return backgroundColor;
     }
 
     public void setBackgroundColor(Color backgroundColor) {
@@ -91,45 +77,53 @@ public class PolarPlot implements Initializable {
         return foregroundColor.get();
     }
 
-    public SimpleObjectProperty<Color> foregroundColorProperty() {
-        return foregroundColor;
-    }
-
     public void setForegroundColor(Color foregroundColor) {
         this.foregroundColor.set(foregroundColor);
     }
 
-    public Color getTrackColor() {
-        return trackColor.get();
-    }
-
-    public SimpleObjectProperty<Color> trackColorProperty() {
-        return trackColor;
-    }
-
-    public void setTrackColor(Color trackColor) {
-        this.trackColor.set(trackColor);
-    }
-
-    public Color getSpacecraftColor() {
-        return spacecraftColor.get();
-    }
-
-    public SimpleObjectProperty<Color> spacecraftColorProperty() {
-        return spacecraftColor;
-    }
-
-    public void setSpacecraftColor(Color spacecraftColor) {
-        this.spacecraftColor.set(spacecraftColor);
-    }
-
     public void setSpacecraftTrack(VisibilityWindow track) {
         if(track != null) {
-            this.spacecraftTrack.set(new SpacecraftTrack(track));
-        } else {
-            this.spacecraftTrack.set(null);
+            SpacecraftTrack st = new SpacecraftTrack(track);
+            this.trackMap.put(track.getOrbit().getId(), st);
+            this.colorMap.put(track.getOrbit().getId(), Color.valueOf(track.getOrbit().getColor()));
+
+            refresh();
         }
-        this.spacecraftPosition.set(null);
+    }
+
+    public void setSpacecraftPosition(UUID id, String name, Point2D position, Color color) {
+        if(position != null) {
+            SpacecraftTrackPoint stp = new SpacecraftTrackPoint(name, position);
+            this.positionMap.put(id, stp);
+            if(color != null) {
+                this.colorMap.put(id, color);
+            }
+
+            refresh();
+        }
+    }
+
+    public void setColor(UUID id, Color color) {
+        if(color != null) {
+            this.colorMap.put(id, color);
+
+            refresh();
+        }
+    }
+
+    public void setText(PlotPosition position, String text, Color color) {
+        this.textMap.put(position, new Pair<>(color, text));
+
+        refresh();
+    }
+
+    public void clear() {
+        this.trackMap.clear();
+        this.positionMap.clear();
+        this.colorMap.clear();
+        this.textMap.clear();
+
+        refresh();
     }
 
     private void refresh() {
@@ -138,82 +132,93 @@ public class PolarPlot implements Initializable {
         drawPlot(gc);
         drawPass(gc);
         drawSpacecraftLocation(gc);
+        drawAngleText(gc);
+    }
+
+    private void drawAngleText(GraphicsContext gc) {
+        Font previous = gc.getFont();
+        gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
+        for(Map.Entry<PlotPosition, Pair<Color, String>> entry : this.textMap.entrySet()) {
+            gc.setStroke(entry.getValue().getKey());
+            switch (entry.getKey()) {
+                case TOP_LEFT:
+                    gc.strokeText(entry.getValue().getValue(),2, 15);
+                    break;
+                case TOP_RIGHT:
+                    gc.strokeText(entry.getValue().getValue(), canvas.getWidth() - 100, 15);
+                    break;
+                case BOTTOM_LEFT:
+                    gc.strokeText(entry.getValue().getValue(), 2, canvas.getHeight() - 35);
+                    break;
+                case BOTTOM_RIGHT:
+                    gc.strokeText(entry.getValue().getValue(), canvas.getWidth() - 100, canvas.getHeight() - 35);
+            }
+        }
+        gc.setFont(previous);
     }
 
     public void updateSize(double size) {
         canvas.setHeight(size);
         canvas.setWidth(size);
+
         refresh();
     }
 
     private void drawSpacecraftLocation(GraphicsContext gc) {
-        Point2D location = this.spacecraftPosition.get();
-        SpacecraftTrack st = this.spacecraftTrack.get();
-        gc.setStroke(trackColor.get());
-        gc.setFill(trackColor.get());
-        gc.setLineWidth(1.5);
-        Font previous = gc.getFont();
-        gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
-        if(location != null && st != null) {
-            Point2D p1 = toXY(location.getX(), location.getY());
-            gc.fillOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
-            gc.setFill(Color.WHITE);
-            gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
-            gc.setFill(trackColor.get());
-            // TL: entry
-            gc.strokeText(st.getName() + "\nAZ " + doublePrint(location.getX(), 4) + "\nEL " + doublePrint(location.getY(), 4), 2, 15);
-        } else if(st != null) {
-            // TL: entry
-            gc.strokeText(st.getName(), 2, 15);
+        for(Map.Entry<UUID, SpacecraftTrackPoint> entry : this.positionMap.entrySet()) {
+            Point2D location = entry.getValue().getPoint();
+            Color color = this.colorMap.get(entry.getKey());
+            gc.setStroke(color);
+            gc.setFill(color);
+            gc.setLineWidth(1.5);
+            Font previous = gc.getFont();
+            gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
+            if (location != null) {
+                Point2D p1 = toXY(location.getX(), location.getY());
+                gc.fillOval(p1.getX() - 7, p1.getY() - 7, 14, 14);
+                gc.setFill(Color.WHITE);
+                gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
+                gc.setFill(color);
+            }
+            gc.setFont(previous);
         }
-        gc.setFont(previous);
     }
 
     private void drawPass(GraphicsContext gc) {
-        SpacecraftTrack st = this.spacecraftTrack.get();
-        if(st != null) {
-            TrackPoint maxElPoint = null;
-            gc.setStroke(trackColor.get());
-            gc.setFill(trackColor.get());
-            gc.setLineWidth(1.5);
-            List<TrackPoint> track = st.getTrack();
-            for(int i = 0; i < track.size() - 1; ++i) {
-                // Draw line from point to point
-                TrackPoint tp1 = track.get(i);
-                TrackPoint tp2 = track.get(i + 1);
-                Point2D p1 = toXY(tp1.getAzimuth(), tp1.getElevation());
-                Point2D p2 = toXY(tp2.getAzimuth(), tp2.getElevation());
-                if(p1.getY() < 0 || p2.getY() < 0) {
-                    continue;
-                }
-                gc.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-                if(i == 0) {
-                    gc.fillRect(p1.getX() - 2, p1.getY() - 2, 4, 4);
-                } else if(i == track.size() - 2) {
-                    gc.strokeLine(p2.getX() - 3, p2.getY() - 3, p2.getX() + 3, p2.getY() + 3);
-                    gc.strokeLine(p2.getX() - 3, p2.getY() + 3, p2.getX() + 3, p2.getY() - 3);
-                }
-                if(maxElPoint == null) {
-                    maxElPoint = tp1;
-                } else {
-                    if(maxElPoint.getElevation() < tp2.getElevation()) {
-                        maxElPoint = tp2;
+        for(Map.Entry<UUID, SpacecraftTrack> entry : this.trackMap.entrySet()) {
+            SpacecraftTrack st = entry.getValue();
+            if (st != null) {
+                TrackPoint maxElPoint = null;
+                Color color = this.colorMap.get(entry.getKey());
+                gc.setStroke(color);
+                gc.setFill(color);
+                gc.setLineWidth(2);
+                List<TrackPoint> track = st.getTrack();
+                for (int i = 0; i < track.size() - 1; ++i) {
+                    // Draw line from point to point
+                    TrackPoint tp1 = track.get(i);
+                    TrackPoint tp2 = track.get(i + 1);
+                    Point2D p1 = toXY(tp1.getAzimuth(), tp1.getElevation());
+                    Point2D p2 = toXY(tp2.getAzimuth(), tp2.getElevation());
+                    if (p1.getY() < 0 || p2.getY() < 0) {
+                        continue;
+                    }
+                    gc.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+                    if (i == 0) {
+                        gc.fillRect(p1.getX() - 2, p1.getY() - 2, 4, 4);
+                    } else if (i == track.size() - 2) {
+                        gc.strokeLine(p2.getX() - 3, p2.getY() - 3, p2.getX() + 3, p2.getY() + 3);
+                        gc.strokeLine(p2.getX() - 3, p2.getY() + 3, p2.getX() + 3, p2.getY() - 3);
+                    }
+                    if (maxElPoint == null) {
+                        maxElPoint = tp1;
+                    } else {
+                        if (maxElPoint.getElevation() < tp2.getElevation()) {
+                            maxElPoint = tp2;
+                        }
                     }
                 }
             }
-            // Text
-            gc.setStroke(getForegroundColor());
-            Font previous = gc.getFont();
-            gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
-            // BL: entry
-            gc.strokeText("Start\nAZ " + doublePrint(track.get(0).getAzimuth(), 4) + "\n" + TimeUtils.formatDate(track.get(0).getTime()), 2, canvas.getHeight() - 35);
-            // BR: exit
-            gc.strokeText("End\nAZ " + doublePrint(track.get(track.size() - 1).getAzimuth(), 4) + "\n" + TimeUtils.formatDate(track.get(track.size() - 1).getTime()), canvas.getWidth() - 100, canvas.getHeight() - 35);
-            // TR: max elevation
-            if(maxElPoint != null) {
-                gc.strokeText("Max EL\nAZ " + doublePrint(maxElPoint.getAzimuth(), 4) + "\nEL " + doublePrint(maxElPoint.getElevation(), 4) + "\n" + TimeUtils.formatDate(maxElPoint.getTime()), canvas.getWidth() - 100, 15);
-            }
-            gc.setFont(previous);
         }
     }
 
@@ -276,31 +281,27 @@ public class PolarPlot implements Initializable {
         this.canvas.setDisable(b);
     }
 
-    public void clear() {
-        this.spacecraftTrack.set(null);
-        this.spacecraftPosition.set(null);
-    }
-
     public void setNewSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint currentLocation) {
-        SpacecraftTrack currentTrack = spacecraftTrack.get();
+        SpacecraftTrack currentTrack = this.trackMap.get(orbit.getId());
         if(currentTrack != null &&
             currentTrack.getWindow().getStation().equals(groundStation) &&
             currentTrack.getWindow().getOrbit().equals(orbit)) {
             // If the current location is null, the SC went out of visibility
             if(currentLocation == null) {
-                this.spacecraftPosition.set(null);
+                this.positionMap.remove(orbit.getId());
+                refresh();
             } else {
                 if (currentTrack.contains(currentLocation.getTime())) {
                     // set spacecraft position
                     Point2D currentScPos = new Point2D(currentLocation.getAzimuth(), currentLocation.getElevation());
-                    this.spacecraftPosition.set(currentScPos);
+                    setSpacecraftPosition(orbit.getId(), orbit.getName(), currentScPos, Color.valueOf(orbit.getColor()));
                 }
             }
         }
     }
 
-    public void updateCurrentData(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows) {
-        SpacecraftTrack currentTrack = spacecraftTrack.get();
+    public VisibilityWindow updateCurrentData(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows) {
+        SpacecraftTrack currentTrack = this.trackMap.get(orbit.getId());
         if(currentTrack != null &&
                 currentTrack.getWindow().getStation().equals(groundStation) &&
                 currentTrack.getWindow().getOrbit().equals(orbit)) {
@@ -309,18 +310,59 @@ public class PolarPlot implements Initializable {
                 for (VisibilityWindow vw : visibilityWindows) {
                     if (vw.getOrbitNumber() == currentTrack.getWindow().getOrbitNumber()) {
                         // Found
-                        spacecraftTrack.set(new SpacecraftTrack(vw));
-                        return;
+                        setSpacecraftTrack(vw);
+                        return vw;
                     }
                 }
             }
-            // At this stage, it means that the visibility window disappeared -> clear plot
-            clear();
+            // At this stage, it means that the visibility window disappeared -> clear the track
+            clearSpacecraftTrack(currentTrack.getWindow().getOrbit().getId());
+            clearSpacecraftTrackPosition(currentTrack.getWindow().getOrbit().getId());
+        }
+        return null;
+    }
+
+    public void clearSpacecraftTrackPosition(UUID id) {
+        if(this.positionMap.remove(id) != null) {
+            refresh();
+        }
+    }
+
+    public void clearSpacecraftTrack(UUID id) {
+        if(this.trackMap.remove(id) != null) {
+            refresh();
+        }
+    }
+
+    public static class SpacecraftTrackPoint {
+
+        private final String name;
+
+        private Point2D point;
+
+        public SpacecraftTrackPoint(String name) {
+            this(name, null);
+        }
+
+        public SpacecraftTrackPoint(String name, Point2D point) {
+            this.name = name;
+            this.point = point;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Point2D getPoint() {
+            return point;
+        }
+
+        public void setPoint(Point2D point) {
+            this.point = point;
         }
     }
 
     public static class SpacecraftTrack {
-
         private final VisibilityWindow window;
 
         public SpacecraftTrack(VisibilityWindow window) {
@@ -344,5 +386,12 @@ public class PolarPlot implements Initializable {
             TrackPoint spt2 = getTrack().get(getTrack().size() - 1);
             return now.after(spt1.getTime()) && now.before(spt2.getTime());
         }
+    }
+
+    public enum PlotPosition {
+        TOP_LEFT,
+        TOP_RIGHT,
+        BOTTOM_LEFT,
+        BOTTOM_RIGHT
     }
 }

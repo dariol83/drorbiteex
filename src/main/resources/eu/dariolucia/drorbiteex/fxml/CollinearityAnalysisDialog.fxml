@@ -20,6 +20,8 @@
   ~ limitations under the License.
   -->
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.CollinearityAnalysisDialog">
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -30,7 +32,34 @@
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Reference Orbit" />
-                  <ListView fx:id="orbitList" prefHeight="150.0" prefWidth="255.0" />
+                  <ComboBox fx:id="orbitList" prefWidth="255.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Target Orbit Exclusions" />
+                  <VBox>
+                     <children>
+                        <HBox>
+                           <TextField HBox.hgrow="ALWAYS" fx:id="exclusionText">
+                              <tooltip>
+                                 <Tooltip text="Add orbit exclusion criterium (if the orbit name contains the provided text, the orbit is not considered)" />
+                              </tooltip>
+                           </TextField>
+                           <Button fx:id="addExclusionButton" text="+" prefWidth="28" onAction="#onAddExclusionAction">
+                              <tooltip>
+                                 <Tooltip text="Add exclusion" />
+                              </tooltip>
+                           </Button>
+                           <Button fx:id="removeExclusionButton" text="-" prefWidth="28" onAction="#onRemoveExclusionAction">
+                              <tooltip>
+                                 <Tooltip text="Remove selected exclusion" />
+                              </tooltip>
+                           </Button>
+                        </HBox>
+                        <ListView fx:id="exclusionList" prefWidth="255.0" prefHeight="150" maxHeight="150" />
+                     </children>
+                  </VBox>
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">

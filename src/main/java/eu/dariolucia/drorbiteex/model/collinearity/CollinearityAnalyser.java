@@ -60,18 +60,30 @@ public class CollinearityAnalyser {
         if(monitor.isCancelled()) {
             return null;
         }
-        // Create the orbits, remove the reference orbit if Celestrak based or same name
+        // Create the orbits
         String referenceOrbitCelestrakName = refOrbit.getModel() instanceof CelestrakTleOrbitModel ? ((CelestrakTleOrbitModel) refOrbit.getModel()).getCelestrakName() : null;
         List<Orbit> targetOrbits = active
                 .stream()
                 .map(o -> new Orbit(UUID.randomUUID(), o.getName(), o.getName(), "#FFFFFF", true, new CelestrakTleOrbitModel(o.getGroup(), o.getName(), o.getTle())))
+                // remove the reference orbit if Celestrak based or same name
                 .filter(o -> {
-            if(referenceOrbitCelestrakName != null && ((CelestrakTleOrbitModel) o.getModel()).getCelestrakName().equals(referenceOrbitCelestrakName)) {
-                return false;
-            } else {
-                return !o.getName().equals(request.getReferenceOrbit().getName());
-            }
-        }).collect(Collectors.toList());
+                    if(referenceOrbitCelestrakName != null && ((CelestrakTleOrbitModel) o.getModel()).getCelestrakName().equals(referenceOrbitCelestrakName)) {
+                        return false;
+                    } else {
+                        return !o.getName().equals(request.getReferenceOrbit().getName());
+                    }
+                })
+                // remove the orbits that match the exclusions
+                .filter(o -> {
+                    for(String s : request.getOrbitExclusions()) {
+                        if(o.getName().toLowerCase().contains(s.toLowerCase())) {
+                            // Filter out
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
         // Set configuration to all orbits
         OrbitParameterConfiguration orbitConf = refOrbit.getOrbitConfiguration().copy();
         // Never recompute orbit and do not propagate every time

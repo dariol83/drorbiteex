@@ -19,7 +19,10 @@ package eu.dariolucia.drorbiteex.model.collinearity;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class CollinearityAnalysisRequest {
 
@@ -30,8 +33,9 @@ public class CollinearityAnalysisRequest {
     private final double minAngularSeparation;
     private final int intervalPeriod;
     private final int cores;
+    private final Set<String> orbitExclusions;
 
-    public CollinearityAnalysisRequest(GroundStation groundStation, Orbit referenceOrbit, Date startTime, Date endTime, double minAngularSeparation, int intervalPeriod, int cores) {
+    public CollinearityAnalysisRequest(GroundStation groundStation, Orbit referenceOrbit, Date startTime, Date endTime, double minAngularSeparation, int intervalPeriod, int cores, Collection<String> orbitExclusions) {
         // Copy the ground station and the reference orbit
         this.groundStation = groundStation.copy();
         this.referenceOrbit = referenceOrbit.copy();
@@ -40,6 +44,11 @@ public class CollinearityAnalysisRequest {
         this.minAngularSeparation = minAngularSeparation;
         this.intervalPeriod = intervalPeriod;
         this.cores = cores;
+        this.orbitExclusions = Set.copyOf(orbitExclusions);
+    }
+
+    public Set<String> getOrbitExclusions() {
+        return orbitExclusions;
     }
 
     public GroundStation getGroundStation() {

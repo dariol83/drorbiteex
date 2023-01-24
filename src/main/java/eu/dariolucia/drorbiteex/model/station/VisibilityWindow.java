@@ -19,6 +19,7 @@ package eu.dariolucia.drorbiteex.model.station;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import javafx.geometry.Point2D;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
@@ -209,5 +210,15 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
             sb.append("\n");
         }
         outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public TrackPoint getMaxElevationPoint() {
+        TrackPoint maxElPoint = null;
+        for (TrackPoint tp : getGroundTrack()) {
+            if (maxElPoint == null || maxElPoint.getElevation() < tp.getElevation()) {
+                maxElPoint = tp;
+            }
+        }
+        return maxElPoint;
     }
 }

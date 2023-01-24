@@ -21,6 +21,8 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -37,23 +39,27 @@ public class CollinearityAnalysisDialog implements Initializable {
 
     private static Date lastStartDate = new Date(); // now
     private static Date lastEndDate = new Date(lastStartDate.getTime() + (7 * 24 * 3600 * 1000)); // 7 days
-
     private static String lastSelectedOrbitNames = null;
-
     private static double lastMinAngularSeparation = 5.0; // in degrees
     private static int lastPointInterval = 5; // in seconds
-
     private static int lastNbOfCores = 1;
+    private static final List<String> lastExclusions = new LinkedList<>();
 
     public TextField startDateText;
     public TextField startTimeText;
     public TextField endDateText;
     public TextField endTimeText;
 
-    public ListView<Orbit> orbitList;
+    public ComboBox<Orbit> orbitList;
     public TextField minAngularSeparationText;
     public TextField intervalPeriodText;
     public Slider coreSlide;
+
+    // Exclusion part
+    public TextField exclusionText;
+    public Button addExclusionButton;
+    public Button removeExclusionButton;
+    public ListView<String> exclusionList;
 
     private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
@@ -67,8 +73,6 @@ public class CollinearityAnalysisDialog implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        orbitList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-
         coreSlide.setMin(1);
         coreSlide.setMax(Runtime.getRuntime().availableProcessors());
         coreSlide.setMajorTickUnit(1);
@@ -80,13 +84,19 @@ public class CollinearityAnalysisDialog implements Initializable {
         dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         timeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        startDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        startTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        endDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        endTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        coreSlide.valueProperty().addListener((prop, oldVal, newVal) -> validate());
-        minAngularSeparationText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        intervalPeriodText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        ChangeListener<Object> validationBroker =  (prop, oldVal, newVal) -> validate();
+
+        startDateText.textProperty().addListener(validationBroker);
+        startTimeText.textProperty().addListener(validationBroker);
+        endDateText.textProperty().addListener(validationBroker);
+        endTimeText.textProperty().addListener(validationBroker);
+        coreSlide.valueProperty().addListener(validationBroker);
+        minAngularSeparationText.textProperty().addListener(validationBroker);
+        intervalPeriodText.textProperty().addListener(validationBroker);
+        orbitList.getSelectionModel().selectedItemProperty().addListener(validationBroker);
+
+        addExclusionButton.disableProperty().bind(exclusionText.textProperty().isEmpty());
+        removeExclusionButton.disableProperty().bind(exclusionList.getSelectionModel().selectedItemProperty().isNull());
 
         validate();
     }
@@ -136,8 +146,10 @@ public class CollinearityAnalysisDialog implements Initializable {
             lastPointInterval = pointInterval;
             int nbCores = (int) coreSlide.getValue();
             lastNbOfCores = nbCores;
+            lastExclusions.clear();
+            lastExclusions.addAll(exclusionList.getItems());
             return new CollinearityAnalysisRequest(this.groundStation, orbit, start, end, minAngSep,
-                    pointInterval, nbCores);
+                    pointInterval, nbCores, List.copyOf(exclusionList.getItems()));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -187,6 +199,7 @@ public class CollinearityAnalysisDialog implements Initializable {
         this.intervalPeriodText.setText(String.valueOf(lastPointInterval));
         this.minAngularSeparationText.setText(String.valueOf(lastMinAngularSeparation));
         this.coreSlide.setValue(lastNbOfCores);
+        this.exclusionList.getItems().addAll(lastExclusions);
         Orbit selectedOrbit = null;
         for(Orbit o : orbits) {
             this.orbitList.getItems().add(o);
@@ -208,4 +221,17 @@ public class CollinearityAnalysisDialog implements Initializable {
         return dateFormatter.format(date);
     }
 
+    public void onAddExclusionAction(ActionEvent actionEvent) {
+        if(!exclusionText.getText().isBlank()) {
+            exclusionList.getItems().add(exclusionText.getText());
+            exclusionText.setText("");
+            exclusionText.requestFocus();
+        }
+    }
+
+    public void onRemoveExclusionAction(ActionEvent actionEvent) {
+        if(exclusionList.getSelectionModel().getSelectedItem() != null) {
+            exclusionList.getItems().remove(exclusionList.getSelectionModel().getSelectedItem());
+        }
+    }
 }

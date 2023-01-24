@@ -130,23 +130,32 @@ public class GroundStationPane implements Initializable {
         }
     }
 
+    // This method is called when a visibility window is selected, therefore you have to re-initialise the polar plot
     private void updatePolarPlotSelection(VisibilityWindow c) {
-        if(c == null) {
-            this.polarPlotController.clear();
-        } else {
+        this.polarPlotController.clear();
+        if(c != null) {
             this.polarPlotController.setSpacecraftTrack(c);
+            updatePolarPlotText(c);
             Color trackColor = Color.valueOf(c.getOrbit().getColor());
-            this.polarPlotController.setTrackColor(trackColor);
-            this.polarPlotController.setSpacecraftColor(trackColor);
+            this.polarPlotController.setColor(c.getOrbit().getId(), trackColor);
             // Check if the spacecraft is in visibility
             SpacecraftPosition sp = c.getOrbit().getCurrentSpacecraftPosition();
-            if(sp != null) {
+            if (sp != null) {
                 TrackPoint tp = c.getStation().getTrackPointOf(sp);
-                if(tp != null && c.isInPass(tp.getTime())) {
+                if (tp != null && c.isInPass(tp.getTime())) {
                     this.polarPlotController.setNewSpacecraftPosition(c.getStation(), c.getOrbit(), tp);
+                    this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_LEFT, c.getOrbit().getName() + "\nAZ " + doublePrint(tp.getAzimuth(), 4) + "\nEL " + doublePrint(tp.getElevation(), 4), this.polarPlotController.getForegroundColor());
+                } else {
+                    this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_LEFT, c.getOrbit().getName(), this.polarPlotController.getForegroundColor());
                 }
+            } else {
+                this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_LEFT, c.getOrbit().getName(), this.polarPlotController.getForegroundColor());
             }
         }
+    }
+
+    private String doublePrint(double value, int places) {
+        return String.format("%." + places + "f", value);
     }
 
     public void onNewGroundStationAction(ActionEvent actionEvent) {
@@ -277,16 +286,33 @@ public class GroundStationPane implements Initializable {
     }
 
     public void refreshGroundStationOrbitData(GroundStation groundStation, Orbit orbit, List<VisibilityWindow> visibilityWindows, TrackPoint currentPoint) {
-        this.polarPlotController.updateCurrentData(groundStation, orbit, visibilityWindows);
-        this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, currentPoint);
+        VisibilityWindow currentVisibilityWindow = this.polarPlotController.updateCurrentData(groundStation, orbit, visibilityWindows);
+        if(currentVisibilityWindow != null) {
+            this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, currentPoint);
+            updatePolarPlotText(currentVisibilityWindow);
+        }
         if(groundStationList.getSelectionModel().getSelectedItem() != null && groundStation.equals(groundStationList.getSelectionModel().getSelectedItem().getGroundStation())) {
             // Force refresh of visibility windows
             refreshPassTableSelection();
         }
     }
 
+    private void updatePolarPlotText(VisibilityWindow currentVisibilityWindow) {
+        if(currentVisibilityWindow != null) {
+            // BL: entry
+            this.polarPlotController.setText(PolarPlot.PlotPosition.BOTTOM_LEFT, "Start\nAZ " + doublePrint(currentVisibilityWindow.getGroundTrack().get(0).getAzimuth(), 4) + "\n" + TimeUtils.formatDate(currentVisibilityWindow.getGroundTrack().get(0).getTime()), this.polarPlotController.getForegroundColor());
+            // BR: exit
+            this.polarPlotController.setText(PolarPlot.PlotPosition.BOTTOM_RIGHT,"End\nAZ " + doublePrint(currentVisibilityWindow.getGroundTrack().get(currentVisibilityWindow.getGroundTrack().size() - 1).getAzimuth(), 4) + "\n" + TimeUtils.formatDate(currentVisibilityWindow.getGroundTrack().get(currentVisibilityWindow.getGroundTrack().size() - 1).getTime()), this.polarPlotController.getForegroundColor());
+            // TR: max elevation
+            TrackPoint maxElPoint = currentVisibilityWindow.getMaxElevationPoint();
+            if (maxElPoint != null) {
+                this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_RIGHT, "Max EL\nAZ " + doublePrint(maxElPoint.getAzimuth(), 4) + "\nEL " + doublePrint(maxElPoint.getElevation(), 4) + "\n" + TimeUtils.formatDate(maxElPoint.getTime()), this.polarPlotController.getForegroundColor());
+            }
+        }
+    }
+
     public void refreshSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint point) {
-        polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
+        this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
     }
 
     public void addSelectionSubscriber(Consumer<GroundStationGraphics> selectionListener) {
@@ -308,6 +334,9 @@ public class GroundStationPane implements Initializable {
             if(this.visibilityCsvFolder != null) {
                 fc.setInitialDirectory(new File(this.visibilityCsvFolder));
             }
+            fc.setInitialFileName("VisibilityWindows_" + gs.getGroundStation().getCode() + "_"
+                    + TimeUtils.formatDate(new Date()).replace(" ","_").replace(".","").replace(":","")
+                    + ".csv" );
             File selected = fc.showSaveDialog(this.groundStationList.getScene().getWindow());
             if(selected != null) {
                 this.visibilityCsvFolder = selected.getParentFile().getAbsolutePath();
@@ -362,10 +391,8 @@ public class GroundStationPane implements Initializable {
                     }
                 };
                 ProgressDialog.Result<List<CollinearityEvent>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Collinearity Analysis", task);
-                // TODO: implement view of events (which allows the export in CSV): table with events, and polar plot to show the two points upon selection
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
-                    DialogUtils.info("Collinearity Analysis", taskResult.getResult().size() + " events found for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
-                            taskResult.getResult().size() + " collinearity events detected.");
+                    CollinearityReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert("Collinearity Analysis", "Collinearity events for " + gs.getGroundStation().getName() + " with " + sgr.getReferenceOrbit().getName(),
                             "Task cancelled by user");
@@ -383,10 +410,13 @@ public class GroundStationPane implements Initializable {
         if(gs != null && vw != null) {
             // open file dialog
             FileChooser fc = new FileChooser();
-            fc.setTitle("Save CSV ground track for ground station " + gs.getGroundStation().getCode() + " - Orbit: " + vw.getOrbit() + " - AOS: " + TimeUtils.formatDate(vw.getAos()));
+            fc.setTitle("Save CSV ground track for ground station " + gs.getGroundStation().getCode() + " - Orbit: " + vw.getOrbit() + " - AOS: " + vw.getAosString());
             fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
             fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
             fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+            fc.setInitialFileName("GroundTrack_" + gs.getGroundStation().getCode() + "_" + vw.getOrbit().getName() +
+                    (vw.getAos() == null ? "" : "_AOS_" + vw.getAosString().replace(" ","_").replace(".","").replace(":",""))
+                    + ".csv" );
             if(this.trackingCsvFolder != null) {
                 fc.setInitialDirectory(new File(this.trackingCsvFolder));
             }
