@@ -19,10 +19,7 @@ package eu.dariolucia.drorbiteex.model.collinearity;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class CollinearityAnalysisRequest {
 
@@ -35,7 +32,16 @@ public class CollinearityAnalysisRequest {
     private final int cores;
     private final Set<String> orbitExclusions;
 
-    public CollinearityAnalysisRequest(GroundStation groundStation, Orbit referenceOrbit, Date startTime, Date endTime, double minAngularSeparation, int intervalPeriod, int cores, Collection<String> orbitExclusions) {
+    private final int minHeight;
+    private final int maxHeight;
+    private final String celestrakGroup;
+    private final List<Orbit> targetOrbits;
+
+    public CollinearityAnalysisRequest(GroundStation groundStation, Orbit referenceOrbit, Date startTime, Date endTime,
+                                       double minAngularSeparation, int intervalPeriod, int cores,
+                                       Collection<String> orbitExclusions, Integer minHeight, Integer maxHeight,
+                                       String celestrakGroup,
+                                       List<Orbit> targetOrbits) {
         // Copy the ground station and the reference orbit
         this.groundStation = groundStation.copy();
         this.referenceOrbit = referenceOrbit.copy();
@@ -45,6 +51,18 @@ public class CollinearityAnalysisRequest {
         this.intervalPeriod = intervalPeriod;
         this.cores = cores;
         this.orbitExclusions = Set.copyOf(orbitExclusions);
+        this.minHeight = minHeight != null ? minHeight : 0;
+        this.maxHeight = maxHeight != null ? maxHeight : Integer.MAX_VALUE;
+        this.celestrakGroup = celestrakGroup;
+        this.targetOrbits = targetOrbits;
+    }
+
+    public List<Orbit> getTargetOrbits() {
+        return targetOrbits;
+    }
+
+    public String getCelestrakGroup() {
+        return celestrakGroup;
     }
 
     public Set<String> getOrbitExclusions() {
@@ -78,4 +96,13 @@ public class CollinearityAnalysisRequest {
     public int getIntervalPeriod() {
         return intervalPeriod;
     }
+
+    public int getMaxHeight() {
+        return maxHeight;
+    }
+
+    public int getMinHeight() {
+        return minHeight;
+    }
+
 }

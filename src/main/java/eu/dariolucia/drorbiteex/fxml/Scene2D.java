@@ -23,10 +23,11 @@ import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.*;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 
@@ -88,6 +89,21 @@ public class Scene2D implements Initializable {
         scene2d.addEventHandler(MouseEvent.MOUSE_PRESSED, this::onStartDragOnScene);
         scene2d.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
         scene2d.addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
+
+        // Menu for image copy
+        scene2d.setOnContextMenuRequested(e -> {
+            ContextMenu m = new ContextMenu();
+            final MenuItem copyItem = new MenuItem("Copy image to clipboard");
+            copyItem.setOnAction(event -> {
+                WritableImage image = new WritableImage((int) scene2d.getWidth(), (int) scene2d.getHeight());
+                image = scene2d.snapshot(null, image);
+                ClipboardContent content = new ClipboardContent();
+                content.putImage(image);
+                Clipboard.getSystemClipboard().setContent(content);
+            });
+            m.getItems().add(copyItem);
+            m.show(scene2d.getScene().getWindow(), e.getScreenX(), e.getScreenY());
+        });
         // EMP
     }
 

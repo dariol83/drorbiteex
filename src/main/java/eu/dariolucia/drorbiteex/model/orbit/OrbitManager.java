@@ -71,7 +71,7 @@ public class OrbitManager {
 
     public void persist(OutputStream outputStream) throws IOException {
         OrbitConfiguration oc = new OrbitConfiguration();
-        oc.setOrbits(new LinkedList<>(this.orbits.values()));
+        oc.setOrbits(getOrbits());
         oc.setConfiguration(this.configuration);
         OrbitConfiguration.save(oc, outputStream);
         outputStream.flush();
@@ -134,8 +134,10 @@ public class OrbitManager {
         return this.orbits.get(id);
     }
 
-    public Map<UUID, Orbit> getOrbits() {
-        return Map.copyOf(this.orbits);
+    public List<Orbit> getOrbits() {
+        List<Orbit> orbitList = new LinkedList<>(this.orbits.values());
+        Collections.sort(orbitList);
+        return orbitList;
     }
 
     public void refresh() {

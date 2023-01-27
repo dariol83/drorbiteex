@@ -34,10 +34,7 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.PVCoordinates;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
@@ -46,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVisibilityProcessor {
+public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVisibilityProcessor, Comparable<GroundStation> {
 
     private static final double MAX_CHECK = 60.0;
     private static final double THRESHOLD =  0.001;
@@ -76,7 +73,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     // To record the update state on visibility process
     private boolean visibilityUpdateInProgress = false;
 
-    private volatile GroundStationParameterConfiguration configuration;
+    private transient volatile GroundStationParameterConfiguration configuration;
 
     private volatile boolean reducedProcessing = false;
 
@@ -101,6 +98,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.reducedProcessing = true;
     }
 
+    @XmlTransient
     public GroundStationParameterConfiguration getConfiguration() {
         return configuration;
     }
@@ -533,5 +531,12 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         GroundStation gs = new GroundStation(getId(), getCode(), getName(), getSite(), getDescription(), getColor(), isVisible(), getLatitude(), getLongitude(), getHeight());
         gs.setConfiguration(getConfiguration().copy());
         return gs;
+    }
+
+    @Override
+    public int compareTo(GroundStation o) {
+        // Sort by name and UUID
+        int nameSort = getName().compareTo(o.getName());
+        return nameSort == 0 ? getId().compareTo(o.getId()) : nameSort;
     }
 }

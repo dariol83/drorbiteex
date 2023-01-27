@@ -53,7 +53,7 @@ public class CelestrakDialog implements Initializable {
         dataList = FXCollections.observableList(new LinkedList<>());
         filteredList = new FilteredList<>(dataList, s -> true);
         satelliteList.setItems(filteredList);
-        groupCombo.getItems().addAll("last-30-days", "weather", "dmc", "sarsar", "noaa", "resource", "gps-ops", "galileo", "geo", "cubesat", "active");
+        groupCombo.getItems().addAll(CelestrakTleData.CELESTRAK_GROUPS);
         filterText.textProperty().addListener(observable -> {
             String filter = filterText.getText();
             if(filter == null || filter.length() == 0) {

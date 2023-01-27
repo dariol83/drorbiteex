@@ -89,6 +89,10 @@ public class CollinearityEvent {
                 + String.format("%.2f", angularSeparation);
     }
 
+    public static String getCsvHeader() {
+        return "Ground Station, Time, Reference Orbit, Reference AZ, Reference EL, Target Orbit, Target AZ, Target EL, Angular Separation";
+    }
+
     @Override
     public String toString() {
         return "CollinearityEvent{" +

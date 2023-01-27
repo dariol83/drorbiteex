@@ -16,64 +16,92 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalyser;
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityEvent;
-import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
-import javafx.beans.property.BooleanProperty;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
-import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.TimeZone;
 
 public class CollinearityReportDialog implements Initializable {
+
+    private static String lastExportFolder = null;
 
     private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     public Label titleLabel;
     public TextField filterText;
-    public Label timePeriodLabel;
     public TableView<CollinearityEvent> table;
     public PolarPlot polarPlotController;
     public Label referenceElAzLabel;
     public Label targetElAzLabel;
     public Label angularSeparationLabel;
     public Label nbEventsLabel;
+    public VBox polarPlotParent;
 
     private CollinearityAnalysisRequest request;
     private FilteredList<CollinearityEvent> filteredList;
+    private SortedList<CollinearityEvent> sortedList;
 
     @Override
     @SuppressWarnings("unchecked")
     public void initialize(URL url, ResourceBundle resourceBundle) {
         dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        polarPlotController.setForegroundColor(Color.LIMEGREEN);
-        polarPlotController.setBackgroundColor(Color.BLACK);
-
+        polarPlotController.setSpacecraftDrawStrategy(this::drawSpacecraft);
+        Platform.runLater(this::updatePolarPlotSize);
         filterText.textProperty().addListener((w, o, n) -> applyFilter(n));
         table.getSelectionModel().selectedItemProperty().addListener((w,o,n) -> selectEvent(n));
 
         ((TableColumn<CollinearityEvent, String>) table.getColumns().get(0)).setCellValueFactory(o -> new ReadOnlyStringWrapper(TimeUtils.formatDate(o.getValue().getTime())));
         ((TableColumn<CollinearityEvent, String>) table.getColumns().get(1)).setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getTargetOrbit().getName()));
-        ((TableColumn<CollinearityEvent, String>) table.getColumns().get(2)).setCellValueFactory(o -> new ReadOnlyStringWrapper(String.valueOf(o.getValue().getAngularSeparation())));
+        ((TableColumn<CollinearityEvent, String>) table.getColumns().get(2)).setCellValueFactory(o -> new ReadOnlyStringWrapper(formatDouble(o.getValue().getAngularSeparation(), 3)));
+    }
+
+    private void updatePolarPlotSize() {
+        double size = Math.min(polarPlotParent.getWidth(), polarPlotParent.getHeight());
+        size = Math.min(400, size);
+        size = Math.max(200, size);
+        polarPlotController.updateSize(size - 1);
+    }
+
+    private void drawSpacecraft(GraphicsContext gc, Color color, Point2D p1, String orbitName) {
+        if(orbitName.equals(request.getReferenceOrbit().getName())) {
+            // Reference orbit
+            gc.setLineWidth(1.5);
+            gc.setFill(Color.WHITE);
+            gc.fillOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
+            gc.setStroke(Color.LIMEGREEN);
+            gc.strokeOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
+            gc.setFill(color);
+            gc.setStroke(color);
+        } else {
+            // Target orbit
+            gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
+        }
     }
 
     private void selectEvent(CollinearityEvent event) {
@@ -139,10 +167,39 @@ public class CollinearityReportDialog implements Initializable {
     private void initialise(CollinearityAnalysisRequest request, List<CollinearityEvent> events) {
         this.request = request;
         this.filteredList = new FilteredList<>(FXCollections.observableList(events), e -> true);
-        this.table.setItems(this.filteredList);
+        this.sortedList = new SortedList<>(this.filteredList);
+        this.table.setItems(this.sortedList);
+        this.sortedList.comparatorProperty().bind(this.table.comparatorProperty());
         this.titleLabel.setText("Ground Station: " + request.getGroundStation().getName() + " - Reference Orbit: " + request.getReferenceOrbit().getName() + " - Period: "
             + TimeUtils.formatDate(request.getStartTime()) + " - " + TimeUtils.formatDate(request.getEndTime()));
-        this.timePeriodLabel.setText(TimeUtils.formatDate(request.getStartTime()) + " - " + TimeUtils.formatDate(request.getEndTime()));
         this.nbEventsLabel.setText(String.valueOf(this.filteredList.size()));
+    }
+
+    public void onExportButtonAction(ActionEvent actionEvent) {
+        // open file dialog
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Save CSV collinearity events for " + request.getGroundStation().getName());
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
+        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
+        if(lastExportFolder != null) {
+            fc.setInitialDirectory(new File(lastExportFolder));
+        }
+        fc.setInitialFileName("CollinearityEvents_" + request.getGroundStation().getCode() + "_" + request.getReferenceOrbit().getName() + "_"
+                + TimeUtils.formatDate(request.getStartTime()).replace(" ","_").replace(".","").replace(":","") + "_"
+                + TimeUtils.formatDate(request.getEndTime()).replace(" ","_").replace(".","").replace(":","")
+                + ".csv" );
+        File selected = fc.showSaveDialog(titleLabel.getScene().getWindow());
+        if(selected != null) {
+            lastExportFolder = selected.getParentFile().getAbsolutePath();
+            // Export
+            try {
+                CollinearityAnalyser.generateCSV(selected.getAbsolutePath(), this.table.getItems());
+                Platform.runLater(() -> DialogUtils.info("CSV collinearity events", "Collinearity events of " + request.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> DialogUtils.alert("CSV collinearity events", "Collinearity events of " + request.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
+            }
+        }
     }
 }

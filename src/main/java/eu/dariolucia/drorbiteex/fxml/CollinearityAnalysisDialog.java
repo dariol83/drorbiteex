@@ -17,11 +17,13 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -34,16 +36,21 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CollinearityAnalysisDialog implements Initializable {
 
     private static Date lastStartDate = new Date(); // now
-    private static Date lastEndDate = new Date(lastStartDate.getTime() + (7 * 24 * 3600 * 1000)); // 7 days
+    private static Date lastEndDate = new Date(lastStartDate.getTime() + (24 * 3600 * 1000)); // 1 day
     private static String lastSelectedOrbitNames = null;
     private static double lastMinAngularSeparation = 5.0; // in degrees
     private static int lastPointInterval = 5; // in seconds
     private static int lastNbOfCores = 1;
     private static final List<String> lastExclusions = new LinkedList<>();
+    private static Integer lastMaxHeight = null;
+    private static Integer lastMinHeight = null;
+    private static boolean lastCelestrakOrbits = true;
+    private static String lastCelestrakGroup = "active";
 
     public TextField startDateText;
     public TextField startTimeText;
@@ -64,15 +71,27 @@ public class CollinearityAnalysisDialog implements Initializable {
     private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
     private final SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
-
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
-
+    public TextField maxHeightText;
+    public TextField minHeightText;
+    public RadioButton celestrakGroupRadio;
+    public ComboBox<String> celestrakGroupCombo;
+    public RadioButton applicationGroupRadio;
     private String error;
 
     private GroundStation groundStation;
+    private Dialog<?> dialog;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        celestrakGroupCombo.getItems().addAll(CelestrakTleData.CELESTRAK_GROUPS);
+        ToggleGroup radioGroup = new ToggleGroup();
+        celestrakGroupRadio.setToggleGroup(radioGroup);
+        applicationGroupRadio.setToggleGroup(radioGroup);
+        celestrakGroupRadio.setSelected(true);
+        celestrakGroupCombo.getSelectionModel().select("active");
+        celestrakGroupCombo.disableProperty().bind(celestrakGroupRadio.selectedProperty().not());
+
         coreSlide.setMin(1);
         coreSlide.setMax(Runtime.getRuntime().availableProcessors());
         coreSlide.setMajorTickUnit(1);
@@ -90,15 +109,29 @@ public class CollinearityAnalysisDialog implements Initializable {
         startTimeText.textProperty().addListener(validationBroker);
         endDateText.textProperty().addListener(validationBroker);
         endTimeText.textProperty().addListener(validationBroker);
+        maxHeightText.textProperty().addListener(validationBroker);
+        minHeightText.textProperty().addListener(validationBroker);
         coreSlide.valueProperty().addListener(validationBroker);
+
         minAngularSeparationText.textProperty().addListener(validationBroker);
         intervalPeriodText.textProperty().addListener(validationBroker);
         orbitList.getSelectionModel().selectedItemProperty().addListener(validationBroker);
 
+        exclusionText.textProperty().addListener((w, o, n) -> changeFocus());
         addExclusionButton.disableProperty().bind(exclusionText.textProperty().isEmpty());
         removeExclusionButton.disableProperty().bind(exclusionList.getSelectionModel().selectedItemProperty().isNull());
 
         validate();
+    }
+
+    private void changeFocus() {
+        if(exclusionText.isFocused() && !exclusionText.getText().isBlank()) {
+            addExclusionButton.setDefaultButton(true);
+        } else {
+            addExclusionButton.setDefaultButton(false);
+            Button ok = (Button) this.dialog.getDialogPane().lookupButton(ButtonType.OK);
+            ok.setDefaultButton(true);
+        }
     }
 
     private void validate() {
@@ -120,6 +153,13 @@ public class CollinearityAnalysisDialog implements Initializable {
             }
             Double.parseDouble(minAngularSeparationText.getText());
             Integer.parseInt(intervalPeriodText.getText());
+
+            if(!maxHeightText.getText().isBlank()) {
+                Integer.parseInt(maxHeightText.getText());
+            }
+            if(!minHeightText.getText().isBlank()) {
+                Integer.parseInt(minHeightText.getText());
+            }
 
             getDate(startDateText, startTimeText);
             getDate(endDateText, endTimeText);
@@ -148,12 +188,30 @@ public class CollinearityAnalysisDialog implements Initializable {
             lastNbOfCores = nbCores;
             lastExclusions.clear();
             lastExclusions.addAll(exclusionList.getItems());
+            Integer minHeight = null;
+            Integer maxHeight = null;
+            if(!minHeightText.getText().isBlank()) {
+                minHeight = Integer.parseInt(minHeightText.getText());
+            }
+            if(!maxHeightText.getText().isBlank()) {
+                maxHeight = Integer.parseInt(maxHeightText.getText());
+            }
+            lastMinHeight = minHeight;
+            lastMaxHeight = maxHeight;
+            lastCelestrakOrbits = celestrakGroupRadio.isSelected();
+            lastCelestrakGroup = celestrakGroupCombo.getSelectionModel().getSelectedItem();
             return new CollinearityAnalysisRequest(this.groundStation, orbit, start, end, minAngSep,
-                    pointInterval, nbCores, List.copyOf(exclusionList.getItems()));
+                    pointInterval, nbCores, List.copyOf(exclusionList.getItems()), minHeight, maxHeight,
+                    celestrakGroupRadio.isSelected() ? celestrakGroupCombo.getSelectionModel().getSelectedItem() : null,
+                    applicationGroupRadio.isSelected() ? getTargetOrbitList(this.orbitList.getItems(), orbit) : null);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private List<Orbit> getTargetOrbitList(ObservableList<Orbit> items, Orbit toRemove) {
+        return items.stream().filter(o -> !o.getId().equals(toRemove.getId())).collect(Collectors.toCollection(LinkedList::new));
     }
 
     private Date getDate(TextField dateText, TextField timeText) throws ParseException {
@@ -173,7 +231,7 @@ public class CollinearityAnalysisDialog implements Initializable {
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             CollinearityAnalysisDialog controller = loader.getController();
-            controller.initialise(gs, orbits);
+            controller.initialise(d, gs, orbits);
 
             d.getDialogPane().setContent(root);
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
@@ -190,7 +248,8 @@ public class CollinearityAnalysisDialog implements Initializable {
         }
     }
 
-    private void initialise(GroundStation gs, List<Orbit> orbits) {
+    private void initialise(Dialog<?> d, GroundStation gs, List<Orbit> orbits) {
+        this.dialog = d;
         this.groundStation = gs;
         this.startDateText.setText(toDateText(lastStartDate));
         this.startTimeText.setText(toTimeText(lastStartDate));
@@ -209,6 +268,18 @@ public class CollinearityAnalysisDialog implements Initializable {
         }
         if(selectedOrbit != null) {
             this.orbitList.getSelectionModel().select(selectedOrbit);
+        }
+        if(lastMinHeight != null) {
+            this.minHeightText.setText(String.valueOf(lastMinHeight.intValue()));
+        }
+        if(lastMaxHeight != null) {
+            this.maxHeightText.setText(String.valueOf(lastMaxHeight.intValue()));
+        }
+        if(lastCelestrakOrbits) {
+            this.celestrakGroupRadio.setSelected(true);
+            this.celestrakGroupCombo.getSelectionModel().select(lastCelestrakGroup);
+        } else {
+            this.applicationGroupRadio.setSelected(true);
         }
         validate();
     }

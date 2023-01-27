@@ -354,7 +354,7 @@ public class GroundStationPane implements Initializable {
                     }
                     try(FileOutputStream fs = new FileOutputStream(selected)) {
                         manager.getGroundStationManager().exportVisibilityPasses(gsId, fs, filteredOrbits);
-                        Platform.runLater(() -> DialogUtils.info("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " exported", "file: " + selected.getAbsolutePath()));
+                        Platform.runLater(() -> DialogUtils.info("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
                     } catch (Exception e) {
                         e.printStackTrace();
                         Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
@@ -440,7 +440,7 @@ public class GroundStationPane implements Initializable {
                     }
                     try(FileOutputStream fs = new FileOutputStream(selected)) {
                         manager.getGroundStationManager().exportTrackingInfo(gsId, fs, orbitId, vwId);
-                        Platform.runLater(() -> DialogUtils.info("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " exported", "file: " + selected.getAbsolutePath()));
+                        Platform.runLater(() -> DialogUtils.info("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
                     } catch (Exception e) {
                         e.printStackTrace();
                         Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));

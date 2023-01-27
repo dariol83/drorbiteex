@@ -16,6 +16,7 @@
 
 package eu.dariolucia.drorbiteex.model.orbit;
 
+import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -31,7 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class Orbit {
+public class Orbit implements Comparable<Orbit> {
 
     // Subject to serialisation
     private volatile UUID id;
@@ -308,6 +309,7 @@ public class Orbit {
         this.orbitConfiguration = param.copy();
     }
 
+    @XmlTransient
     public OrbitParameterConfiguration getOrbitConfiguration() {
         return orbitConfiguration;
     }
@@ -316,5 +318,12 @@ public class Orbit {
         Orbit o = new Orbit(getId(), getCode(), getName(), getColor(), isVisible(), getModel().copy());
         o.setOrbitConfiguration(this.orbitConfiguration.copy());
         return o;
+    }
+
+    @Override
+    public int compareTo(Orbit o) {
+        // Sort by name and UUID
+        int nameSort = getName().compareTo(o.getName());
+        return nameSort == 0 ? getId().compareTo(o.getId()) : nameSort;
     }
 }

@@ -31,13 +31,39 @@
          <children>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Reference Orbit" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Reference Orbit" />
                   <ComboBox fx:id="orbitList" prefWidth="255.0" />
                </children>
             </HBox>
+            <Separator />
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Target Orbit Exclusions" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Target Orbits" />
+                  <VBox>
+                     <children>
+                        <HBox>
+                           <RadioButton text="Celestrak" prefWidth="100.0" fx:id="celestrakGroupRadio">
+                              <tooltip>
+                                 <Tooltip text="Use Celestrak orbits in the selected group" />
+                              </tooltip>
+                           </RadioButton>
+                           <ComboBox fx:id="celestrakGroupCombo" prefWidth="155.0" />
+                        </HBox>
+                        <HBox>
+                           <RadioButton text="Application"  prefWidth="255.0" fx:id="applicationGroupRadio">
+                              <tooltip>
+                                 <Tooltip text="Use all orbits loaded in Dr. Orbiteex" />
+                              </tooltip>
+                           </RadioButton>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+            <Separator />
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Target Orbit Exclusions" />
                   <VBox>
                      <children>
                         <HBox>
@@ -64,35 +90,45 @@
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Start Date/Time" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Target Height (km)" />
+                  <Label minWidth="30.0" prefHeight="24.0" prefWidth="30.0" text="Max" />
+                  <TextField fx:id="maxHeightText" minWidth="80.0" prefWidth="80.0" promptText="e.g. 1500 or blank" />
+                  <Label minWidth="30.0" prefHeight="24.0" prefWidth="30.0" text="Min" />
+                  <TextField fx:id="minHeightText" minWidth="80.0" prefWidth="80.0" promptText="e.g. 300 or blank" />
+               </children>
+            </HBox>
+            <Separator />
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Start Date/Time" />
                   <TextField fx:id="startDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
                   <TextField fx:id="startTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="End Date/Time" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="End Date/Time" />
                   <TextField fx:id="endDateText" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
                   <TextField fx:id="endTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Min. angular separation" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Min. angular separation" />
                   <TextField fx:id="minAngularSeparationText" minWidth="150.0" promptText="5.0" text="5.0" />
                   <Label minWidth="50.0" prefHeight="24.0" prefWidth="50.0" text="degrees" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Point interval period" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Point interval period" />
                   <TextField fx:id="intervalPeriodText" minWidth="150.0" promptText="5" text="5" />
                   <Label minWidth="50.0" prefHeight="24.0" prefWidth="50.0" text="seconds" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Parallel Processing Cores" />
+                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="CPU Cores" />
                   <Slider fx:id="coreSlide" showTickLabels="true" showTickMarks="true" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>

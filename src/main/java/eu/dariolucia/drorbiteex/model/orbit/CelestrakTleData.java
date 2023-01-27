@@ -22,12 +22,15 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 public class CelestrakTleData {
 
     private static final String CELESTRAK_PATH = "https://celestrak.org/NORAD/elements/gp.php?GROUP=<group>&FORMAT=tle";
+
+    public static final String[] CELESTRAK_GROUPS = new String[] {"last-30-days", "weather", "dmc", "sarsar", "noaa", "resource", "gps-ops", "galileo", "geo", "cubesat", "active"};
 
     private final String name;
     private final String group;

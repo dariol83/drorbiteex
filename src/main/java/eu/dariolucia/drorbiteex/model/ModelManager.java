@@ -67,7 +67,7 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
             }
         }
         // Add all ground stations as listeners to the orbits
-        for(GroundStation gs : this.groundStationManager.getGroundStations().values()) {
+        for(GroundStation gs : this.groundStationManager.getGroundStations()) {
             this.orbitManager.addListener(gs);
         }
         // Register the manager as listener

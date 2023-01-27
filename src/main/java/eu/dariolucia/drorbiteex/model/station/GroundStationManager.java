@@ -22,10 +22,7 @@ import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -50,7 +47,7 @@ public class GroundStationManager {
     public void persist(OutputStream outputStream) throws IOException {
         GroundStationConfiguration oc = new GroundStationConfiguration();
         oc.setConfiguration(this.configuration);
-        oc.setGroundStations(new LinkedList<>(this.groundStations.values()));
+        oc.setGroundStations(getGroundStations());
         GroundStationConfiguration.save(oc, outputStream);
         outputStream.flush();
     }
@@ -112,8 +109,10 @@ public class GroundStationManager {
         return this.groundStations.get(id);
     }
 
-    public Map<UUID, GroundStation> getGroundStations() {
-        return Map.copyOf(this.groundStations);
+    public List<GroundStation> getGroundStations() {
+        List<GroundStation> stationList = new LinkedList<>(this.groundStations.values());
+        Collections.sort(stationList);
+        return stationList;
     }
 
     public GroundStationParameterConfiguration getConfiguration() {

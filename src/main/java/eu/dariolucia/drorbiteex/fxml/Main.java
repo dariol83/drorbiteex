@@ -389,11 +389,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
 
         // Create graphics objects
-        for(Orbit o : this.manager.getOrbitManager().getOrbits().values()) {
+        for(Orbit o : this.manager.getOrbitManager().getOrbits()) {
             registerNewOrbit(o);
         }
 
-        for(GroundStation gs : this.manager.getGroundStationManager().getGroundStations().values()) {
+        for(GroundStation gs : this.manager.getGroundStationManager().getGroundStations()) {
             registerNewGroundStation(gs);
         }
 
