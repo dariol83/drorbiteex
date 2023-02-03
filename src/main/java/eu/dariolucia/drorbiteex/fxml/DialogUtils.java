@@ -18,10 +18,22 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.TextField;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoField;
+import java.util.Date;
 import java.util.Optional;
+import java.util.TimeZone;
 
 public class DialogUtils {
+
+    private static final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    private static final SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
 
     public static void alert(String title, String headerText, String content) {
         dialog(Alert.AlertType.ERROR, title, headerText, content);
@@ -46,5 +58,23 @@ public class DialogUtils {
         alert.setContentText(content);
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && result.get() == ButtonType.OK;
+    }
+
+    public static Date getDate(DatePicker datePicker, TextField timeText) throws ParseException {
+        dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        LocalDate date = datePicker.getValue();
+        String dateStr = String.format("%02d/", date.get(ChronoField.DAY_OF_MONTH));
+        dateStr += String.format("%02d/", date.get(ChronoField.MONTH_OF_YEAR));
+        dateStr += date.getYear();
+        return dateTimeFormatter.parse(dateStr + " " + timeText.getText());
+    }
+
+    public static String toTimeText(Date date) {
+        timeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return timeFormatter.format(date);
+    }
+
+    public static LocalDate toDateText(Date date) {
+        return LocalDate.ofInstant(date.toInstant(), ZoneId.of("UTC"));
     }
 }

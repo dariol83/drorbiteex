@@ -59,9 +59,9 @@ public class ExportOemOrbitDialog implements Initializable {
 
     public TextField codeText;
     public TextField nameText;
-    public TextField startDateText;
+    public DatePicker startDatePicker;
     public TextField startTimeText;
-    public TextField endDateText;
+    public DatePicker endDatePicker;
     public TextField endTimeText;
     public TextField periodText;
     public TextField filePathText;
@@ -75,12 +75,7 @@ public class ExportOemOrbitDialog implements Initializable {
     public ComboBox<String> fileGeneratorCombo;
     public Button folderPathButton;
 
-
     private boolean isTle = false;
-
-    private SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-    private SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
-    private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
 
@@ -89,15 +84,12 @@ public class ExportOemOrbitDialog implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        timeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         codeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         nameText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        startDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        startDatePicker.valueProperty().addListener((prop, oldVal, newVal) -> validate());
         startTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        endDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        endDatePicker.valueProperty().addListener((prop, oldVal, newVal) -> validate());
         endTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         filePathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         folderPathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
@@ -139,13 +131,13 @@ public class ExportOemOrbitDialog implements Initializable {
             if(nameText.getText().isBlank()) {
                 throw new IllegalStateException("Name field is blank");
             }
-            if(startDateText.getText().isBlank()) {
+            if(startDatePicker.valueProperty().isNull().get()) {
                 throw new IllegalStateException("Start date field is blank");
             }
             if(startTimeText.getText().isBlank()) {
                 throw new IllegalStateException("Start time field is blank");
             }
-            if(endDateText.getText().isBlank()) {
+            if(endDatePicker.valueProperty().isNull().get()) {
                 throw new IllegalStateException("End date field is blank");
             }
             if(endTimeText.getText().isBlank()) {
@@ -161,8 +153,8 @@ public class ExportOemOrbitDialog implements Initializable {
                 throw new IllegalStateException("TEME reference frame can only be used with TLE orbits");
             }
 
-            getDate(startDateText, startTimeText);
-            getDate(endDateText, endTimeText);
+            DialogUtils.getDate(startDatePicker, startTimeText);
+            DialogUtils.getDate(endDatePicker, endTimeText);
 
             Integer.parseInt(periodText.getText());
 
@@ -177,8 +169,8 @@ public class ExportOemOrbitDialog implements Initializable {
     public OemGenerationRequest getResult() {
         try {
             LAST_PERIOD = Integer.parseInt(periodText.getText());
-            Date start = getDate(startDateText, startTimeText);
-            Date end = getDate(endDateText, endTimeText);
+            Date start = DialogUtils.getDate(startDatePicker, startTimeText);
+            Date end = DialogUtils.getDate(endDatePicker, endTimeText);
             LAST_TIME_DIFFERENCE = end.getTime() - start.getTime();
             Frame frame = getFrame();
             FileFormat format = getFormat();
@@ -223,10 +215,6 @@ public class ExportOemOrbitDialog implements Initializable {
         }
     }
 
-    private Date getDate(TextField dateText, TextField timeText) throws ParseException {
-        return dateTimeFormatter.parse(dateText.getText() + " " + timeText.getText());
-    }
-
     public static OemGenerationRequest openDialog(Window owner, Orbit gs) {
         try {
             // Create the popup
@@ -262,10 +250,10 @@ public class ExportOemOrbitDialog implements Initializable {
         this.nameText.setText(gs.getName());
         this.codeText.setText(gs.getCode());
         Date refDate = new Date();
-        this.startDateText.setText(toDateText(refDate));
-        this.startTimeText.setText(toTimeText(refDate));
-        this.endDateText.setText(toDateText(new Date(refDate.getTime() + LAST_TIME_DIFFERENCE)));
-        this.endTimeText.setText(toTimeText(new Date()));
+        this.startDatePicker.setValue(DialogUtils.toDateText(refDate));
+        this.startTimeText.setText(DialogUtils.toTimeText(refDate));
+        this.endDatePicker.setValue(DialogUtils.toDateText(new Date(refDate.getTime() + LAST_TIME_DIFFERENCE)));
+        this.endTimeText.setText(DialogUtils.toTimeText(new Date()));
         this.periodText.setText(String.valueOf(LAST_PERIOD));
         this.isTle = gs.getModel() instanceof TleOrbitModel;
         selectCombo(formatCombo, LAST_FORMAT);
@@ -285,14 +273,6 @@ public class ExportOemOrbitDialog implements Initializable {
         if (value != null && combo.getItems().contains(value)){
             combo.getSelectionModel().select(value);
         }
-    }
-
-    private String toTimeText(Date date) {
-        return timeFormatter.format(date);
-    }
-
-    private String toDateText(Date date) {
-        return dateFormatter.format(date);
     }
 
     public void onSelectFileAction(ActionEvent actionEvent) {
@@ -317,5 +297,4 @@ public class ExportOemOrbitDialog implements Initializable {
             folderPathText.setText(selected.getAbsolutePath());
         }
     }
-
 }

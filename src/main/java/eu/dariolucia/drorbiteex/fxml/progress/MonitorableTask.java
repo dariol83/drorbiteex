@@ -44,6 +44,10 @@ public class MonitorableTask<V> implements Callable<V> {
         } catch (Exception e) {
             this.detectedError = e;
             throw e;
+        } finally {
+            if(this.monitor != null) {
+                this.monitor.completed();
+            }
         }
     }
 }

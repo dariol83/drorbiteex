@@ -17,6 +17,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.collinearity.SkyCoverageAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
@@ -36,13 +37,10 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CollinearityAnalysisDialog implements Initializable {
+public class SkyCoverageAnalysisDialog implements Initializable {
 
     private static Date lastStartDate = new Date(); // now
     private static Date lastEndDate = new Date(lastStartDate.getTime() + (24 * 3600 * 1000)); // 1 day
-    private static String lastSelectedOrbitNames = null;
-    private static double lastMinAngularSeparation = 5.0; // in degrees
-    private static int lastPointInterval = 5; // in seconds
     private static int lastNbOfCores = 1;
     private static final List<String> lastExclusions = new LinkedList<>();
     private static Integer lastMaxHeight = null;
@@ -55,9 +53,6 @@ public class CollinearityAnalysisDialog implements Initializable {
     public DatePicker endDatePicker;
     public TextField endTimeText;
 
-    public ComboBox<Orbit> orbitList;
-    public TextField minAngularSeparationText;
-    public TextField intervalPeriodText;
     public Slider coreSlide;
 
     // Exclusion part
@@ -75,6 +70,7 @@ public class CollinearityAnalysisDialog implements Initializable {
 
     private GroundStation groundStation;
     private Dialog<?> dialog;
+    private List<Orbit> orbitList;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -102,10 +98,6 @@ public class CollinearityAnalysisDialog implements Initializable {
         maxHeightText.textProperty().addListener(validationBroker);
         minHeightText.textProperty().addListener(validationBroker);
         coreSlide.valueProperty().addListener(validationBroker);
-
-        minAngularSeparationText.textProperty().addListener(validationBroker);
-        intervalPeriodText.textProperty().addListener(validationBroker);
-        orbitList.getSelectionModel().selectedItemProperty().addListener(validationBroker);
 
         exclusionText.textProperty().addListener((w, o, n) -> changeFocus());
         addExclusionButton.disableProperty().bind(exclusionText.textProperty().isEmpty());
@@ -138,11 +130,6 @@ public class CollinearityAnalysisDialog implements Initializable {
             if(endTimeText.getText().isBlank()) {
                 throw new IllegalStateException("End time field is blank");
             }
-            if(orbitList.getSelectionModel().getSelectedItem() == null) {
-                throw new IllegalStateException("Orbit not selected");
-            }
-            Double.parseDouble(minAngularSeparationText.getText());
-            Integer.parseInt(intervalPeriodText.getText());
 
             if(!maxHeightText.getText().isBlank()) {
                 Integer.parseInt(maxHeightText.getText());
@@ -162,18 +149,12 @@ public class CollinearityAnalysisDialog implements Initializable {
         }
     }
 
-    public CollinearityAnalysisRequest getResult() {
+    public SkyCoverageAnalysisRequest getResult() {
         try {
             Date start = DialogUtils.getDate(startDatePicker, startTimeText);
             Date end = DialogUtils.getDate(endDatePicker, endTimeText);
             lastStartDate = start;
             lastEndDate = end;
-            Orbit orbit = this.orbitList.getSelectionModel().getSelectedItem();
-            lastSelectedOrbitNames = orbit.getName();
-            double minAngSep = Double.parseDouble(minAngularSeparationText.getText());
-            lastMinAngularSeparation = minAngSep;
-            int pointInterval = Integer.parseInt(intervalPeriodText.getText());
-            lastPointInterval = pointInterval;
             int nbCores = (int) coreSlide.getValue();
             lastNbOfCores = nbCores;
             lastExclusions.clear();
@@ -190,33 +171,28 @@ public class CollinearityAnalysisDialog implements Initializable {
             lastMaxHeight = maxHeight;
             lastCelestrakOrbits = celestrakGroupRadio.isSelected();
             lastCelestrakGroup = celestrakGroupCombo.getSelectionModel().getSelectedItem();
-            return new CollinearityAnalysisRequest(this.groundStation, orbit, start, end, minAngSep,
-                    pointInterval, nbCores, List.copyOf(exclusionList.getItems()), minHeight, maxHeight,
+            return new SkyCoverageAnalysisRequest(this.groundStation, start, end, nbCores, List.copyOf(exclusionList.getItems()), minHeight, maxHeight,
                     celestrakGroupRadio.isSelected() ? celestrakGroupCombo.getSelectionModel().getSelectedItem() : null,
-                    applicationGroupRadio.isSelected() ? getTargetOrbitList(this.orbitList.getItems(), orbit) : null);
+                    applicationGroupRadio.isSelected() ? this.orbitList : null);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private List<Orbit> getTargetOrbitList(ObservableList<Orbit> items, Orbit toRemove) {
-        return items.stream().filter(o -> !o.getId().equals(toRemove.getId())).collect(Collectors.toCollection(LinkedList::new));
-    }
-
-    public static CollinearityAnalysisRequest openDialog(Window owner, GroundStation gs, List<Orbit> orbits) {
+    public static SkyCoverageAnalysisRequest openDialog(Window owner, GroundStation gs, List<Orbit> orbits) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Run collinearity analysis for " + gs.getName());
+            d.setTitle("Run sky coverage for " + gs.getName());
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = CollinearityAnalysisDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/CollinearityAnalysisDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = SkyCoverageAnalysisDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/SkyCoverageAnalysisDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
-            CollinearityAnalysisDialog controller = loader.getController();
+            SkyCoverageAnalysisDialog controller = loader.getController();
             controller.initialise(d, gs, orbits);
 
             d.getDialogPane().setContent(root);
@@ -241,20 +217,9 @@ public class CollinearityAnalysisDialog implements Initializable {
         this.startTimeText.setText(DialogUtils.toTimeText(lastStartDate));
         this.endDatePicker.setValue(DialogUtils.toDateText(lastEndDate));
         this.endTimeText.setText(DialogUtils.toTimeText(lastEndDate));
-        this.intervalPeriodText.setText(String.valueOf(lastPointInterval));
-        this.minAngularSeparationText.setText(String.valueOf(lastMinAngularSeparation));
         this.coreSlide.setValue(lastNbOfCores);
         this.exclusionList.getItems().addAll(lastExclusions);
-        Orbit selectedOrbit = null;
-        for(Orbit o : orbits) {
-            this.orbitList.getItems().add(o);
-            if(lastSelectedOrbitNames != null && lastSelectedOrbitNames.equals(o.getName())) {
-                selectedOrbit = o;
-            }
-        }
-        if(selectedOrbit != null) {
-            this.orbitList.getSelectionModel().select(selectedOrbit);
-        }
+        this.orbitList = orbits;
         if(lastMinHeight != null) {
             this.minHeightText.setText(String.valueOf(lastMinHeight.intValue()));
         }

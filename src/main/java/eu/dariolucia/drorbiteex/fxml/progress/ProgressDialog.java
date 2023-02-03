@@ -22,11 +22,12 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
 import java.net.URL;
@@ -143,8 +144,8 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
         Date timestamp = new Date();
         Platform.runLater(() -> {
             this.messageText.setText(message);
-            this.progress.setProgress(current/(double) total);
-            if(current > 0) {
+            if(current >= 0) {
+                this.progress.setProgress(current/(double) total);
                 // Compute ECT
                 long secs = computeECT(timestamp, current, total);
                 long hours = secs / 3600;
@@ -165,8 +166,9 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
                 }
                 this.ectText.setText(sb.toString());
 
-                if(current == total) {
+                if(current == total && stage != null) {
                     stage.close(); // Unblock showAndWait
+                    stage = null;
                 }
             }
         });
@@ -175,6 +177,16 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
     @Override
     public boolean isCancelled() {
         return this.wasInterrupted;
+    }
+
+    @Override
+    public void completed() {
+        Platform.runLater(() -> {
+            if(stage != null) {
+                stage.close(); // Unblock showAndWait
+                stage = null;
+            }
+        });
     }
 
     private long computeECT(Date timestamp, long current, long total) {

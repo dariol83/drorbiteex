@@ -93,6 +93,18 @@
                                 <Tooltip text="Compute collinearity events..." />
                             </tooltip>
                         </Button>
+                        <Button mnemonicParsing="false" onAction="#onSkyCoverageAnalysisAction">
+                            <graphic>
+                                <ImageView pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@/scatter-plot-custom.png" />
+                                    </image>
+                                </ImageView>
+                            </graphic>
+                            <tooltip>
+                                <Tooltip text="Compute sky coverage..." />
+                            </tooltip>
+                        </Button>
                         <Button mnemonicParsing="false" onAction="#onEditGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">

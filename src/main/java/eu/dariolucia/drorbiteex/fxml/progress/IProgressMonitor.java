@@ -20,4 +20,6 @@ public interface IProgressMonitor {
     void progress(String name, long current, long total, String message);
 
     boolean isCancelled();
+
+    void completed();
 }

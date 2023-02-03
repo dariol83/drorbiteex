@@ -30,22 +30,32 @@ public class PolarPlotPainter {
         gc.setStroke(strokeColor);
         gc.setFill(strokeColor);
         gc.setLineWidth(2);
+        Point2D lastDrawnPoint = null;
+        Point2D firstDrawnPoint = null;
         for (int i = 0; i < track.size() - 1; ++i) {
             // Draw line from point to point
             TrackPoint tp1 = track.get(i);
             TrackPoint tp2 = track.get(i + 1);
+            if(tp1.getElevation() < 0 || tp2.getElevation() < 0) {
+                continue;
+            }
             Point2D p1 = toScreenPoint(tp1.getAzimuth(), tp1.getElevation(), width, height);
             Point2D p2 = toScreenPoint(tp2.getAzimuth(), tp2.getElevation(), width, height);
             if (p1.getY() < 0 || p2.getY() < 0) {
                 continue;
             }
-            gc.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-            if (i == 0) {
-                gc.fillRect(p1.getX() - 2, p1.getY() - 2, 4, 4);
-            } else if (i == track.size() - 2) {
-                gc.strokeLine(p2.getX() - 3, p2.getY() - 3, p2.getX() + 3, p2.getY() + 3);
-                gc.strokeLine(p2.getX() - 3, p2.getY() + 3, p2.getX() + 3, p2.getY() - 3);
+            if(i == 0) {
+                firstDrawnPoint = p1;
             }
+            gc.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+            lastDrawnPoint = p2;
+        }
+        if(firstDrawnPoint != null) {
+            gc.fillRect(firstDrawnPoint.getX() - 2, firstDrawnPoint.getY() - 2, 4, 4);
+        }
+        if(lastDrawnPoint != null) {
+            gc.strokeLine(lastDrawnPoint.getX() - 3, lastDrawnPoint.getY() - 3, lastDrawnPoint.getX() + 3, lastDrawnPoint.getY() + 3);
+            gc.strokeLine(lastDrawnPoint.getX() - 3, lastDrawnPoint.getY() + 3, lastDrawnPoint.getX() + 3, lastDrawnPoint.getY() - 3);
         }
     }
 
@@ -146,6 +156,10 @@ public class PolarPlotPainter {
             azimuth = 360 - azimuth;
         }
         double elevation = 90 - radius/(MAX_RADIUS_FACTOR * width/2) * 90;
-        return new Point2D(elevation,azimuth);
+        if(elevation < 0) {
+            return null;
+        } else {
+            return new Point2D(elevation, azimuth);
+        }
     }
 }

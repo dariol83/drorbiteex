@@ -22,20 +22,13 @@
 
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
-<AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.CollinearityAnalysisDialog">
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.SkyCoverageAnalysisDialog">
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
          <children>
-            <HBox spacing="5" VBox.vgrow="NEVER">
-               <children>
-                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Reference Orbit" />
-                  <ComboBox fx:id="orbitList" prefWidth="255.0" />
-               </children>
-            </HBox>
-            <Separator />
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Target Orbits" />
@@ -110,20 +103,6 @@
                   <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="End Date/Time" />
                   <DatePicker fx:id="endDatePicker" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
                   <TextField fx:id="endTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
-               </children>
-            </HBox>
-            <HBox spacing="5" VBox.vgrow="NEVER">
-               <children>
-                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Min. angular separation" />
-                  <TextField fx:id="minAngularSeparationText" minWidth="150.0" promptText="5.0" text="5.0" />
-                  <Label minWidth="50.0" prefHeight="24.0" prefWidth="50.0" text="degrees" />
-               </children>
-            </HBox>
-            <HBox spacing="5" VBox.vgrow="NEVER">
-               <children>
-                  <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Point interval period" />
-                  <TextField fx:id="intervalPeriodText" minWidth="150.0" promptText="5" text="5" />
-                  <Label minWidth="50.0" prefHeight="24.0" prefWidth="50.0" text="seconds" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">

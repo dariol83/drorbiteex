@@ -75,7 +75,7 @@ public class PolarPlot implements Initializable {
         tooltip.setShowDelay(Duration.millis(200));
         canvas.setOnMouseMoved(e -> {
             Point2D elAzCoordinates = PolarPlotPainter.toPolarPoint(e.getX(), e.getY(), canvas.getWidth(), canvas.getHeight());
-            if(elAzCoordinates.getX() > 0) {
+            if(elAzCoordinates != null && elAzCoordinates.getX() > 0) {
                 tooltip.setText(String.format("EL: %.3f - AZ: %.3f", elAzCoordinates.getX(), elAzCoordinates.getY()));
             } else {
                 tooltip.hide();

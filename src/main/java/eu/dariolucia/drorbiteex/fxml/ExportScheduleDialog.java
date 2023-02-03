@@ -35,8 +35,6 @@ import javafx.util.Pair;
 
 import java.io.File;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,9 +60,9 @@ public class ExportScheduleDialog implements Initializable {
 
     private static boolean lastFileRadio = true;
 
-    public TextField startDateText;
+    public DatePicker startDatePicker;
     public TextField startTimeText;
-    public TextField endDateText;
+    public DatePicker endDatePicker;
     public TextField endTimeText;
     public TextField filePathText;
 
@@ -94,10 +92,6 @@ public class ExportScheduleDialog implements Initializable {
     public Button filePathButton;
     public Button folderPathButton;
 
-    private SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-    private SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
-    private SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
-
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
 
     private String error;
@@ -108,13 +102,9 @@ public class ExportScheduleDialog implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitWrapper::selectedProperty));
 
-        dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        timeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        startDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        startDatePicker.valueProperty().addListener((prop, oldVal, newVal) -> validate());
         startTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
-        endDateText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        endDatePicker.valueProperty().addListener((prop, oldVal, newVal) -> validate());
         endTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         filePathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         folderPathText.textProperty().addListener((prop, oldVal, newVal) -> validate());
@@ -163,13 +153,13 @@ public class ExportScheduleDialog implements Initializable {
 
     private void validate() {
         try {
-            if(startDateText.getText().isBlank()) {
+            if(startDatePicker.valueProperty().isNull().get()) {
                 throw new IllegalStateException("Start date field is blank");
             }
             if(startTimeText.getText().isBlank()) {
                 throw new IllegalStateException("Start time field is blank");
             }
-            if(endDateText.getText().isBlank()) {
+            if(endDatePicker.valueProperty().isNull().get()) {
                 throw new IllegalStateException("End date field is blank");
             }
             if(endTimeText.getText().isBlank()) {
@@ -187,8 +177,8 @@ public class ExportScheduleDialog implements Initializable {
 
             Integer.parseInt(startEndActivityDeltaText.getText());
 
-            getDate(startDateText, startTimeText);
-            getDate(endDateText, endTimeText);
+            DialogUtils.getDate(startDatePicker, startTimeText);
+            DialogUtils.getDate(endDatePicker, endTimeText);
 
             error = null;
             validData.setValue(true);
@@ -200,8 +190,8 @@ public class ExportScheduleDialog implements Initializable {
 
     public ScheduleGenerationRequest getResult() {
         try {
-            Date start = getDate(startDateText, startTimeText);
-            Date end = getDate(endDateText, endTimeText);
+            Date start = DialogUtils.getDate(startDatePicker, startTimeText);
+            Date end = DialogUtils.getDate(endDatePicker, endTimeText);
             lastStartDate = start;
             lastEndDate = end;
             List<Orbit> orbits = orbitList.getItems().stream().filter(OrbitWrapper::isSelected).map(OrbitWrapper::getOrbit).collect(Collectors.toList());
@@ -249,10 +239,6 @@ public class ExportScheduleDialog implements Initializable {
         return reqs;
     }
 
-    private Date getDate(TextField dateText, TextField timeText) throws ParseException {
-        return dateTimeFormatter.parse(dateText.getText() + " " + timeText.getText());
-    }
-
     public static ScheduleGenerationRequest openDialog(Window owner, GroundStation gs, List<Orbit> orbits) {
         try {
             // Create the popup
@@ -285,10 +271,10 @@ public class ExportScheduleDialog implements Initializable {
 
     private void initialise(GroundStation gs, List<Orbit> orbits) {
         this.groundStation = gs;
-        this.startDateText.setText(toDateText(lastStartDate));
-        this.startTimeText.setText(toTimeText(lastStartDate));
-        this.endDateText.setText(toDateText(lastEndDate));
-        this.endTimeText.setText(toTimeText(lastEndDate));
+        this.startDatePicker.setValue(DialogUtils.toDateText(lastStartDate));
+        this.startTimeText.setText(DialogUtils.toTimeText(lastStartDate));
+        this.endDatePicker.setValue(DialogUtils.toDateText(lastEndDate));
+        this.endTimeText.setText(DialogUtils.toTimeText(lastEndDate));
         this.originatingEntityText.setText(lastOrigEntityId);
         if(lastFileRadio) {
             this.filePathRadio.setSelected(true);
@@ -332,14 +318,6 @@ public class ExportScheduleDialog implements Initializable {
         }
 
         validate();
-    }
-
-    private String toTimeText(Date date) {
-        return timeFormatter.format(date);
-    }
-
-    private String toDateText(Date date) {
-        return dateFormatter.format(date);
     }
 
     public void onSelectFileAction(ActionEvent actionEvent) {

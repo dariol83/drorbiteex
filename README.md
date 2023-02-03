@@ -16,6 +16,8 @@ interest
 - Export a TLE-based orbit to CCSDS OEM file (KVN and XML)
 - For a ground station/point of interest, export a set of visibility windows in the form of
 CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
+- Detect collinearity events with reference to a specific satellite/orbit
+- Calculate a sky coverage map for a given ground station/point of interest, with reference to a selectable set of satellites/orbits
 
 ![AND](img/drorbiteex1.png "Dr. Orbiteex main window")
 

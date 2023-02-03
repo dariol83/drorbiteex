@@ -59,10 +59,11 @@ public class CollinearityAnalyser {
         String referenceOrbitCelestrakName = refOrbit.getModel() instanceof CelestrakTleOrbitModel ? ((CelestrakTleOrbitModel) refOrbit.getModel()).getCelestrakName() : null;
         List<Orbit> targetOrbits;
         if(request.getCelestrakGroup() != null) {
-            // Fetch all 'active' satellites in Celestrak
+            monitor.progress(-1, -1, "Fetching Celestrak data for group " + request.getCelestrakGroup());
+            // Fetch all selected satellites in Celestrak
             List<CelestrakTleData> active = CelestrakTleData.retrieveSpacecraftList(request.getCelestrakGroup());
             if(active == null) {
-                throw new IOException("Cannot fetch Celestrak data for 'active' satellites");
+                throw new IOException("Cannot fetch Celestrak data for '" + request.getCelestrakGroup() + "' satellites");
             }
             if(monitor.isCancelled()) {
                 return null;
@@ -75,6 +76,7 @@ public class CollinearityAnalyser {
             targetOrbits = request.getTargetOrbits().stream().map(Orbit::copy).collect(Collectors.toList());
         }
         // Filter out orbits
+        monitor.progress(-1, -1, "Filtering " + targetOrbits.size() + " orbits...");
         targetOrbits = targetOrbits
                 .stream()
                 // remove the orbit if Celestrak based or same name or same UUID
@@ -98,6 +100,7 @@ public class CollinearityAnalyser {
                 })
                 .collect(Collectors.toList());
         // Set configuration to all orbits
+        monitor.progress(-1, -1, "Configuring " + targetOrbits.size() + " initial orbits...");
         OrbitParameterConfiguration orbitConf = refOrbit.getOrbitConfiguration().copy();
         // Never recompute orbit and do not propagate every time
         orbitConf.setRecomputeFullDataInterval(Integer.MAX_VALUE);
@@ -151,6 +154,8 @@ public class CollinearityAnalyser {
                 e.printStackTrace();
                 service.shutdownNow();
                 throw new IOException(e);
+            } finally {
+                System.gc();
             }
             ++progress;
             monitor.progress(progress, futures.size(), f.getDescription());

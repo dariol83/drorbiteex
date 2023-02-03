@@ -405,6 +405,13 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         }
     }
 
+    public synchronized void clearVisibilityWindowsOf(Orbit o) {
+        List<VisibilityWindow> toReturn = this.visibilityWindows.remove(o);
+        if(toReturn != null) {
+            toReturn.clear();
+        }
+    }
+
     public synchronized Map<Orbit, TrackPoint> getAllCurrentVisibilities() {
         return Map.copyOf(this.currentVisibilityMap);
     }

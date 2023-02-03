@@ -19,9 +19,7 @@ package eu.dariolucia.drorbiteex.fxml;
 import eu.dariolucia.drorbiteex.fxml.progress.IMonitorableCallable;
 import eu.dariolucia.drorbiteex.fxml.progress.ProgressDialog;
 import eu.dariolucia.drorbiteex.model.ModelManager;
-import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalyser;
-import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
-import eu.dariolucia.drorbiteex.model.collinearity.CollinearityEvent;
+import eu.dariolucia.drorbiteex.model.collinearity.*;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
@@ -35,8 +33,10 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
@@ -459,6 +459,46 @@ public class GroundStationPane implements Initializable {
     public void deregisterOrbit(OrbitGraphics graphics) {
         for(GroundStationGraphics g : getGroundStationGraphics()) {
             g.informOrbitRemoved(graphics.getOrbit());
+        }
+    }
+
+    public void onSkyCoverageAnalysisAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            List<Orbit> orbits = orbitSupplier.get();
+            // open dialog
+            SkyCoverageAnalysisRequest sgr = SkyCoverageAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
+            if(sgr != null) {
+                IMonitorableCallable<Canvas> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Sky Coverage Analysis", current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return SkyCoverageAnalyser.analyse(sgr, monitorBridge);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<Canvas> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Sky Coverage Analysis", task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    SkyCoverageReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Sky Coverage Analysis", "Sky coverage for " + gs.getGroundStation().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("Sky Coverage Analysis", "Sky coverage for " + gs.getGroundStation().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
         }
     }
 }
