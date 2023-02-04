@@ -22,12 +22,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Modality;
@@ -48,7 +48,19 @@ public class SkyCoverageReportDialog implements Initializable {
     @Override
     @SuppressWarnings("unchecked")
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        //
+        // Menu for image copy
+        image.setOnContextMenuRequested(e -> {
+            ContextMenu m = new ContextMenu();
+            final MenuItem copyItem = new MenuItem("Copy image to clipboard");
+            copyItem.setOnAction(event -> {
+                WritableImage theImage = image.snapshot(null, null);
+                ClipboardContent content = new ClipboardContent();
+                content.putImage(theImage);
+                Clipboard.getSystemClipboard().setContent(content);
+            });
+            m.getItems().add(copyItem);
+            m.show(image.getScene().getWindow(), e.getScreenX(), e.getScreenY());
+        });
     }
 
     public static void openDialog(Window owner, SkyCoverageAnalysisRequest request, Canvas plot) {
