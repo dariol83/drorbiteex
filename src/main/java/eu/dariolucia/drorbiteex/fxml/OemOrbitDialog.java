@@ -113,12 +113,15 @@ public class OemOrbitDialog implements Initializable {
             URL dataSelectionDialogFxmlUrl = OemOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/OemOrbitDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             OemOrbitDialog controller = loader.getController();
             if(gs != null) {
                 controller.setOriginalOrbit(gs);
             }
 
             d.getDialogPane().setContent(root);
+            d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
+
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
             ok.disableProperty().bind(controller.validData.not());
             Optional<ButtonType> result = d.showAndWait();

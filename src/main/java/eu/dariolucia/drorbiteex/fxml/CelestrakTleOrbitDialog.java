@@ -113,12 +113,15 @@ public class CelestrakTleOrbitDialog implements Initializable {
             URL dataSelectionDialogFxmlUrl = CelestrakTleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/CelestrakTleOrbitDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             CelestrakTleOrbitDialog controller = loader.getController();
             if(gs != null) {
                 controller.setOriginalOrbit(gs);
             }
 
             d.getDialogPane().setContent(root);
+            d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
+
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
             ok.disableProperty().bind(controller.validData.not());
             Optional<ButtonType> result = d.showAndWait();

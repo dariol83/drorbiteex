@@ -35,7 +35,7 @@
                <VBox.margin>
                   <Insets />
                </VBox.margin></Label>
-            <TextField fx:id="filterText" maxWidth="370.0" minWidth="370.0">
+            <TextField fx:id="filterText" maxWidth="400.0" minWidth="400.0">
                <VBox.margin>
                   <Insets bottom="5.0" />
                </VBox.margin></TextField>

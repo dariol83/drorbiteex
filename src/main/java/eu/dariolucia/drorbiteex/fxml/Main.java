@@ -35,6 +35,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.util.StringConverter;
 
 import java.net.URL;
@@ -61,6 +64,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public Label currentTimeLabel;
     private final Timer tracker = new Timer();
     public ToggleButton toggle3DvisibilityLineButton;
+    public AnchorPane dropshadow;
 
 
     private TimerTask timerTask = null;
@@ -133,6 +137,11 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Configure 3D scene
         scene3dController.configure(fullPane);
         scene2dController.configure(miniPane);
+
+        // TODO: finish with image
+        dropshadow.prefWidthProperty().bind(mainSceneParent.widthProperty());
+        dropshadow.prefHeightProperty().bind(mainSceneParent.heightProperty());
+        dropshadow.setStyle("-fx-background-color: #282828");
     }
 
     private void handleOrbitTracking(OrbitGraphics o) {
@@ -354,6 +363,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         fullPane.getChildren().add(scene2Dmain);
         miniPane.getChildren().add(scene3Dmain);
         // Reconfigure 3D scene
+        this.scene3dController.setBackgroundColor(Color.BLACK);
         this.scene3dController.configure(miniPane);
         this.scene2dController.configure(fullPane);
         this.scene2dController.recomputeViewports(true);
@@ -372,6 +382,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         miniPane.getChildren().add(scene2Dmain);
         fullPane.getChildren().add(scene3Dmain);
         // Reconfigure 3D scene
+        this.scene3dController.setBackgroundColor(Color.TRANSPARENT);
         this.scene3dController.configure(fullPane);
         this.scene2dController.configure(miniPane);
         this.scene2dController.recomputeViewports(true);
@@ -413,8 +424,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     public void onAboutAction(ActionEvent actionEvent) {
         DialogUtils.info("About " + DrOrbiteex.APPLICATION_NAME + "...", DrOrbiteex.APPLICATION_NAME + " " + DrOrbiteex.VERSION,
-                String.format("%s %s\n\nOrbit visualisation and processing application\n\nCopyright (c) 2022-2023 Dario Lucia\n\nhttps://www.dariolucia.eu\n" +
-                        "https://github.com/dariol83/drorbiteex", DrOrbiteex.APPLICATION_NAME, DrOrbiteex.VERSION));
+                String.format("Orbit visualisation and processing application\n\nCopyright (c) 2022-2023 Dario Lucia\n\nhttps://www.dariolucia.eu\n" +
+                        "https://github.com/dariol83/drorbiteex"));
     }
 
 }

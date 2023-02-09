@@ -83,12 +83,15 @@ public class GroundStationConfigurationDialog implements Initializable {
             URL dataSelectionDialogFxmlUrl = GroundStationConfigurationDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/GroundStationConfigurationDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             GroundStationConfigurationDialog controller = loader.getController();
             if(p != null) {
                 controller.initialise(p);
             }
 
             d.getDialogPane().setContent(root);
+            d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
+
             Button ok = (Button) d.getDialogPane().lookupButton(ButtonType.OK);
             ok.disableProperty().bind(controller.validData.not());
             Optional<ButtonType> result = d.showAndWait();

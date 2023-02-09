@@ -81,7 +81,7 @@ public class GroundStationPane implements Initializable {
 
         // Polar plot color configuration
         polarPlotController.setForegroundColor(Color.LIMEGREEN);
-        polarPlotController.setBackgroundColor(Color.BLACK);
+        polarPlotController.setBackgroundColor(Color.valueOf("#101010"));
         polarPlotParent.widthProperty().addListener((a,b,c) -> updatePolarPlotSize());
         polarPlotParent.heightProperty().addListener((a,b,c) -> updatePolarPlotSize());
         // Configure pass table

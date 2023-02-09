@@ -16,6 +16,7 @@
 
 package eu.dariolucia.drorbiteex.application;
 
+import eu.dariolucia.drorbiteex.fxml.CssHolder;
 import eu.dariolucia.drorbiteex.fxml.DialogUtils;
 import eu.dariolucia.drorbiteex.fxml.Main;
 import eu.dariolucia.drorbiteex.model.ModelManager;
@@ -57,7 +58,6 @@ public class DrOrbiteex extends Application {
         // First the splash
         {
             Parent root = FXMLLoader.load(DrOrbiteex.class.getResource("/eu/dariolucia/drorbiteex/fxml/Splash.fxml"));
-
             substage.initStyle(StageStyle.UNDECORATED);
             substage.setAlwaysOnTop(true);
             Scene scene = new Scene(root);
@@ -115,7 +115,8 @@ public class DrOrbiteex extends Application {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-
+                    CssHolder.applyTo(root);
+                    CssHolder.CSSProperty().addListener((a,b,c) -> CssHolder.applyTo(root));
                     Scene scene = new Scene(root);
                     stage.setScene(scene);
                     stage.setTitle(APPLICATION_NAME);

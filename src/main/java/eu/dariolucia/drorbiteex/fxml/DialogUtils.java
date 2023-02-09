@@ -45,6 +45,7 @@ public class DialogUtils {
 
     public static void dialog(Alert.AlertType type, String title, String headerText, String content) {
         Alert alert = new Alert(type);
+        CssHolder.applyTo(alert.getDialogPane());
         alert.setTitle(title);
         alert.setHeaderText(headerText);
         alert.setContentText(content);
@@ -53,6 +54,7 @@ public class DialogUtils {
 
     public static boolean confirm(String title, String headerText, String content) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        CssHolder.applyTo(alert.getDialogPane());
         alert.setTitle(title);
         alert.setHeaderText(headerText);
         alert.setContentText(content);

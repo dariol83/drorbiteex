@@ -29,7 +29,7 @@
             fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitPane"
             prefHeight="400.0" prefWidth="600.0">
     <content>
-        <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5">
+        <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5" style="-fx-background-color: #101010;">
             <children>
                 <ToolBar prefHeight="32.0" prefWidth="200.0" VBox.vgrow="NEVER">
                     <items>
@@ -149,7 +149,7 @@
                     </ToggleButton>
                 </items>
                 </ToolBar>
-                <Label fx:id="orbitInfoLabel" maxWidth="1.7976931348623157E308" style="-fx-background-color: #e6e6e6;" text="Orbit Information">
+                <Label minHeight="24" styleClass="label-clear" fx:id="orbitInfoLabel" maxWidth="1.7976931348623157E308" text="Orbit Information">
                     <padding>
                         <Insets bottom="0" left="5" right="5" top="0" />
                     </padding>

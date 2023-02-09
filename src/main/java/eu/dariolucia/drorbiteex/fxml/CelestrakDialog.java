@@ -110,9 +110,12 @@ public class CelestrakDialog implements Initializable {
             URL dataSelectionDialogFxmlUrl = TleOrbitDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/CelestrakDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             CelestrakDialog controller = loader.getController();
 
             d.getDialogPane().setContent(root);
+            d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
+
             Optional<ButtonType> result = d.showAndWait();
             if (result.isPresent() && result.get().equals(ButtonType.OK)) {
                 return controller.getResult();

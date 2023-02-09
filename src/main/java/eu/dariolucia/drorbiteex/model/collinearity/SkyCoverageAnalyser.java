@@ -21,22 +21,18 @@ import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleData;
 import eu.dariolucia.drorbiteex.model.orbit.CelestrakTleOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
-import eu.dariolucia.drorbiteex.model.station.*;
-import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
+import eu.dariolucia.drorbiteex.model.station.GroundStation;
+import eu.dariolucia.drorbiteex.model.station.GroundStationParameterConfiguration;
+import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
-import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
-import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,7 +42,6 @@ import java.util.stream.Collectors;
 public class SkyCoverageAnalyser {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
-    private static final long DAY_MS = 3600L * 24000L;
 
     public static Canvas analyse(SkyCoverageAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
@@ -135,7 +130,7 @@ public class SkyCoverageAnalyser {
         Canvas output = new Canvas(400, 400);
         GraphicsContext gc = output.getGraphicsContext2D();
         PolarPlotPainter painter = new PolarPlotPainter(gc, output.getWidth(), output.getHeight());
-        painter.drawBackground(Color.BLACK);
+        painter.drawBackground(Color.valueOf("101010"));
         painter.drawPlot(Color.LIMEGREEN);
         monitor.progress(-1, -1, "Processing...");
         long progress = 0;

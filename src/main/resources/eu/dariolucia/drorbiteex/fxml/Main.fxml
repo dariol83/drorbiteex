@@ -34,7 +34,7 @@
   ~ limitations under the License.
   -->
 
-<VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
+<VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main" style="-fx-background-color: #101010;">
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
            <items>
@@ -145,6 +145,9 @@
                       <children>
                           <StackPane fx:id="mainSceneStackPane" VBox.vgrow="ALWAYS">
                               <children>
+                                  <AnchorPane fx:id="dropshadow" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
+
+                                  </AnchorPane>
                                   <AnchorPane fx:id="fullPane" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
                                       <children>
                                           <fx:include fx:id="scene3d" source="Scene3D.fxml" />

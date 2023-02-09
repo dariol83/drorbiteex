@@ -75,10 +75,13 @@ public class SkyCoverageReportDialog implements Initializable {
             URL dataSelectionDialogFxmlUrl = SkyCoverageReportDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/SkyCoverageReportDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             SkyCoverageReportDialog controller = loader.getController();
             controller.initialise(request, plot);
 
             d.getDialogPane().setContent(root);
+            d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
+
             d.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();

@@ -72,6 +72,8 @@ public class CollinearityReportDialog implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         polarPlotController.setSpacecraftDrawStrategy(this::drawSpacecraft);
+        polarPlotController.setBackgroundColor(Color.valueOf("#101010"));
+        polarPlotController.setForegroundColor(Color.WHITE);
         Platform.runLater(this::updatePolarPlotSize);
         filterText.textProperty().addListener((w, o, n) -> applyFilter(n));
         table.getSelectionModel().selectedItemProperty().addListener((w,o,n) -> selectEvent(n));
@@ -154,10 +156,13 @@ public class CollinearityReportDialog implements Initializable {
             URL dataSelectionDialogFxmlUrl = CollinearityReportDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/CollinearityReportDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             CollinearityReportDialog controller = loader.getController();
             controller.initialise(request, events);
 
             d.getDialogPane().setContent(root);
+            d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
+
             d.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();

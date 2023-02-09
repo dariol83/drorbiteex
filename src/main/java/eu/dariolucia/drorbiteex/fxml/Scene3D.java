@@ -26,6 +26,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import org.orekit.bodies.GeodeticPoint;
@@ -72,7 +75,7 @@ public class Scene3D implements Initializable {
         group = new Group(earth, groundStationGroup, orbitGroup);
 
         // Handle 3D view
-        scene3d.setFill(Color.BLACK);
+        scene3d.setFill(Color.TRANSPARENT);
         scene3d.setRoot(group);
         scene3d.setDepthTest(DepthTest.ENABLE);
         scene3d.setManaged(false);
@@ -86,6 +89,11 @@ public class Scene3D implements Initializable {
         scene3d.addEventHandler(MouseEvent.MOUSE_PRESSED, this::onStartDragOnScene);
         scene3d.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDragOnScene);
         scene3d.addEventHandler(MouseEvent.MOUSE_RELEASED, this::onEndDragOnScene);
+
+    }
+
+    public void setBackgroundColor(Color c) {
+        scene3d.setFill(c);
     }
 
     public void configure(Region parentRegion) {

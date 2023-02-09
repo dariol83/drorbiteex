@@ -16,6 +16,7 @@
 
 package eu.dariolucia.drorbiteex.fxml.progress;
 
+import eu.dariolucia.drorbiteex.fxml.CssHolder;
 import eu.dariolucia.drorbiteex.fxml.ExportScheduleDialog;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -67,7 +68,11 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
                         e.printStackTrace();
                     }
                 }
-                Platform.runLater(() -> stage.close());
+                Platform.runLater(() -> {
+                    if(stage != null) {
+                        stage.close();
+                    }
+                });
             }).start();
         }
     }
@@ -108,6 +113,7 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
             URL dataSelectionDialogFxmlUrl = ExportScheduleDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/progress/ProgressDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
+            CssHolder.applyTo(root);
             d.setScene(new Scene(root));
 
             ProgressDialog controller = loader.getController();
