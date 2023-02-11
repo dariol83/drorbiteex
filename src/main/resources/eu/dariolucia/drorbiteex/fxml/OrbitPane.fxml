@@ -81,7 +81,7 @@
                                 <Tooltip text="New OEM Orbit..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onExportOemOrbitAction">
+                        <Button fx:id="exportOemOrbitButton" mnemonicParsing="false" onAction="#onExportOemOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -93,7 +93,7 @@
                                 <Tooltip text="Export OEM..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onEditOrbitAction">
+                        <Button fx:id="editOrbitButton" mnemonicParsing="false" onAction="#onEditOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -105,7 +105,7 @@
                                 <Tooltip text="Edit Orbit..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onDeleteOrbitAction">
+                        <Button fx:id="deleteOrbitButton" mnemonicParsing="false" onAction="#onDeleteOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>

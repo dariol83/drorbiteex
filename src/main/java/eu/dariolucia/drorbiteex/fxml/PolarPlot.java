@@ -16,11 +16,13 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.fxml.canvas.ResizableCanvas;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.Initializable;
@@ -44,7 +46,7 @@ import java.util.*;
 
 public class PolarPlot implements Initializable {
 
-    public Canvas canvas;
+    public ResizableCanvas canvas;
 
     private SimpleObjectProperty<Color> backgroundColor;
     private SimpleObjectProperty<Color> foregroundColor;
@@ -53,6 +55,8 @@ public class PolarPlot implements Initializable {
     private final Map<UUID, SpacecraftTrackPoint> positionMap = new LinkedHashMap<>();
     private final Map<UUID, Color> colorMap = new HashMap<>();
     private final Map<PlotPosition, Pair<Color, String>> textMap = new EnumMap<>(PlotPosition.class);
+
+    private SimpleBooleanProperty nameVisible = new SimpleBooleanProperty(false);
 
     private ISpacecraftDrawStrategy spacecraftDrawStrategy = null;
 
@@ -67,6 +71,7 @@ public class PolarPlot implements Initializable {
 
         this.backgroundColor.addListener(this.refresher);
         this.foregroundColor.addListener(this.refresher);
+        this.nameVisible.addListener(this.refresher);
 
         // Tooltip for coordinates
         Tooltip tooltip = new Tooltip();
@@ -116,6 +121,14 @@ public class PolarPlot implements Initializable {
         this.foregroundColor.set(foregroundColor);
     }
 
+    public boolean isNameVisible() {
+        return nameVisible.get();
+    }
+
+    public void setNameVisible(boolean nameVisible) {
+        this.nameVisible.set(nameVisible);
+    }
+
     public void setSpacecraftTrack(VisibilityWindow track) {
         if(track != null) {
             SpacecraftTrack st = new SpacecraftTrack(track);
@@ -160,7 +173,7 @@ public class PolarPlot implements Initializable {
         refresh();
     }
 
-    private void refresh() {
+    public void refresh() {
         GraphicsContext gc = this.canvas.getGraphicsContext2D();
         PolarPlotPainter painter = new PolarPlotPainter(gc, canvas.getWidth(), canvas.getHeight());
         drawBackground(painter);
@@ -177,8 +190,7 @@ public class PolarPlot implements Initializable {
     }
 
     public void updateSize(double size) {
-        canvas.setHeight(size);
-        canvas.setWidth(size);
+        canvas.resize(size, size);
 
         refresh();
     }
@@ -197,7 +209,7 @@ public class PolarPlot implements Initializable {
                     this.spacecraftDrawStrategy.draw(painter.getGraphicsContext(), color, p1, entry.getValue().getName());
                 }
             } else {
-                painter.drawSpacecraftLocation(color, location);
+                painter.drawSpacecraftLocation(color, location, isNameVisible() ? entry.getValue().getName() : null);
             }
         }
     }

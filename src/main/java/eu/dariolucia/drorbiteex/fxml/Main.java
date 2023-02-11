@@ -33,15 +33,14 @@ import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
 import javafx.util.StringConverter;
 
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
@@ -138,10 +137,17 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         scene3dController.configure(fullPane);
         scene2dController.configure(miniPane);
 
-        // TODO: finish with image
         dropshadow.prefWidthProperty().bind(mainSceneParent.widthProperty());
         dropshadow.prefHeightProperty().bind(mainSceneParent.heightProperty());
-        dropshadow.setStyle("-fx-background-color: #282828");
+        dropshadow.setBackground(new Background(
+                new BackgroundImage(
+                        new Image(DrOrbiteex.class.getResourceAsStream("/images/sky.png")),
+                        BackgroundRepeat.REPEAT,
+                        BackgroundRepeat.REPEAT,
+                        BackgroundPosition.CENTER,
+                        BackgroundSize.DEFAULT)
+        ));
+
     }
 
     private void handleOrbitTracking(OrbitGraphics o) {

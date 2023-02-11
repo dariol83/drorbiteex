@@ -123,6 +123,9 @@ public class PolarPlotPainter {
     }
 
     public void drawSpacecraftLocation(Color color, Point2D location) {
+        drawSpacecraftLocation(color, location, null);
+    }
+    public void drawSpacecraftLocation(Color color, Point2D location, String name) {
         Point2D p1 = location != null ? toScreenPoint(location.getX(), location.getY(), width, height) : null;
         if(p1 != null) {
             gc.setStroke(color);
@@ -132,6 +135,10 @@ public class PolarPlotPainter {
             gc.setFill(Color.WHITE);
             gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
             gc.setFill(color);
+
+            if(name != null) {
+                gc.strokeText(name, p1.getX(), p1.getY() - 10);
+            }
         }
     }
 

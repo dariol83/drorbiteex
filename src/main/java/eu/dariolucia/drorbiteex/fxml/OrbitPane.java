@@ -42,16 +42,24 @@ public class OrbitPane implements Initializable {
     public OrbitDetailPanel orbitDetailPanelController;
     public ToggleButton satelliteAutotrackButton;
     public Label orbitInfoLabel;
+    public Button exportOemOrbitButton;
+    public Button editOrbitButton;
+    public Button deleteOrbitButton;
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
-
     private ModelManager manager;
-
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
         orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(a, b));
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        // Button enablement
+        exportOemOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        editOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        deleteOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        satelliteAutotrackButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+
+
     }
 
     public ObservableList<OrbitGraphics> getOrbitGraphics() {
@@ -79,7 +87,6 @@ public class OrbitPane implements Initializable {
         graphics.dispose();
         orbitList.refresh();
     }
-
 
     public void onNewOrbitAction(ActionEvent actionEvent) {
         Orbit gs = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow());

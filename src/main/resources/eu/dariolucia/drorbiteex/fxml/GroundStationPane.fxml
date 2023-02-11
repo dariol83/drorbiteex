@@ -40,7 +40,7 @@
                                 <Tooltip text="New Ground Station..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onGenerateScheduleAction">
+                        <Button fx:id="generateScheduleButton" mnemonicParsing="false" onAction="#onGenerateScheduleAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -52,7 +52,7 @@
                                 <Tooltip text="Generate schedule..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onExportVisibilityWindowsAction">
+                        <Button fx:id="exportVisibilityButton" mnemonicParsing="false" onAction="#onExportVisibilityWindowsAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -64,7 +64,7 @@
                                 <Tooltip text="Export currently computed visibility windows..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onExportGroundTrackAction">
+                        <Button fx:id="exportGroundTrackButton" mnemonicParsing="false" onAction="#onExportGroundTrackAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -76,7 +76,7 @@
                                 <Tooltip text="Export currently computed ground track..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onCollinearityAnalysisAction">
+                        <Button fx:id="collinearityAnalysisButton" mnemonicParsing="false" onAction="#onCollinearityAnalysisAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -88,7 +88,7 @@
                                 <Tooltip text="Compute collinearity events..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onSkyCoverageAnalysisAction">
+                        <Button fx:id="skyCoverageAnalysisButton" mnemonicParsing="false" onAction="#onSkyCoverageAnalysisAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -100,7 +100,7 @@
                                 <Tooltip text="Compute sky coverage..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onEditGroundStationAction">
+                        <Button fx:id="editGroundStationButton" mnemonicParsing="false" onAction="#onEditGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -112,7 +112,7 @@
                                 <Tooltip text="Edit Ground Station..." />
                             </tooltip>
                         </Button>
-                        <Button mnemonicParsing="false" onAction="#onDeleteGroundStationAction">
+                        <Button fx:id="deleteGroundStationButton" mnemonicParsing="false" onAction="#onDeleteGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -141,10 +141,10 @@
                 </ToolBar>
                 <SplitPane dividerPositions="0.35, 0.7" orientation="VERTICAL" SplitPane.resizableWithParent="true">
                     <items>
-                        <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" />
+                        <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" />
                         <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: #101010;">
                             <children>
-                                <Label maxWidth="1.7976931348623157E308" minHeight="24" minWidth="0" styleClass="label-clear" text="Upcoming passes">
+                                <Label maxWidth="1.7976931348623157E308" minHeight="24" minWidth="0" styleClass="label-clear" text="Current/Upcoming passes">
                                     <padding>
                                         <Insets bottom="0" left="5" right="5" top="0" />
                                     </padding>
@@ -172,7 +172,7 @@
                                         <Font name="System Bold" size="12.0" />
                                     </font>
                                 </Label>
-                                <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
+                                <fx:include fx:id="polarPlot" source="PolarPlot.fxml" VBox.vgrow="ALWAYS" />
                             </children>
                         </VBox>
                     </items>

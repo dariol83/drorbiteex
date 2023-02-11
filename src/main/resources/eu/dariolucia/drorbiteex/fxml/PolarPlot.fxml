@@ -18,6 +18,7 @@
   ~ limitations under the License.
   -->
 
-<Canvas fx:id="canvas" height="300.0" width="300.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.PolarPlot">
+<?import eu.dariolucia.drorbiteex.fxml.canvas.ResizableCanvas?>
+<ResizableCanvas fx:id="canvas" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.PolarPlot">
 
-</Canvas>
+</ResizableCanvas>

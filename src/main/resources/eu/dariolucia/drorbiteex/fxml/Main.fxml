@@ -146,7 +146,6 @@
                           <StackPane fx:id="mainSceneStackPane" VBox.vgrow="ALWAYS">
                               <children>
                                   <AnchorPane fx:id="dropshadow" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
-
                                   </AnchorPane>
                                   <AnchorPane fx:id="fullPane" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
                                       <children>
@@ -161,6 +160,7 @@
                                         <Insets right="5.0" bottom="5.0" />
                                      </StackPane.margin>
                                   </AnchorPane>
+                                  <!-- TODO: add top left minipane 300x300 for current GS view (polar plot), plus toggle button for its visibility  -->
                               </children>
                           </StackPane>
                       </children>

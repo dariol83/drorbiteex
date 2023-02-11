@@ -39,6 +39,7 @@ import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -64,9 +65,17 @@ public class GroundStationPane implements Initializable {
     public TableColumn<VisibilityWindow, String> aosColumn;
     public TableColumn<VisibilityWindow, String> losColumn;
 
-    // Polar plot
+    // Polar plot for pass tracking
     public PolarPlot polarPlotController;
     public VBox polarPlotParent;
+    public Button generateScheduleButton;
+    public Button exportVisibilityButton;
+    public Button exportGroundTrackButton;
+    public Button collinearityAnalysisButton;
+    public Button skyCoverageAnalysisButton;
+    public Button editGroundStationButton;
+    public Button deleteGroundStationButton;
+
     private ModelManager manager;
     private Supplier<List<Orbit>> orbitSupplier;
 
@@ -92,13 +101,21 @@ public class GroundStationPane implements Initializable {
         groundStationList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> refreshPassTableSelection(b));
         groundStationList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         passTable.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updatePolarPlotSelection(c));
+        polarPlotController.setNameVisible(true);
+        // Button enablement
+        generateScheduleButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        collinearityAnalysisButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        skyCoverageAnalysisButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        editGroundStationButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        deleteGroundStationButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        exportVisibilityButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        exportGroundTrackButton.disableProperty().bind(passTable.getSelectionModel().selectedItemProperty().isNull());
+
     }
 
     private void updatePolarPlotSize() {
-        double size = Math.min(polarPlotParent.getWidth(), polarPlotParent.getHeight());
-        size = Math.min(400, size);
-        size = Math.max(200, size);
-        polarPlotController.updateSize(size - 1);
+        double size = Math.min(polarPlotParent.getWidth(), polarPlotParent.getHeight() - 24); // 24: height of the Pass Plot label
+        polarPlotController.updateSize(size);
     }
 
     public void configure(ModelManager manager, Supplier<List<Orbit>> orbitSupplier) {
@@ -152,6 +169,7 @@ public class GroundStationPane implements Initializable {
                 this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_LEFT, c.getOrbit().getName(), this.polarPlotController.getForegroundColor());
             }
         }
+        updatePolarPlotSize();
     }
 
     private String doublePrint(double value, int places) {
