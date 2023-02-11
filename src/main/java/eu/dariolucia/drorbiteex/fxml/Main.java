@@ -17,6 +17,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.application.DrOrbiteex;
+import eu.dariolucia.drorbiteex.fxml.canvas.ResizableCanvas;
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.IOrbitListener;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
@@ -64,6 +65,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private final Timer tracker = new Timer();
     public ToggleButton toggle3DvisibilityLineButton;
     public AnchorPane dropshadow;
+    public AnchorPane polarPlotPane;
+    public PolarPlot polarPlotController;
 
 
     private TimerTask timerTask = null;
@@ -147,6 +150,14 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                         BackgroundPosition.CENTER,
                         BackgroundSize.DEFAULT)
         ));
+
+        polarPlotController.updateSize(300);
+        polarPlotController.setNameVisible(true);
+        polarPlotController.setBackgroundColor(Color.BLACK);
+        polarPlotController.setForegroundColor(Color.LIMEGREEN);
+        polarPlotController.refresh();
+
+        groundStationPaneController.setGroundStationPolarPlot(polarPlotController);
 
     }
 

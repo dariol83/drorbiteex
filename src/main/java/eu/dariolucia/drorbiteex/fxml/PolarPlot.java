@@ -147,6 +147,10 @@ public class PolarPlot implements Initializable {
             }
 
             refresh();
+        } else {
+            this.positionMap.remove(id);
+
+            refresh();
         }
     }
 

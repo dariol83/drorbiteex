@@ -33,6 +33,7 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
@@ -75,6 +76,8 @@ public class GroundStationPane implements Initializable {
     public Button skyCoverageAnalysisButton;
     public Button editGroundStationButton;
     public Button deleteGroundStationButton;
+
+    private PolarPlot groundStationPolarPlot;
 
     private ModelManager manager;
     private Supplier<List<Orbit>> orbitSupplier;
@@ -127,6 +130,8 @@ public class GroundStationPane implements Initializable {
         // If there is already a pass selected, remember it
         VisibilityWindow selected = passTable.getSelectionModel().getSelectedItem();
         passTable.getItems().clear();
+        // Clear the ground station polar plot
+        groundStationPolarPlot.clear();
         if(b != null) {
             Map<Orbit, List<VisibilityWindow>> windows = b.getGroundStation().getAllVisibilityWindows();
             List<VisibilityWindow> vw = new LinkedList<>();
@@ -143,6 +148,11 @@ public class GroundStationPane implements Initializable {
                         break;
                     }
                 }
+            }
+            // Get all satellites in visibility of the ground station and add them to the polar plot
+            Map<Orbit, TrackPoint> points = b.getGroundStation().getAllCurrentVisibilities();
+            for(Map.Entry<Orbit, TrackPoint> e : points.entrySet()) {
+                groundStationPolarPlot.setSpacecraftPosition(e.getKey().getId(), e.getKey().getName(), new Point2D(e.getValue().getAzimuth(), e.getValue().getElevation()), Color.valueOf(e.getKey().getColor()));
             }
         }
     }
@@ -331,6 +341,15 @@ public class GroundStationPane implements Initializable {
 
     public void refreshSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint point) {
         this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
+        if(groundStationList.getSelectionModel().getSelectedItem() != null &&
+                groundStationList.getSelectionModel().getSelectedItem().getGroundStation().getId().equals(groundStation.getId())) {
+            // Update ground station plot
+            groundStationPolarPlot.setSpacecraftPosition(
+                    orbit.getId(),
+                    orbit.getName(),
+                    point != null ? new Point2D(point.getAzimuth(), point.getElevation()) : null,
+                    Color.valueOf(orbit.getColor()));
+        }
     }
 
     public void addSelectionSubscriber(Consumer<GroundStationGraphics> selectionListener) {
@@ -518,5 +537,9 @@ public class GroundStationPane implements Initializable {
                 }
             }
         }
+    }
+
+    public void setGroundStationPolarPlot(PolarPlot polarPlot) {
+        this.groundStationPolarPlot = polarPlot;
     }
 }

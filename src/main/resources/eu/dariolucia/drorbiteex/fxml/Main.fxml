@@ -160,6 +160,14 @@
                                         <Insets right="5.0" bottom="5.0" />
                                      </StackPane.margin>
                                   </AnchorPane>
+                                  <AnchorPane fx:id="polarPlotPane" maxHeight="300" maxWidth="300" minHeight="300" minWidth="300" StackPane.alignment="TOP_LEFT">
+                                      <children>
+                                          <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
+                                      </children>
+                                      <StackPane.margin>
+                                          <Insets left="5.0" top="5.0" />
+                                      </StackPane.margin>
+                                  </AnchorPane>
                                   <!-- TODO: add top left minipane 300x300 for current GS view (polar plot), plus toggle button for its visibility  -->
                               </children>
                           </StackPane>
