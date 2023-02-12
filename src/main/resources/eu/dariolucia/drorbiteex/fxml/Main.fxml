@@ -38,6 +38,18 @@
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
            <items>
+               <ToggleButton fx:id="polarPlotButton" mnemonicParsing="false" selected="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/polarplot.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle polar plot" />
+                   </tooltip>
+               </ToggleButton>
                <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
@@ -168,7 +180,6 @@
                                           <Insets left="5.0" top="5.0" />
                                       </StackPane.margin>
                                   </AnchorPane>
-                                  <!-- TODO: add top left minipane 300x300 for current GS view (polar plot), plus toggle button for its visibility  -->
                               </children>
                           </StackPane>
                       </children>

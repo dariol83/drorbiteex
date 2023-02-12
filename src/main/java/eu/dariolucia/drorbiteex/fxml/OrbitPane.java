@@ -29,6 +29,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -133,8 +134,8 @@ public class OrbitPane implements Initializable {
     }
 
     public void onDeleteOrbitAction(ActionEvent actionEvent) {
-        List<OrbitGraphics> orbits = orbitList.getSelectionModel().getSelectedItems();
-        if(orbits != null && !orbits.isEmpty()) {
+        List<OrbitGraphics> orbits = new ArrayList<>(orbitList.getSelectionModel().getSelectedItems());
+        if(!orbits.isEmpty()) {
             boolean confirmed = false;
             if(orbits.size() == 1) {
                 // One orbit

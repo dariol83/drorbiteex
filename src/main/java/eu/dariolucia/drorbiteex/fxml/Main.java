@@ -67,6 +67,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public AnchorPane dropshadow;
     public AnchorPane polarPlotPane;
     public PolarPlot polarPlotController;
+    public ToggleButton polarPlotButton;
 
 
     private TimerTask timerTask = null;
@@ -133,8 +134,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         });
         groundTrackCombo.getSelectionModel().select(0);
 
-        // Bind visibility of minimap to toggle button
+        // Bind visibility of minimap/polar plot to toggle button
         miniPane.visibleProperty().bind(this.minimapButton.selectedProperty());
+        polarPlotPane.visibleProperty().bind(this.polarPlotButton.selectedProperty());
 
         // Configure 3D scene
         scene3dController.configure(fullPane);

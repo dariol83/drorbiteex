@@ -20,6 +20,7 @@ CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
 - Calculate a sky coverage map for a given ground station/point of interest, with reference to a selectable set of satellites/orbits
 
 ![AND](img/drorbiteex1.png "Dr. Orbiteex main window")
+![AND](img/drorbiteex2.png "Dr. Orbiteex sky coverage and map view")
 
 ## Getting started
 Make sure you have Java >= 11 and Apache Maven installed.
