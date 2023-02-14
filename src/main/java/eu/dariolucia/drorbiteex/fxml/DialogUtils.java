@@ -63,12 +63,15 @@ public class DialogUtils {
     }
 
     public static Date getDate(DatePicker datePicker, TextField timeText) throws ParseException {
+        return getDate(datePicker.getValue(), timeText.getText());
+    }
+
+    public static Date getDate(LocalDate date, String time) throws ParseException {
         dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        LocalDate date = datePicker.getValue();
         String dateStr = String.format("%02d/", date.get(ChronoField.DAY_OF_MONTH));
         dateStr += String.format("%02d/", date.get(ChronoField.MONTH_OF_YEAR));
         dateStr += date.getYear();
-        return dateTimeFormatter.parse(dateStr + " " + timeText.getText());
+        return dateTimeFormatter.parse(dateStr + " " + time);
     }
 
     public static String toTimeText(Date date) {

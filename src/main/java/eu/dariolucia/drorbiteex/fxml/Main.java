@@ -17,7 +17,6 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.application.DrOrbiteex;
-import eu.dariolucia.drorbiteex.fxml.canvas.ResizableCanvas;
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.IOrbitListener;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
@@ -26,22 +25,25 @@ import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.station.*;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
@@ -60,7 +62,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public Scene2D scene2dController;
 
     // Time tracker
-    public ToggleButton timerTrackingButton;
+    public ToggleButton timerRealTimeTrackingButton;
     public Label currentTimeLabel;
     private final Timer tracker = new Timer();
     public ToggleButton toggle3DvisibilityLineButton;
@@ -68,7 +70,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public AnchorPane polarPlotPane;
     public PolarPlot polarPlotController;
     public ToggleButton polarPlotButton;
-
+    public Button stepBackwardTrackingButton;
+    public Button stepForwardTrackingButton;
+    public ToggleButton replayTrackingButton;
+    public ToggleButton replay2SpeedTrackingButton;
+    public ToggleButton replay4SpeedTrackingButton;
+    public Button editReplayDateTimeButton;
 
     private TimerTask timerTask = null;
 
@@ -91,6 +98,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     private ModelManager manager;
 
     private boolean orbitUpdateInProgress = false;
+    private Stage replayPanelEditStage;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -161,6 +169,36 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
         groundStationPaneController.setGroundStationPolarPlot(polarPlotController);
 
+        // Wiring button disabling depending on the status
+        editReplayDateTimeButton.disableProperty().bind(
+                Bindings.or(timerRealTimeTrackingButton.selectedProperty(), Bindings.or(replayTrackingButton.selectedProperty(), Bindings.or(replay2SpeedTrackingButton.selectedProperty(),
+                        replay4SpeedTrackingButton.selectedProperty())))
+        );
+        stepForwardTrackingButton.disableProperty().bind(
+                Bindings.or(timerRealTimeTrackingButton.selectedProperty(), Bindings.or(replayTrackingButton.selectedProperty(), Bindings.or(replay2SpeedTrackingButton.selectedProperty(),
+                        replay4SpeedTrackingButton.selectedProperty())))
+        );
+        stepBackwardTrackingButton.disableProperty().bind(
+                Bindings.or(timerRealTimeTrackingButton.selectedProperty(), Bindings.or(replayTrackingButton.selectedProperty(), Bindings.or(replay2SpeedTrackingButton.selectedProperty(),
+                        replay4SpeedTrackingButton.selectedProperty())))
+        );
+        timerRealTimeTrackingButton.disableProperty().bind(
+                Bindings.or(replayTrackingButton.selectedProperty(), Bindings.or(replay2SpeedTrackingButton.selectedProperty(),
+                        replay4SpeedTrackingButton.selectedProperty()))
+        );
+        replayTrackingButton.disableProperty().bind(
+                Bindings.or(timerRealTimeTrackingButton.selectedProperty(), Bindings.or(replay2SpeedTrackingButton.selectedProperty(),
+                        replay4SpeedTrackingButton.selectedProperty()))
+        );
+        replay2SpeedTrackingButton.disableProperty().bind(
+                Bindings.or(timerRealTimeTrackingButton.selectedProperty(), Bindings.or(replayTrackingButton.selectedProperty(),
+                        replay4SpeedTrackingButton.selectedProperty()))
+        );
+        replay4SpeedTrackingButton.disableProperty().bind(
+                Bindings.or(timerRealTimeTrackingButton.selectedProperty(), Bindings.or(replayTrackingButton.selectedProperty(),
+                        replay2SpeedTrackingButton.selectedProperty()))
+        );
+
     }
 
     private void handleOrbitTracking(OrbitGraphics o) {
@@ -225,19 +263,39 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         scene2dController.refreshScene();
     }
 
-    public void onActivateTrackingAction(ActionEvent actionEvent) {
-        if(this.timerTrackingButton.isSelected() && this.timerTask == null) {
-            this.timerTask = new TimerTask() {
-                @Override
-                public void run() {
-                    refreshModel(new Date(), false);
-                }
-            };
-            this.tracker.schedule(timerTask, 0, 5000);
-        } else if(!this.timerTrackingButton.isSelected() && this.timerTask != null){
+    public void onActivateRealTimeTrackingAction(ActionEvent actionEvent) {
+        if(this.timerRealTimeTrackingButton.isSelected() && this.timerTask == null) {
+            activateTrackingTimer(this::getRealTimeDate, getWaitPeriod());
+        } else if(!this.timerRealTimeTrackingButton.isSelected() && this.timerTask != null){
             this.timerTask.cancel();
             this.timerTask = null;
         }
+    }
+
+    private int getWaitPeriod() {
+        if(timerRealTimeTrackingButton.isSelected() || replayTrackingButton.isSelected()) {
+            return 5000;
+        } else if(replay2SpeedTrackingButton.isSelected()) {
+            return 2500;
+        } else if(replay4SpeedTrackingButton.isSelected()) {
+            return 1250;
+        } else {
+            throw new IllegalStateException("Cannot derive wait period");
+        }
+    }
+
+    private void activateTrackingTimer(Supplier<Date> dateSupplier, int waitPeriod) {
+        this.timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                refreshModel(dateSupplier.get(), false);
+            }
+        };
+        this.tracker.schedule(timerTask, 0, waitPeriod);
+    }
+
+    private Date getRealTimeDate() {
+        return new Date();
     }
 
     private void refreshModel(Date now, boolean forceUpdate) {
@@ -354,7 +412,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     public void onForceOrbitComputationAction(ActionEvent actionEvent) {
-        refreshModel(new Date(), true);
+        refreshModel(new Date(), true); // TODO: Read date from widget ... or use null and update the code in the OrbitManager class
     }
 
     public List<Orbit> getOrbits() {
@@ -435,8 +493,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         update2Dscene();
 
         // Activate satellite tracking
-        timerTrackingButton.setSelected(true);
-        onActivateTrackingAction(null);
+        timerRealTimeTrackingButton.setSelected(true);
+        onActivateRealTimeTrackingAction(null);
 
         onFinish.run();
     }
@@ -447,4 +505,37 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                         "https://github.com/dariol83/drorbiteex"));
     }
 
+    public void onStepBackwardTrackingAction(ActionEvent actionEvent) {
+    }
+
+    public void onStepForwardTrackingAction(ActionEvent actionEvent) {
+    }
+
+    public void onActivateReplayTrackingAction(ActionEvent actionEvent) {
+    }
+
+    public void onActivateReplay2SpeedTrackingAction(ActionEvent actionEvent) {
+
+    }
+
+    public void onActivateReplay4SpeedTrackingAction(ActionEvent actionEvent) {
+
+    }
+
+    public void editReplayDateTimeAction(ActionEvent actionEvent) {
+        if(this.replayPanelEditStage == null) {
+            Bounds bounds = editReplayDateTimeButton.getBoundsInLocal();
+            Bounds screenBounds = editReplayDateTimeButton.localToScreen(bounds);
+            double x = screenBounds.getMinX();
+            double y = screenBounds.getMinY();
+            double height = screenBounds.getHeight();
+            this.replayPanelEditStage = DateTimePickerPanel.openDialog(editReplayDateTimeButton.getScene().getWindow(), new Date(), o -> {
+                        replayPanelEditStage = null;
+                    },
+                    new Point2D(x, y + height));
+        } else {
+            this.replayPanelEditStage.close();
+            this.replayPanelEditStage = null;
+        }
+    }
 }

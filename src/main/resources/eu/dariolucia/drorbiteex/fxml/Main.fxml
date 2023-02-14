@@ -34,6 +34,9 @@
   ~ limitations under the License.
   -->
 
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Spinner?>
 <VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main" style="-fx-background-color: #101010;">
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
@@ -91,21 +94,6 @@
                    </tooltip>
                </ToggleButton>
                <Separator orientation="VERTICAL" />
-               <Region HBox.hgrow="ALWAYS" />
-               <Separator orientation="VERTICAL" />
-               <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--" alignment="CENTER" contentDisplay="CENTER" minWidth="120" maxWidth="120"/>
-               <ToggleButton fx:id="timerTrackingButton" mnemonicParsing="false" onAction="#onActivateTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/step-forward.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle current time processing" />
-                   </tooltip>
-               </ToggleButton>
                <Button mnemonicParsing="false" onAction="#onForceOrbitComputationAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
@@ -119,6 +107,97 @@
                    </tooltip>
                </Button>
                <Separator orientation="VERTICAL" />
+               <ToggleButton fx:id="timerRealTimeTrackingButton" mnemonicParsing="false" onAction="#onActivateRealTimeTrackingAction">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/play.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle current time processing" />
+                   </tooltip>
+               </ToggleButton>
+               <Separator orientation="VERTICAL" />
+               <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--" alignment="CENTER" contentDisplay="CENTER" minHeight="32" maxHeight="32" minWidth="140" maxWidth="140" style="-fx-border-color: #b9b9b9;"/>
+               <Separator orientation="VERTICAL" />
+               <Button fx:id="editReplayDateTimeButton" disable="true" onAction="#editReplayDateTimeAction">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/calendar-text-outline.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Edit reference time" />
+                   </tooltip>
+               </Button>
+               <Button fx:id="stepBackwardTrackingButton" mnemonicParsing="false" onAction="#onStepBackwardTrackingAction" disable="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/skip-previous.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Step back" />
+                   </tooltip>
+               </Button>
+               <Button fx:id="stepForwardTrackingButton" mnemonicParsing="false" onAction="#onStepForwardTrackingAction" disable="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/skip-next.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Step forward" />
+                   </tooltip>
+               </Button>
+               <ToggleButton fx:id="replayTrackingButton" mnemonicParsing="false" onAction="#onActivateReplayTrackingAction" disable="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/play.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle replay time processing - Real time speed" />
+                   </tooltip>
+               </ToggleButton>
+               <ToggleButton fx:id="replay2SpeedTrackingButton" mnemonicParsing="false" onAction="#onActivateReplay2SpeedTrackingAction" disable="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/step-forward.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle replay time processing - 2x speed" />
+                   </tooltip>
+               </ToggleButton>
+               <ToggleButton fx:id="replay4SpeedTrackingButton" mnemonicParsing="false" onAction="#onActivateReplay4SpeedTrackingAction" disable="true">
+                   <graphic>
+                       <ImageView pickOnBounds="true" preserveRatio="true">
+                           <image>
+                               <Image url="@/step-forward-2.png" />
+                           </image>
+                       </ImageView>
+                   </graphic>
+                   <tooltip>
+                       <Tooltip text="Toggle replay time processing - 4x speed" />
+                   </tooltip>
+               </ToggleButton>
+               <Separator orientation="VERTICAL" />
+
+               <Region HBox.hgrow="ALWAYS" />
+
                <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" minHeight="32" maxHeight="32" maxWidth="80.0" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
                    <tooltip>
                        <Tooltip text="Processing status" />
@@ -164,7 +243,7 @@
                                           <fx:include fx:id="scene3d" source="Scene3D.fxml" />
                                       </children>
                                   </AnchorPane>
-                                  <AnchorPane fx:id="miniPane" maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" StackPane.alignment="BOTTOM_RIGHT">
+                                  <AnchorPane fx:id="miniPane" maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" StackPane.alignment="BOTTOM_RIGHT" style="-fx-border-color: lime;-fx-border-width: 3px;">
                                       <children>
                                           <fx:include fx:id="scene2d" source="Scene2D.fxml" />
                                       </children>
@@ -172,7 +251,7 @@
                                         <Insets right="5.0" bottom="5.0" />
                                      </StackPane.margin>
                                   </AnchorPane>
-                                  <AnchorPane fx:id="polarPlotPane" maxHeight="300" maxWidth="300" minHeight="300" minWidth="300" StackPane.alignment="TOP_LEFT">
+                                  <AnchorPane fx:id="polarPlotPane" maxHeight="300" maxWidth="300" minHeight="300" minWidth="300" StackPane.alignment="TOP_LEFT" style="-fx-border-color: lime;-fx-border-width: 3px 3px 3px 3px;">
                                       <children>
                                           <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
                                       </children>
