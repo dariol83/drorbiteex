@@ -33,7 +33,7 @@
             <children>
                 <ToolBar prefHeight="32.0" prefWidth="200.0" VBox.vgrow="NEVER">
                     <items>
-                        <Button mnemonicParsing="false" onAction="#onNewOrbitAction">
+                        <SplitMenuButton mnemonicParsing="false" onAction="#onNewOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -44,19 +44,30 @@
                             <tooltip>
                                 <Tooltip text="New TLE Orbit..." />
                             </tooltip>
-                        </Button>
-                        <Button mnemonicParsing="false" onAction="#onNewCelestrakOrbitAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/plus-circle-outline-celestrak.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
+                            <items>
+                                <MenuItem text="Celestrak..." onAction="#onNewCelestrakOrbitAction">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/plus-circle-outline-celestrak.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                                <MenuItem text="OEM..." onAction="#onNewOemOrbitAction">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/plus-circle-outline-oem.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                            </items>
                             <tooltip>
-                                <Tooltip text="New Celestrak Orbit..." />
+                                <Tooltip text="Add new orbit" />
                             </tooltip>
-                        </Button>
+                        </SplitMenuButton>
                         <Button mnemonicParsing="false" onAction="#onRefreshCelestrakOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
@@ -67,18 +78,6 @@
                             </graphic>
                             <tooltip>
                                 <Tooltip text="Refresh Celestrak Orbits" />
-                            </tooltip>
-                        </Button>
-                        <Button mnemonicParsing="false" onAction="#onNewOemOrbitAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/plus-circle-outline-oem.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="New OEM Orbit..." />
                             </tooltip>
                         </Button>
                         <Button fx:id="exportOemOrbitButton" mnemonicParsing="false" onAction="#onExportOemOrbitAction">

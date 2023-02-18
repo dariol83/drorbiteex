@@ -59,7 +59,7 @@ public class CcsdsSimpleScheduleExporter {
                 " originatingOrganization=\"" + request.getOriginatingRequest() + "\"" +
                 " generationTime=\"" + timeFormatter.format(generationDate)+ "\"" +
                 " status=\"" + request.getStatus().name() + "\"" +
-                " inclusionType=\"START_INCLUSION\"\n" + // TODO: make it parametric
+                " inclusionType=\"START_INCLUSION\"\n" +
                 "\t version=\"1\"" +
                 " startTime=\"" + timeFormatter.format(request.getStartTime())+ "\"" +
                 " endTime=\"" + timeFormatter.format(request.getEndTime())+ "\"/>");

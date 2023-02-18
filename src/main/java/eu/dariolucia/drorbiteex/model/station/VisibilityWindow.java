@@ -25,6 +25,7 @@ import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
+import javax.sound.midi.Track;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -42,12 +43,17 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
     private final UUID id;
 
     VisibilityWindow(Orbit orbit, int orbitNumber, Date aos, Date los, GroundStation station) {
+        this(orbit, orbitNumber, aos, los, station, Collections.emptyList());
+    }
+
+    VisibilityWindow(Orbit orbit, int orbitNumber, Date aos, Date los, GroundStation station, List<TrackPoint> initialTrackPoints) {
         this.id = UUID.randomUUID();
         this.orbitNumber = orbitNumber;
         this.aos = aos;
         this.los = los;
         this.station = station;
         this.orbit = orbit;
+        this.azimuthElevationTrack.addAll(initialTrackPoints);
     }
 
     public UUID getId() {
@@ -56,22 +62,22 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
     void initialiseGroundTrack(Orbit orbit, Propagator propagator) {
         if(this.azimuthElevationTrack.isEmpty() && propagator != null) {
-            Date currentDate = this.aos;
-            // If you don't have AOS, then use the current time
-            if (currentDate == null) {
-                currentDate = new Date();
+            Date[] startEndTrackDates = deriveDates();
+            if(startEndTrackDates == null) {
+                // Ground track is empty
+                return;
             }
-            Date endDate = this.los;
-            // If you don't have LOS, then use currentDate + 20 minutes
-            if (endDate == null) {
-                endDate = new Date(currentDate.getTime() + 20 * 60 * 1000);
-            }
+            Date currentDate = startEndTrackDates[0];
+            Date endDate = startEndTrackDates[1];
             // Start propagation from currentDate to endDate: 10 seconds interval
             while (currentDate.before(endDate)) {
                 SpacecraftState next = propagator.propagate(new AbsoluteDate(currentDate, TimeScalesFactory.getUTC()));
                 // Convert spacecraft point to azimuth/elevation
                 double[] azElPoint = this.station.getAzimuthElevationOf(next);
-                this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
+                // If the elevation is below 0, discard the point
+                if(azElPoint[1] >= 0) {
+                    this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
+                }
                 // Next point, XXX seconds after (check configuration)
                 currentDate = new Date(currentDate.getTime() + station.getConfiguration().getTrackingInterval() * 1000L);
             }
@@ -80,7 +86,21 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
             // Convert spacecraft point to azimuth/elevation
             double[] azElPoint = this.station.getAzimuthElevationOf(next);
             //
-            this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
+            if(azElPoint[1] >= 0) {
+                this.azimuthElevationTrack.add(new TrackPoint(currentDate, new SpacecraftPosition(orbit, this.orbitNumber, next), this.station, azElPoint[0], azElPoint[1]));
+            }
+        }
+    }
+
+    private Date[] deriveDates() {
+        if(aos != null && los != null) {
+            return new Date[] { aos, los };
+        } else if(aos == null && los == null) {
+            return null;
+        } else if(aos == null) { // los != null // If you don't have AOS, then use LOS - 20 minutes
+            return new Date[] { new Date(los.getTime() - 20 * 60 * 1000), los };
+        } else { // los == null // If you don't have LOS, then use AOS + 20 minutes
+            return new Date[] { aos, new Date(aos.getTime() + 20 * 60 * 1000) };
         }
     }
 

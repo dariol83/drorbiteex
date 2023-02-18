@@ -1,22 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Accordion?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.control.Tooltip?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
 <!--
   ~ Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
@@ -34,10 +21,7 @@
   ~ limitations under the License.
   -->
 
-<?import javafx.scene.control.DatePicker?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.Spinner?>
-<VBox xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main" style="-fx-background-color: #101010;">
+<VBox style="-fx-background-color: #101010;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
        <ToolBar VBox.vgrow="ALWAYS">
            <items>
@@ -79,7 +63,10 @@
                </ToggleButton>
                <Separator orientation="VERTICAL" />
                <Label text="Visibility" />
-               <ComboBox fx:id="groundTrackCombo" minWidth="150.0" onAction="#onGroundTrackComboSelected">
+               <ComboBox fx:id="groundTrackCombo" minHeight="32" maxHeight="32" minWidth="150.0" onAction="#onGroundTrackComboSelected">
+                   <tooltip>
+                       <Tooltip text="Activate ground station visibility circles" />
+                   </tooltip>
                </ComboBox>
                <ToggleButton fx:id="toggle3DvisibilityLineButton" mnemonicParsing="false" selected="true">
                    <graphic>
@@ -116,11 +103,11 @@
                        </ImageView>
                    </graphic>
                    <tooltip>
-                       <Tooltip text="Toggle current time processing" />
+                       <Tooltip text="Toggle real time processing" />
                    </tooltip>
                </ToggleButton>
                <Separator orientation="VERTICAL" />
-               <Label fx:id="currentTimeLabel" text="----.--.-- --:--:--" alignment="CENTER" contentDisplay="CENTER" minHeight="32" maxHeight="32" minWidth="140" maxWidth="140" style="-fx-border-color: #b9b9b9;"/>
+               <Label fx:id="currentTimeLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="140" minHeight="32" minWidth="140" style="-fx-border-color: #b9b9b9;" text="----.--.-- --:--:--" />
                <Separator orientation="VERTICAL" />
                <Button fx:id="editReplayDateTimeButton" disable="true" onAction="#editReplayDateTimeAction">
                    <graphic>
@@ -134,7 +121,7 @@
                        <Tooltip text="Edit reference time" />
                    </tooltip>
                </Button>
-               <Button fx:id="stepBackwardTrackingButton" mnemonicParsing="false" onAction="#onStepBackwardTrackingAction" disable="true">
+               <Button fx:id="stepBackwardTrackingButton" disable="true" mnemonicParsing="false" onAction="#onStepBackwardTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
                            <image>
@@ -146,7 +133,7 @@
                        <Tooltip text="Step back" />
                    </tooltip>
                </Button>
-               <Button fx:id="stepForwardTrackingButton" mnemonicParsing="false" onAction="#onStepForwardTrackingAction" disable="true">
+               <Button fx:id="stepForwardTrackingButton" disable="true" mnemonicParsing="false" onAction="#onStepForwardTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
                            <image>
@@ -158,7 +145,7 @@
                        <Tooltip text="Step forward" />
                    </tooltip>
                </Button>
-               <ToggleButton fx:id="replayTrackingButton" mnemonicParsing="false" onAction="#onActivateReplayTrackingAction" disable="true">
+               <ToggleButton fx:id="replayTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplayTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
                            <image>
@@ -167,10 +154,10 @@
                        </ImageView>
                    </graphic>
                    <tooltip>
-                       <Tooltip text="Toggle replay time processing - Real time speed" />
+                       <Tooltip text="Toggle reference time processing - Real time speed" />
                    </tooltip>
                </ToggleButton>
-               <ToggleButton fx:id="replay2SpeedTrackingButton" mnemonicParsing="false" onAction="#onActivateReplay2SpeedTrackingAction" disable="true">
+               <ToggleButton fx:id="replay2SpeedTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplay2SpeedTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
                            <image>
@@ -179,10 +166,10 @@
                        </ImageView>
                    </graphic>
                    <tooltip>
-                       <Tooltip text="Toggle replay time processing - 2x speed" />
+                       <Tooltip text="Toggle reference time processing - 2x speed" />
                    </tooltip>
                </ToggleButton>
-               <ToggleButton fx:id="replay4SpeedTrackingButton" mnemonicParsing="false" onAction="#onActivateReplay4SpeedTrackingAction" disable="true">
+               <ToggleButton fx:id="replay4SpeedTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplay4SpeedTrackingAction">
                    <graphic>
                        <ImageView pickOnBounds="true" preserveRatio="true">
                            <image>
@@ -191,14 +178,14 @@
                        </ImageView>
                    </graphic>
                    <tooltip>
-                       <Tooltip text="Toggle replay time processing - 4x speed" />
+                       <Tooltip text="Toggle reference time processing - 4x speed" />
                    </tooltip>
                </ToggleButton>
                <Separator orientation="VERTICAL" />
 
                <Region HBox.hgrow="ALWAYS" />
 
-               <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" minHeight="32" maxHeight="32" maxWidth="80.0" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
+               <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="80.0" minHeight="32" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
                    <tooltip>
                        <Tooltip text="Processing status" />
                    </tooltip>
@@ -220,11 +207,11 @@
        </ToolBar>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
          <children>
-            <SplitPane dividerPositions="0.25" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <SplitPane dividerPositions="0.22" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
               <items>
                 <AnchorPane fx:id="leftPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                      <children>
-                        <Accordion AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Accordion fx:id="accordion" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                           <panes>
                             <fx:include fx:id="groundStationPane" source="GroundStationPane.fxml" />
                             <fx:include fx:id="orbitPane" source="OrbitPane.fxml" />
@@ -236,24 +223,32 @@
                       <children>
                           <StackPane fx:id="mainSceneStackPane" VBox.vgrow="ALWAYS">
                               <children>
-                                  <AnchorPane fx:id="dropshadow" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
+                                  <AnchorPane fx:id="dropshadow" maxWidth="9000" minWidth="0" StackPane.alignment="CENTER">
                                   </AnchorPane>
-                                  <AnchorPane fx:id="fullPane" StackPane.alignment="CENTER" minWidth="0" maxWidth="9000">
+                                  <AnchorPane fx:id="fullPane" maxWidth="9000" minWidth="0" StackPane.alignment="CENTER">
                                       <children>
                                           <fx:include fx:id="scene3d" source="Scene3D.fxml" />
                                       </children>
                                   </AnchorPane>
-                                  <AnchorPane fx:id="miniPane" maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" StackPane.alignment="BOTTOM_RIGHT" style="-fx-border-color: lime;-fx-border-width: 3px;">
+                                  <AnchorPane maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" style="-fx-border-color: lime;-fx-border-width: 1px;" StackPane.alignment="BOTTOM_RIGHT">
                                       <children>
-                                          <fx:include fx:id="scene2d" source="Scene2D.fxml" />
+                                          <AnchorPane fx:id="miniPane" maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+                                              <children>
+                                                  <fx:include fx:id="scene2d" source="Scene2D.fxml"  />
+                                              </children>
+                                          </AnchorPane>
                                       </children>
-                                     <StackPane.margin>
-                                        <Insets right="5.0" bottom="5.0" />
-                                     </StackPane.margin>
+                                      <StackPane.margin>
+                                          <Insets bottom="5.0" right="5.0" />
+                                      </StackPane.margin>
                                   </AnchorPane>
-                                  <AnchorPane fx:id="polarPlotPane" maxHeight="300" maxWidth="300" minHeight="300" minWidth="300" StackPane.alignment="TOP_LEFT" style="-fx-border-color: lime;-fx-border-width: 3px 3px 3px 3px;">
+                                  <AnchorPane maxHeight="302" maxWidth="302" minHeight="302" minWidth="302" style="-fx-border-color: lime;-fx-border-width: 1px;" StackPane.alignment="TOP_LEFT">
                                       <children>
-                                          <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
+                                          <AnchorPane fx:id="polarPlotPane" maxHeight="300" maxWidth="300" minHeight="300" minWidth="300" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+                                              <children>
+                                                  <fx:include fx:id="polarPlot" source="PolarPlot.fxml" />
+                                              </children>
+                                          </AnchorPane>
                                       </children>
                                       <StackPane.margin>
                                           <Insets left="5.0" top="5.0" />

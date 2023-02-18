@@ -31,6 +31,7 @@ import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -48,6 +49,7 @@ import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
     private static final String NO_GROUND_TRACK = "             ";
+    public static final int UPDATE_PERIOD = 5000;
 
     // Ground Station Pane
     public GroundStationPane groundStationPaneController;
@@ -76,6 +78,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public ToggleButton replay2SpeedTrackingButton;
     public ToggleButton replay4SpeedTrackingButton;
     public Button editReplayDateTimeButton;
+    public Accordion accordion;
 
     private TimerTask timerTask = null;
 
@@ -143,8 +146,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         groundTrackCombo.getSelectionModel().select(0);
 
         // Bind visibility of minimap/polar plot to toggle button
-        miniPane.visibleProperty().bind(this.minimapButton.selectedProperty());
-        polarPlotPane.visibleProperty().bind(this.polarPlotButton.selectedProperty());
+        miniPane.getParent().visibleProperty().bind(this.minimapButton.selectedProperty());
+        polarPlotPane.getParent().visibleProperty().bind(this.polarPlotButton.selectedProperty());
 
         // Configure 3D scene
         scene3dController.configure(fullPane);
@@ -264,23 +267,33 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     public void onActivateRealTimeTrackingAction(ActionEvent actionEvent) {
-        if(this.timerRealTimeTrackingButton.isSelected() && this.timerTask == null) {
-            activateTrackingTimer(this::getRealTimeDate, getWaitPeriod());
-        } else if(!this.timerRealTimeTrackingButton.isSelected() && this.timerTask != null){
+        handleTimerActivation(this.timerRealTimeTrackingButton, this::getRealTimeDate);
+    }
+
+    private void handleTimerActivation(ToggleButton toggleButton, Supplier<Date> dateSupplier) {
+        if(toggleButton.isSelected() && this.timerTask == null) {
+            activateTrackingTimer(dateSupplier, getUpdatePeriod());
+        } else if(!toggleButton.isSelected() && this.timerTask != null){
+            deactivateTrackingTimer();
+        }
+    }
+
+    private void deactivateTrackingTimer() {
+        if(this.timerTask != null) {
             this.timerTask.cancel();
             this.timerTask = null;
         }
     }
 
-    private int getWaitPeriod() {
+    private int getUpdatePeriod() {
         if(timerRealTimeTrackingButton.isSelected() || replayTrackingButton.isSelected()) {
-            return 5000;
+            return UPDATE_PERIOD;
         } else if(replay2SpeedTrackingButton.isSelected()) {
-            return 2500;
+            return UPDATE_PERIOD/2;
         } else if(replay4SpeedTrackingButton.isSelected()) {
-            return 1250;
+            return UPDATE_PERIOD/4;
         } else {
-            throw new IllegalStateException("Cannot derive wait period");
+            throw new IllegalStateException("Cannot derive update period");
         }
     }
 
@@ -288,7 +301,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         this.timerTask = new TimerTask() {
             @Override
             public void run() {
-                refreshModel(dateSupplier.get(), false);
+                updateOrbitTime(dateSupplier.get(), false);
             }
         };
         this.tracker.schedule(timerTask, 0, waitPeriod);
@@ -298,7 +311,24 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         return new Date();
     }
 
-    private void refreshModel(Date now, boolean forceUpdate) {
+    private Date getReplayTimeDate() {
+        Date d = (Date) this.currentTimeLabel.getUserData();
+        if(d == null) {
+            d = new Date();
+            this.currentTimeLabel.setText(TimeUtils.formatDate(d));
+            this.currentTimeLabel.setUserData(d);
+        } else {
+            d = new Date(d.getTime() + UPDATE_PERIOD);
+            // The update of the label will be done on notification
+        }
+        return d;
+    }
+
+    private void refreshModel() {
+        BackgroundThread.runLater(() -> manager.getOrbitManager().refresh());
+    }
+
+    private void updateOrbitTime(Date now, boolean forceUpdate) {
         BackgroundThread.runLater(() -> manager.getOrbitManager().updateOrbitTime(now, forceUpdate));
     }
 
@@ -355,6 +385,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Platform.runLater(() -> {
             if(currentPosition != null) {
                 this.currentTimeLabel.setText(TimeUtils.formatDate(currentPosition.getTime()));
+                this.currentTimeLabel.setUserData(currentPosition.getTime());
             }
             // If in tracking mode, you have to inform the 3D scene about realigning
             scene3dController.updateIfTrackingOrbit(orbit, currentPosition);
@@ -390,6 +421,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Platform.runLater(() -> {
             if(currentPoint != null) {
                 this.currentTimeLabel.setText(TimeUtils.formatDate(currentPoint.getTime()));
+                this.currentTimeLabel.setUserData(currentPoint.getTime());
             }
             groundStationPaneController.refreshGroundStationOrbitData(groundStation, orbit, visibilityWindows, currentPoint);
             if(!orbitUpdateInProgress) {
@@ -403,6 +435,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         Platform.runLater(() -> {
             if(point != null) {
                 this.currentTimeLabel.setText(TimeUtils.formatDate(point.getTime()));
+                this.currentTimeLabel.setUserData(point.getTime());
             }
             groundStationPaneController.refreshSpacecraftPosition(groundStation, orbit, point);
             if(!orbitUpdateInProgress) {
@@ -412,7 +445,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     public void onForceOrbitComputationAction(ActionEvent actionEvent) {
-        refreshModel(new Date(), true); // TODO: Read date from widget ... or use null and update the code in the OrbitManager class
+        refreshModel();
     }
 
     public List<Orbit> getOrbits() {
@@ -496,6 +529,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         timerRealTimeTrackingButton.setSelected(true);
         onActivateRealTimeTrackingAction(null);
 
+        // Expand first accordion panel
+        accordion.setExpandedPane(accordion.getPanes().get(0));
+
         onFinish.run();
     }
 
@@ -506,20 +542,25 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     }
 
     public void onStepBackwardTrackingAction(ActionEvent actionEvent) {
+        Date next = new Date(getReplayTimeDate().getTime() - 2*UPDATE_PERIOD);
+        updateOrbitTime(next, false);
     }
 
     public void onStepForwardTrackingAction(ActionEvent actionEvent) {
+        Date next = getReplayTimeDate();
+        updateOrbitTime(next, false);
     }
 
     public void onActivateReplayTrackingAction(ActionEvent actionEvent) {
+        handleTimerActivation(this.replayTrackingButton, this::getReplayTimeDate);
     }
 
     public void onActivateReplay2SpeedTrackingAction(ActionEvent actionEvent) {
-
+        handleTimerActivation(this.replay2SpeedTrackingButton, this::getReplayTimeDate);
     }
 
     public void onActivateReplay4SpeedTrackingAction(ActionEvent actionEvent) {
-
+        handleTimerActivation(this.replay4SpeedTrackingButton, this::getReplayTimeDate);
     }
 
     public void editReplayDateTimeAction(ActionEvent actionEvent) {
@@ -529,8 +570,13 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             double x = screenBounds.getMinX();
             double y = screenBounds.getMinY();
             double height = screenBounds.getHeight();
-            this.replayPanelEditStage = DateTimePickerPanel.openDialog(editReplayDateTimeButton.getScene().getWindow(), new Date(), o -> {
-                        replayPanelEditStage = null;
+            this.replayPanelEditStage = DateTimePickerPanel.openDialog(
+                    editReplayDateTimeButton.getScene().getWindow(), getReplayTimeDate(),
+                    o -> {
+                        if(o != null){
+                            updateOrbitTime(o, true);
+                        }
+                        this.replayPanelEditStage = null;
                     },
                     new Point2D(x, y + height));
         } else {

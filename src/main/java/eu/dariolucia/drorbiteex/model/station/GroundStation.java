@@ -347,10 +347,11 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
                     // Spacecraft is visible: update information
                     int orbitNumber = currentSpacecraftPosition.getOrbitNumber();
                     double[] azimuthElevation = getAzimuthElevationOf(spacecraftState);
-                    this.currentVisibilityMap.put(currentOrbit, new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]));
+                    TrackPoint trackPoint = new TrackPoint(sTime, currentSpacecraftPosition, this, azimuthElevation[0], azimuthElevation[1]);
+                    this.currentVisibilityMap.put(currentOrbit, trackPoint);
                     if (!eventRaised) {
-                        // Create a fake visibility window
-                        VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this);
+                        // Create a fake visibility window with the single point, will not be updated
+                        VisibilityWindow vw = new VisibilityWindow(currentOrbit, orbitNumber, null, null, this, Collections.singletonList(trackPoint));
                         visibilityWindows.computeIfAbsent(currentOrbit, o -> new ArrayList<>()).add(0, vw);
                     }
                 } else {

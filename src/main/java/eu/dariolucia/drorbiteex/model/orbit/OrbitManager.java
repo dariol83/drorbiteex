@@ -145,7 +145,7 @@ public class OrbitManager {
     }
 
     public void updateOrbitTime(Date time, boolean forceUpdate) {
-        LOGGER.log(Level.FINE, "Updating orbit time to " + time + ", force update " + forceUpdate);
+        LOGGER.log(Level.FINER, "Updating orbit time to " + time + ", force update " + forceUpdate);
         this.lastReferenceTime = time;
         this.listeners.forEach(o -> o.startOrbitTimeUpdate(time, forceUpdate));
         for(Orbit ob : this.orbits.values()) {

@@ -198,6 +198,45 @@ HBox, VBox {
   -fx-control-inner-background: #282828;
 }
 
+.spinner {
+  -fx-background-color: #101010;
+  -fx-mark-color: lime;
+}
+
+.spinner .increment-arrow-button {
+  -fx-background-color: darkgreen;
+  -fx-mark-color: lime;
+  -fx-border-width: 1;
+  -fx-border-radius: 2;
+  -fx-border-color: lime;
+}
+
+.spinner .increment-arrow-button:hover {
+    -fx-background-color: darkseagreen;
+}
+
+.spinner .increment-arrow-button:pressed {
+    -fx-text-fill: black;
+    -fx-background-color: lawngreen;
+}
+
+.spinner .decrement-arrow-button {
+  -fx-background-color: darkgreen;
+  -fx-mark-color: lime;
+  -fx-border-width: 1;
+  -fx-border-radius: 2;
+  -fx-border-color: lime;
+}
+
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: darkseagreen;
+}
+
+.spinner .decrement-arrow-button:pressed {
+    -fx-text-fill: black;
+    -fx-background-color: lawngreen;
+}
+
 .combo-box {
   -fx-background-color: #101010;
   -fx-mark-color: lime;
@@ -227,15 +266,56 @@ HBox, VBox {
 .combo-box .arrow-button {
   -fx-background-color: darkgreen;
   -fx-mark-color: lime;
-  -fx-border-width: 1;
+  -fx-border-width: 0;
   -fx-border-radius: 2;
   -fx-border-color: lime;
+}
+
+.combo-box .arrow-button:hover {
+  -fx-background-color: darkseagreen;
+}
+
+.combo-box .arrow-button:pressed {
+  -fx-background-color: lawngreen;
 }
 
 .combo-box:focused {
     -fx-border-color: #F1FEE5;
 }
 
+.split-menu-button {
+  -fx-background-color: darkgreen;
+  -fx-mark-color: lime;
+  -fx-border-width: 1;
+  -fx-border-radius: 2;
+  -fx-border-color: lime;
+}
+
+.split-menu-button .arrow-button {
+  -fx-background-color: darkgreen;
+  -fx-mark-color: lime;
+  -fx-border-width: 0;
+  -fx-border-radius: 2;
+  -fx-border-color: lime;
+}
+
+.split-menu-button .label:hover,
+.split-menu-button .arrow-button:hover {
+  -fx-background-color: darkseagreen;
+}
+
+.split-menu-button .label:pressed,
+.split-menu-button .arrow-button:pressed {
+  -fx-background-color: lawngreen;
+}
+
+.split-menu-button .label {
+  -fx-background-color: darkgreen;
+  -fx-mark-color: lime;
+  -fx-border-width: 0;
+  -fx-border-radius: 2;
+  -fx-border-color: lime;
+}
 
 .date-picker {
 	-fx-background-color: lime;
@@ -247,11 +327,18 @@ HBox, VBox {
 
 .date-picker .arrow-button {
 	-fx-background-color: darkgreen;
-	-fx-background-radius: 0;
+	-fx-mark-color: lime;
+    -fx-border-width: 0;
+    -fx-border-radius: 2;
+    -fx-border-color: lime;
 }
 
 .date-picker .arrow-button:hover {
 	-fx-background-color: darkseagreen;
+}
+
+.date-picker .arrow-button:pressed {
+	-fx-background-color: lawngreen;
 }
 
 .date-picker .arrow-button .arrow {
@@ -301,8 +388,6 @@ HBox, VBox {
 	-fx-background-color: lime;
 }
 
-
-
 .color-picker {
 	-fx-background-color: lime;
 	-fx-border-width: 1;
@@ -317,7 +402,7 @@ HBox, VBox {
 .color-picker .arrow-button {
   -fx-background-color: darkgreen;
   -fx-mark-color: lime;
-  -fx-border-width: 1;
+  -fx-border-width: 0;
   -fx-border-radius: 2;
   -fx-border-color: lime;
   -fx-padding: 0.5em 0.667em 0.5em 0.667em; /*  6 8 6 0 */
@@ -330,7 +415,6 @@ HBox, VBox {
 .color-picker .arrow-button .arrow {
 	-fx-background-color: lime;
 }
-
 
 .toggle-button {
     -fx-text-fill: lime;

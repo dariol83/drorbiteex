@@ -317,6 +317,9 @@ public class GroundStationPane implements Initializable {
         VisibilityWindow currentVisibilityWindow = this.polarPlotController.updateCurrentData(groundStation, orbit, visibilityWindows);
         if(currentVisibilityWindow != null) {
             this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, currentPoint);
+            if(currentPoint != null) {
+                this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_LEFT, orbit.getName() + "\nAZ " + doublePrint(currentPoint.getAzimuth(), 4) + "\nEL " + doublePrint(currentPoint.getElevation(), 4), this.polarPlotController.getForegroundColor());
+            }
             updatePolarPlotText(currentVisibilityWindow);
         }
         if(groundStationList.getSelectionModel().getSelectedItem() != null && groundStation.equals(groundStationList.getSelectionModel().getSelectedItem().getGroundStation())) {
@@ -341,6 +344,12 @@ public class GroundStationPane implements Initializable {
 
     public void refreshSpacecraftPosition(GroundStation groundStation, Orbit orbit, TrackPoint point) {
         this.polarPlotController.setNewSpacecraftPosition(groundStation, orbit, point);
+        if(point != null && passTable.getSelectionModel().getSelectedItem() != null) {
+            VisibilityWindow vw = passTable.getSelectionModel().getSelectedItem();
+            if(vw.getStation().equals(groundStation) && vw.getOrbit().equals(orbit) && vw.isInPass(point.getTime())) {
+                this.polarPlotController.setText(PolarPlot.PlotPosition.TOP_LEFT, orbit.getName() + "\nAZ " + doublePrint(point.getAzimuth(), 4) + "\nEL " + doublePrint(point.getElevation(), 4), this.polarPlotController.getForegroundColor());
+            }
+        }
         if(groundStationList.getSelectionModel().getSelectedItem() != null &&
                 groundStationList.getSelectionModel().getSelectedItem().getGroundStation().getId().equals(groundStation.getId())) {
             // Update ground station plot

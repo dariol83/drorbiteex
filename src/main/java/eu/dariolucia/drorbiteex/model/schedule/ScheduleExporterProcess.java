@@ -77,7 +77,6 @@ public class ScheduleExporterProcess {
         return generatedFile;
     }
 
-    // TODO: refactor to avoid duplication with method in Orbit class
     private List<VisibilityWindow> computePasses(GroundStation groundStation, Orbit orbit, Date startTime, Date endTime) {
         // Clone the orbit and the ground station
         Orbit clonedOrbit = new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), orbit.getModel().copy());

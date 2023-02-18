@@ -120,8 +120,10 @@ public class DrOrbiteex extends Application {
                     Scene scene = new Scene(root);
                     stage.setScene(scene);
                     stage.setTitle(APPLICATION_NAME);
-                    stage.setWidth(1600);
-                    stage.setHeight(960);
+                    stage.setWidth(1440);
+                    stage.setHeight(800);
+                    stage.setX(0);
+                    stage.setY(0);
                     Image icon = new Image(DrOrbiteex.class.getResourceAsStream("/satellite-uplink_24.png"));
                     stage.getIcons().add(icon);
                     stage.setOnCloseRequest(event -> {

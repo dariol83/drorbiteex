@@ -139,7 +139,7 @@
                         </Button>
                     </items>
                 </ToolBar>
-                <SplitPane dividerPositions="0.35, 0.7" orientation="VERTICAL" SplitPane.resizableWithParent="true">
+                <SplitPane dividerPositions="0.20, 0.52" orientation="VERTICAL" SplitPane.resizableWithParent="true">
                     <items>
                         <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" />
                         <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: #101010;">

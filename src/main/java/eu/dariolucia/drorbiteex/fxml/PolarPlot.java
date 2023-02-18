@@ -341,9 +341,10 @@ public class PolarPlot implements Initializable {
         }
 
         public boolean contains(Date now) {
-            TrackPoint spt1 = getTrack().get(0);
-            TrackPoint spt2 = getTrack().get(getTrack().size() - 1);
-            return now.after(spt1.getTime()) && now.before(spt2.getTime());
+            return window.isInPass(now);
+            // TrackPoint spt1 = getTrack().get(0);
+            // TrackPoint spt2 = getTrack().get(getTrack().size() - 1);
+            // return now.after(spt1.getTime()) && now.before(spt2.getTime());
         }
     }
 
