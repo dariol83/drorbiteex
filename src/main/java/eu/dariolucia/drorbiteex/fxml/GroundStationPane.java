@@ -327,7 +327,6 @@ public class GroundStationPane implements Initializable {
             refreshPassTableSelection();
         }
     }
-
     private void updatePolarPlotText(VisibilityWindow currentVisibilityWindow) {
         if(currentVisibilityWindow != null) {
             // BL: entry

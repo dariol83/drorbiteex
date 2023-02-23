@@ -22,7 +22,7 @@
   ~ limitations under the License.
   -->
 
-<TitledPane fx:id="groundStationPane" animated="false" prefHeight="400.0" prefWidth="600.0" text="Ground Stations" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.GroundStationPane">
+<Tab fx:id="groundStationPane" text="Ground Stations" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.GroundStationPane">
     <content>
         <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5" style="-fx-background-color: #101010;">
             <children>
@@ -139,7 +139,7 @@
                         </Button>
                     </items>
                 </ToolBar>
-                <SplitPane dividerPositions="0.20, 0.52" orientation="VERTICAL" SplitPane.resizableWithParent="true">
+                <SplitPane dividerPositions="0.15, 0.30" orientation="VERTICAL" SplitPane.resizableWithParent="true">
                     <items>
                         <ListView fx:id="groundStationList" onMouseClicked="#onGroundStationSelectionClick" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" />
                         <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: #101010;">
@@ -176,6 +176,9 @@
                             </children>
                         </VBox>
                     </items>
+                    <padding>
+                        <Insets bottom="0" left="0" right="0" top="5" />
+                    </padding>
                 </SplitPane>
             </children>
             <padding>
@@ -183,4 +186,4 @@
             </padding>
         </VBox>
     </content>
-</TitledPane>
+</Tab>

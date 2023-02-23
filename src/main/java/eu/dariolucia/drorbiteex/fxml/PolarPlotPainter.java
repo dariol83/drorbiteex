@@ -75,18 +75,15 @@ public class PolarPlotPainter {
                 width * MAX_RADIUS_FACTOR,
                 height * MAX_RADIUS_FACTOR);
         gc.setLineWidth(1.0);
-        gc.strokeOval(xyRadius.getX() - xyRadius.getX() * MAX_RADIUS_FACTOR * 0.75,
-                xyRadius.getY() - xyRadius.getY() * MAX_RADIUS_FACTOR * 0.75,
-                width * MAX_RADIUS_FACTOR * 0.75,
-                height * MAX_RADIUS_FACTOR * 0.75);
-        gc.strokeOval(xyRadius.getX() - xyRadius.getX() * MAX_RADIUS_FACTOR * 0.5,
-                xyRadius.getY() - xyRadius.getY() * MAX_RADIUS_FACTOR * 0.5,
-                width * MAX_RADIUS_FACTOR * 0.5,
-                height * MAX_RADIUS_FACTOR * 0.5);
-        gc.strokeOval(xyRadius.getX() - xyRadius.getX() * MAX_RADIUS_FACTOR * 0.25,
-                xyRadius.getY() - xyRadius.getY() * MAX_RADIUS_FACTOR * 0.25,
-                width * MAX_RADIUS_FACTOR * 0.25,
-                height * MAX_RADIUS_FACTOR * 0.25);
+        int divisions = 6;
+        double divisionFraction = 1.0/divisions;
+        for(int i = 1; i < divisions; ++i) {
+            double factor = 1.0 - (divisionFraction * i);
+            gc.strokeOval(xyRadius.getX() - xyRadius.getX() * MAX_RADIUS_FACTOR * factor,
+                    xyRadius.getY() - xyRadius.getY() * MAX_RADIUS_FACTOR * factor,
+                    width * MAX_RADIUS_FACTOR * factor,
+                    height * MAX_RADIUS_FACTOR * factor);
+        }
         gc.fillOval(xyRadius.getX() - 1,
                 xyRadius.getY() - 1,
                 2,

@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
 <?import javafx.scene.image.*?>
-<?import javafx.scene.text.Font?>
-<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
 <!--
   ~ Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
   ~
@@ -24,10 +22,7 @@
   ~ limitations under the License.
   -->
 
-<TitledPane fx:id="orbitPane" animated="false" text="Orbits" xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitPane"
-            prefHeight="400.0" prefWidth="600.0">
+<Tab fx:id="orbitPane" text="Orbits" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitPane">
     <content>
         <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5" style="-fx-background-color: #101010;">
             <children>
@@ -45,7 +40,7 @@
                                 <Tooltip text="New TLE Orbit..." />
                             </tooltip>
                             <items>
-                                <MenuItem text="Celestrak..." onAction="#onNewCelestrakOrbitAction">
+                                <MenuItem onAction="#onNewCelestrakOrbitAction" text="Celestrak...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">
                                             <image>
@@ -54,7 +49,7 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
-                                <MenuItem text="OEM..." onAction="#onNewOemOrbitAction">
+                                <MenuItem onAction="#onNewOemOrbitAction" text="OEM...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">
                                             <image>
@@ -116,7 +111,7 @@
                                 <Tooltip text="Delete Orbit" />
                             </tooltip>
                         </Button>
-                        <Region HBox.hgrow="ALWAYS"></Region>
+                        <Region HBox.hgrow="ALWAYS" />
                         <Button mnemonicParsing="false" onAction="#onSettingsOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
@@ -131,7 +126,11 @@
                         </Button>
                     </items>
                 </ToolBar>
-                <ListView fx:id="orbitList" onMouseClicked="#onOrbitSelectionClick" VBox.vgrow="ALWAYS" />
+                <ListView fx:id="orbitList" onMouseClicked="#onOrbitSelectionClick" VBox.vgrow="ALWAYS">
+                   <VBox.margin>
+                      <Insets top="5.0" />
+                   </VBox.margin>
+                </ListView>
                 <ToolBar prefHeight="32.0" prefWidth="200.0" VBox.vgrow="NEVER">
                 <items>
                     <ToggleButton fx:id="satelliteAutotrackButton" mnemonicParsing="false" onAction="#onActivateSatelliteTrackingAction">
@@ -146,9 +145,15 @@
                             <Tooltip text="Toggle satellite autotrack" />
                         </tooltip>
                     </ToggleButton>
+                    <Label text="Visibility" />
+                    <ComboBox fx:id="groundTrackCombo" maxHeight="32" minHeight="32" minWidth="150.0" onAction="#onGroundTrackComboSelected">
+                        <tooltip>
+                            <Tooltip text="Activate ground station visibility circles" />
+                        </tooltip>
+                    </ComboBox>
                 </items>
                 </ToolBar>
-                <Label minHeight="24" styleClass="label-clear" fx:id="orbitInfoLabel" maxWidth="1.7976931348623157E308" text="Orbit Information">
+                <Label fx:id="orbitInfoLabel" maxWidth="1.7976931348623157E308" minHeight="24" styleClass="label-clear" text="Orbit Information">
                     <padding>
                         <Insets bottom="0" left="5" right="5" top="0" />
                     </padding>
@@ -163,4 +168,4 @@
             </padding>
         </VBox>
     </content>
-</TitledPane>
+</Tab>

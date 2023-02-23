@@ -27,11 +27,9 @@ import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -39,16 +37,13 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.util.StringConverter;
 
 import java.net.URL;
 import java.util.*;
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
-    private static final String NO_GROUND_TRACK = "             ";
     public static final int UPDATE_PERIOD = 5000;
 
     // Ground Station Pane
@@ -78,15 +73,12 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public ToggleButton replay2SpeedTrackingButton;
     public ToggleButton replay4SpeedTrackingButton;
     public Button editReplayDateTimeButton;
-    public Accordion accordion;
+    public TabPane accordion;
 
     private TimerTask timerTask = null;
 
     public ToggleButton minimapButton;
     public ToggleButton toggle3DviewButton;
-
-    // Ground track combo selection
-    public ComboBox<Object> groundTrackCombo;
     private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
     // Label to indicate processing on going
@@ -105,46 +97,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Handle ground track list
-        groundTrackCombo.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Object o) {
-                if (o.equals(NO_GROUND_TRACK)) {
-                    return NO_GROUND_TRACK;
-                } else if (o instanceof OrbitGraphics) {
-                    return ((OrbitGraphics) o).getName();
-                } else {
-                    throw new IllegalStateException("Wrong conversion object: " + o);
-                }
-            }
-
-            @Override
-            public Object fromString(String s) {
-                if (s.equals(NO_GROUND_TRACK)) {
-                    return NO_GROUND_TRACK;
-                } else {
-                    for (OrbitGraphics ao : orbitPaneController.getOrbitGraphics()) {
-                        if (ao.getName().equals(s)) {
-                            return ao;
-                        }
-                    }
-                    throw new IllegalStateException("Wrong conversion string: " + s);
-                }
-            }
-        });
-        groundTrackCombo.getItems().add(NO_GROUND_TRACK);
-        orbitPaneController.getOrbitGraphics().addListener((ListChangeListener<OrbitGraphics>) c -> {
-            while (c.next()) {
-                for (OrbitGraphics remitem : c.getRemoved()) {
-                    groundTrackCombo.getItems().remove(remitem);
-                }
-                for (OrbitGraphics additem : c.getAddedSubList()) {
-                    groundTrackCombo.getItems().add(additem);
-                }
-            }
-        });
-        groundTrackCombo.getSelectionModel().select(0);
-
         // Bind visibility of minimap/polar plot to toggle button
         miniPane.getParent().visibleProperty().bind(this.minimapButton.selectedProperty());
         polarPlotPane.getParent().visibleProperty().bind(this.polarPlotButton.selectedProperty());
@@ -157,7 +109,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         dropshadow.prefHeightProperty().bind(mainSceneParent.heightProperty());
         dropshadow.setBackground(new Background(
                 new BackgroundImage(
-                        new Image(DrOrbiteex.class.getResourceAsStream("/images/sky.png")),
+                        new Image(Main.class.getResourceAsStream("/images/sky.png")),
                         BackgroundRepeat.REPEAT,
                         BackgroundRepeat.REPEAT,
                         BackgroundPosition.CENTER,
@@ -202,6 +154,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
                         replay2SpeedTrackingButton.selectedProperty()))
         );
 
+        orbitPaneController.registerVisibilitySelectionHandler(this::update2Dscene);
     }
 
     private void handleOrbitTracking(OrbitGraphics o) {
@@ -209,15 +162,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         scene2dController.activateTracking(o);
         // Forward to 3D scene controller (only to enable/disable mouse drag)
         scene3dController.activateTracking(o);
-    }
-
-    private OrbitGraphics getSelectedOrbit() {
-        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
-        if(selectedSc.equals(NO_GROUND_TRACK)) {
-            return null;
-        } else {
-            return (OrbitGraphics) selectedSc;
-        }
     }
 
     private void registerNewGroundStation(GroundStation gs) {
@@ -330,10 +274,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     private void updateOrbitTime(Date now, boolean forceUpdate) {
         BackgroundThread.runLater(() -> manager.getOrbitManager().updateOrbitTime(now, forceUpdate));
-    }
-
-    public void onGroundTrackComboSelected(ActionEvent actionEvent) {
-        update2Dscene();
     }
 
     @Override
@@ -507,7 +447,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Ground Station Pane configuration
         this.orbitPaneController.configure(this.manager, this::handleOrbitTracking);
         this.groundStationPaneController.configure(this.manager, this::getOrbits);
-        this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, this::getSelectedOrbit);
+        this.scene2dController.setDataSuppliers(orbitPaneController::getOrbitGraphics, groundStationPaneController::getGroundStationGraphics, orbitPaneController::getSelectedOrbit);
 
         // Create graphics objects
         for(Orbit o : this.manager.getOrbitManager().getOrbits()) {
@@ -528,9 +468,6 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         // Activate satellite tracking
         timerRealTimeTrackingButton.setSelected(true);
         onActivateRealTimeTrackingAction(null);
-
-        // Expand first accordion panel
-        accordion.setExpandedPane(accordion.getPanes().get(0));
 
         onFinish.run();
     }

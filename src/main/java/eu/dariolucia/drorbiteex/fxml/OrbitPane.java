@@ -20,6 +20,7 @@ import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
@@ -27,6 +28,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.util.StringConverter;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,6 +38,8 @@ import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 public class OrbitPane implements Initializable {
+
+    private static final String NO_GROUND_TRACK = "             ";
 
     public ListView<OrbitGraphics> orbitList;
 
@@ -47,10 +51,53 @@ public class OrbitPane implements Initializable {
     public Button editOrbitButton;
     public Button deleteOrbitButton;
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
+    // Ground track combo selection
+    public ComboBox<Object> groundTrackCombo;
     private ModelManager manager;
+    private Runnable visibilitySelectionHandler;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        // Handle ground track list
+        groundTrackCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Object o) {
+                if (o.equals(NO_GROUND_TRACK)) {
+                    return NO_GROUND_TRACK;
+                } else if (o instanceof OrbitGraphics) {
+                    return ((OrbitGraphics) o).getName();
+                } else {
+                    throw new IllegalStateException("Wrong conversion object: " + o);
+                }
+            }
+
+            @Override
+            public Object fromString(String s) {
+                if (s.equals(NO_GROUND_TRACK)) {
+                    return NO_GROUND_TRACK;
+                } else {
+                    for (OrbitGraphics ao : getOrbitGraphics()) {
+                        if (ao.getName().equals(s)) {
+                            return ao;
+                        }
+                    }
+                    throw new IllegalStateException("Wrong conversion string: " + s);
+                }
+            }
+        });
+        groundTrackCombo.getItems().add(NO_GROUND_TRACK);
+        getOrbitGraphics().addListener((ListChangeListener<OrbitGraphics>) c -> {
+            while (c.next()) {
+                for (OrbitGraphics remitem : c.getRemoved()) {
+                    groundTrackCombo.getItems().remove(remitem);
+                }
+                for (OrbitGraphics additem : c.getAddedSubList()) {
+                    groundTrackCombo.getItems().add(additem);
+                }
+            }
+        });
+        groundTrackCombo.getSelectionModel().select(0);
+
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
         orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(a, b));
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -59,8 +106,23 @@ public class OrbitPane implements Initializable {
         editOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         deleteOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         satelliteAutotrackButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+    }
 
+    public void registerVisibilitySelectionHandler(Runnable handler) {
+        this.visibilitySelectionHandler = handler;
+    }
 
+    public void onGroundTrackComboSelected(ActionEvent actionEvent) {
+        this.visibilitySelectionHandler.run();
+    }
+
+    public OrbitGraphics getSelectedOrbit() {
+        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
+        if(selectedSc.equals(NO_GROUND_TRACK)) {
+            return null;
+        } else {
+            return (OrbitGraphics) selectedSc;
+        }
     }
 
     public ObservableList<OrbitGraphics> getOrbitGraphics() {

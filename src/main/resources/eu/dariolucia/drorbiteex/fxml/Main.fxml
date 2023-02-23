@@ -23,204 +23,192 @@
 
 <VBox style="-fx-background-color: #101010;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
-       <ToolBar VBox.vgrow="ALWAYS">
-           <items>
-               <ToggleButton fx:id="polarPlotButton" mnemonicParsing="false" selected="true">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/polarplot.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle polar plot" />
-                   </tooltip>
-               </ToggleButton>
-               <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/picture-in-picture-bottom-right.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle minimap" />
-                   </tooltip>
-               </ToggleButton>
-               <ToggleButton fx:id="toggle3DviewButton" mnemonicParsing="false" onAction="#on3DviewButtonAction" selected="true">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/earth.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle 3D/2D view" />
-                   </tooltip>
-               </ToggleButton>
-               <Separator orientation="VERTICAL" />
-               <Label text="Visibility" />
-               <ComboBox fx:id="groundTrackCombo" minHeight="32" maxHeight="32" minWidth="150.0" onAction="#onGroundTrackComboSelected">
-                   <tooltip>
-                       <Tooltip text="Activate ground station visibility circles" />
-                   </tooltip>
-               </ComboBox>
-               <ToggleButton fx:id="toggle3DvisibilityLineButton" mnemonicParsing="false" selected="true">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/eye-outline.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle ground station 3D visibility lines" />
-                   </tooltip>
-               </ToggleButton>
-               <Separator orientation="VERTICAL" />
-               <Button mnemonicParsing="false" onAction="#onForceOrbitComputationAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/refresh.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Refresh orbits/visibilities" />
-                   </tooltip>
-               </Button>
-               <Separator orientation="VERTICAL" />
-               <ToggleButton fx:id="timerRealTimeTrackingButton" mnemonicParsing="false" onAction="#onActivateRealTimeTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/play.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle real time processing" />
-                   </tooltip>
-               </ToggleButton>
-               <Separator orientation="VERTICAL" />
-               <Label fx:id="currentTimeLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="140" minHeight="32" minWidth="140" style="-fx-border-color: #b9b9b9;" text="----.--.-- --:--:--" />
-               <Separator orientation="VERTICAL" />
-               <Button fx:id="editReplayDateTimeButton" disable="true" onAction="#editReplayDateTimeAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/calendar-text-outline.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Edit reference time" />
-                   </tooltip>
-               </Button>
-               <Button fx:id="stepBackwardTrackingButton" disable="true" mnemonicParsing="false" onAction="#onStepBackwardTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/skip-previous.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Step back" />
-                   </tooltip>
-               </Button>
-               <Button fx:id="stepForwardTrackingButton" disable="true" mnemonicParsing="false" onAction="#onStepForwardTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/skip-next.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Step forward" />
-                   </tooltip>
-               </Button>
-               <ToggleButton fx:id="replayTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplayTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/play.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle reference time processing - Real time speed" />
-                   </tooltip>
-               </ToggleButton>
-               <ToggleButton fx:id="replay2SpeedTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplay2SpeedTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/step-forward.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle reference time processing - 2x speed" />
-                   </tooltip>
-               </ToggleButton>
-               <ToggleButton fx:id="replay4SpeedTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplay4SpeedTrackingAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/step-forward-2.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="Toggle reference time processing - 4x speed" />
-                   </tooltip>
-               </ToggleButton>
-               <Separator orientation="VERTICAL" />
-
-               <Region HBox.hgrow="ALWAYS" />
-
-               <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="80.0" minHeight="32" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
-                   <tooltip>
-                       <Tooltip text="Processing status" />
-                   </tooltip>
-               </Label>
-               <Separator orientation="VERTICAL" />
-               <Button mnemonicParsing="false" onAction="#onAboutAction">
-                   <graphic>
-                       <ImageView pickOnBounds="true" preserveRatio="true">
-                           <image>
-                               <Image url="@/information-outline.png" />
-                           </image>
-                       </ImageView>
-                   </graphic>
-                   <tooltip>
-                       <Tooltip text="About Dr. Orbiteex..." />
-                   </tooltip>
-               </Button>
-           </items>
-       </ToolBar>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
          <children>
-            <SplitPane dividerPositions="0.22" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <SplitPane dividerPositions="0.15" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
               <items>
-                <AnchorPane fx:id="leftPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
-                     <children>
-                        <Accordion fx:id="accordion" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                          <panes>
-                            <fx:include fx:id="groundStationPane" source="GroundStationPane.fxml" />
-                            <fx:include fx:id="orbitPane" source="OrbitPane.fxml" />
-                          </panes>
-                        </Accordion>
-                     </children>
-                  </AnchorPane>
+                  <TabPane fx:id="accordion" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" tabDragPolicy="FIXED" side="LEFT">
+                      <tabs>
+                          <fx:include fx:id="groundStationPane" source="GroundStationPane.fxml" />
+                          <fx:include fx:id="orbitPane" source="OrbitPane.fxml" />
+                      </tabs>
+                  </TabPane>
                   <VBox fx:id="mainSceneParent" spacing="5">
                       <children>
+                          <ToolBar VBox.vgrow="ALWAYS">
+                              <items>
+                                  <ToggleButton fx:id="polarPlotButton" mnemonicParsing="false" selected="true">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/polarplot.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle polar plot" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <ToggleButton fx:id="minimapButton" mnemonicParsing="false" selected="true">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/picture-in-picture-bottom-right.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle minimap" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <ToggleButton fx:id="toggle3DviewButton" mnemonicParsing="false" onAction="#on3DviewButtonAction" selected="true">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/earth.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle 3D/2D view" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <ToggleButton fx:id="toggle3DvisibilityLineButton" mnemonicParsing="false" selected="true">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/eye-outline.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle ground station 3D visibility lines" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <Separator orientation="VERTICAL" />
+                                  <Region HBox.hgrow="ALWAYS" />
+                                  <Button mnemonicParsing="false" onAction="#onForceOrbitComputationAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/refresh.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Refresh orbits/visibilities" />
+                                      </tooltip>
+                                  </Button>
+                                  <Separator orientation="VERTICAL" />
+                                  <ToggleButton fx:id="timerRealTimeTrackingButton" mnemonicParsing="false" onAction="#onActivateRealTimeTrackingAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/play.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle real time processing" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <Separator orientation="VERTICAL" />
+                                  <Label fx:id="currentTimeLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="140" minHeight="32" minWidth="140" style="-fx-border-color: #b9b9b9;" text="----.--.-- --:--:--" />
+                                  <Separator orientation="VERTICAL" />
+                                  <Button fx:id="editReplayDateTimeButton" disable="true" onAction="#editReplayDateTimeAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/calendar-text-outline.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Edit reference time" />
+                                      </tooltip>
+                                  </Button>
+                                  <Button fx:id="stepBackwardTrackingButton" disable="true" mnemonicParsing="false" onAction="#onStepBackwardTrackingAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/skip-previous.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Step back" />
+                                      </tooltip>
+                                  </Button>
+                                  <Button fx:id="stepForwardTrackingButton" disable="true" mnemonicParsing="false" onAction="#onStepForwardTrackingAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/skip-next.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Step forward" />
+                                      </tooltip>
+                                  </Button>
+                                  <ToggleButton fx:id="replayTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplayTrackingAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/play.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle reference time processing - Real time speed" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <ToggleButton fx:id="replay2SpeedTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplay2SpeedTrackingAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/step-forward.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle reference time processing - 2x speed" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <ToggleButton fx:id="replay4SpeedTrackingButton" disable="true" mnemonicParsing="false" onAction="#onActivateReplay4SpeedTrackingAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/step-forward-2.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="Toggle reference time processing - 4x speed" />
+                                      </tooltip>
+                                  </ToggleButton>
+                                  <Separator orientation="VERTICAL" />
+                                  <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="80.0" minHeight="32" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
+                                      <tooltip>
+                                          <Tooltip text="Processing status" />
+                                      </tooltip>
+                                  </Label>
+                                  <Separator orientation="VERTICAL" />
+                                  <Button mnemonicParsing="false" onAction="#onAboutAction">
+                                      <graphic>
+                                          <ImageView pickOnBounds="true" preserveRatio="true">
+                                              <image>
+                                                  <Image url="@/information-outline.png" />
+                                              </image>
+                                          </ImageView>
+                                      </graphic>
+                                      <tooltip>
+                                          <Tooltip text="About Dr. Orbiteex..." />
+                                      </tooltip>
+                                  </Button>
+                              </items>
+                          </ToolBar>
+
                           <StackPane fx:id="mainSceneStackPane" VBox.vgrow="ALWAYS">
                               <children>
                                   <AnchorPane fx:id="dropshadow" maxWidth="9000" minWidth="0" StackPane.alignment="CENTER">
@@ -262,5 +250,6 @@
             </SplitPane>
          </children>
       </AnchorPane>
+
    </children>
 </VBox>
