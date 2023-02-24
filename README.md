@@ -32,10 +32,16 @@ In order to have Dr. Orbiteex up and running from scratch, run the following ste
 3. Rename the extracted folder from "orekit-data-master" to "orekit-data"
 4. Create a folder named "drorbiteex" inside your home folder (e.g. "C:\Users\<your username>\drorbiteex" on Windows or "/home/<your username>/drorbiteex" on Linux)
 5. Copy the "orekit-data" folder inside the "drorbiteex" folder created in step 4
+
+Now, obtain the Dr. Orbiteex binaries:
+6. Download the pre-compiled version from GitHub under Releases;
+or:
 6. Clone Dr. Orbiteex from GitHub and checkout the master branch or one of the branches you want to compile
 7. Perform a "mvn clean install -Prelease" from the fetched version
 8. In the "target" folder, zip and tar.gz files will be generated for Windows, Linux, Mac
-9. Decompress the zip/tar.gz file anywhere on your filesystem, and run the start.bat (Windows) or start.sh (Linux/Mac) inside
+
+Finally, decompress the zip/tar.gz file anywhere on your filesystem, and run the start.bat (Windows) or start.sh (Linux/Mac) inside
+
 
 ## Extensions
 Dr. Orbiteex can export CCSDS OEM files and CCSDS Simple Schedule Files. There is a way to customise some aspects of this 
