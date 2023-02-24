@@ -7,20 +7,21 @@ Dr. Orbiteex allows you to:
 - Define the location of your ground stations/points of interest on Earth
 - Import orbital data in the form of TLE (https://en.wikipedia.org/wiki/Two-line_element_set) or CCSDS OEM files (https://public.ccsds.org/Pubs/502x0b2c1e2.pdf), with a direct import
 function from the Celestrak TLE website (https://celestrak.org/NORAD/elements/)
-- Show the path of each orbit on a 3D view and a 2D view and the current location of each 
+- Show the path of each orbit on a 3D view and a 2D view and the current/specified location of each 
 satellite
-- Show the visibility windows over the defined ground stations/points of interest
+- Show the visibility windows over the defined ground stations/points of interest, export such data as CSV
 - Show the visibility circles from the defined ground stations by selecting an orbit of 
 interest
-- Show the tracking data (azimuth/elevation) related to a visibility window
+- Show the tracking data (azimuth/elevation) related to a visibility window, export such data as CSV
 - Export a TLE-based orbit to CCSDS OEM file (KVN and XML)
 - For a ground station/point of interest, export a set of visibility windows in the form of
 CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
 - Detect collinearity events with reference to a specific satellite/orbit
-- Calculate a sky coverage map for a given ground station/point of interest, with reference to a selectable set of satellites/orbits
+- Calculate sky coverage maps for a given ground station/point of interest, with reference to a selectable set of satellites/orbits
 
 ![AND](img/drorbiteex1.png "Dr. Orbiteex main window")
-![AND](img/drorbiteex2.png "Dr. Orbiteex sky coverage and map view")
+![AND](img/drorbiteex2.png "Dr. Orbiteex map view")
+![AND](img/drorbiteex3.png "Dr. Orbiteex sky coverage")
 
 ## Getting started
 Make sure you have Java >= 11 and Apache Maven installed.
@@ -63,3 +64,6 @@ In order to use the implementations, they must be announced in the module-info f
 - provides eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter with [implementation];
 - provides eu.dariolucia.drorbiteex.model.schedule.IScheduleNameGenerator with [implementation];
 
+### Appearance
+If you want to run Dr. Orbiteex with the default style from OpenJFX, modify the launch script to append VM argument 
+-Ddrorbiteex_css_default_theme to the java invocation.

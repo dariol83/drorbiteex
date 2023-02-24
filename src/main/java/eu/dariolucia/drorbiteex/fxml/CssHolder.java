@@ -22,8 +22,21 @@ import javafx.scene.Parent;
 
 public class CssHolder {
 
-    private static final SimpleStringProperty CSS = new SimpleStringProperty("/eu/dariolucia/drorbiteex/fxml/css/style.css");
-    // private static final SimpleStringProperty CSS = new SimpleStringProperty(null);
+    private static final SimpleStringProperty CSS;
+
+    public static final String DRORBITEEX_CSS_DEFAULT_THEME_KEY = "drorbiteex_css_default_theme";
+
+    static {
+        CSS = new SimpleStringProperty("/eu/dariolucia/drorbiteex/fxml/css/style.css");
+        // Disable the styling if the property below is detected
+        if(System.getProperty(DRORBITEEX_CSS_DEFAULT_THEME_KEY) != null) {
+            CSS.set(null);
+        }
+    }
+
+    private CssHolder() {
+        throw new IllegalCallerException("Not to be called");
+    }
 
     public static ReadOnlyStringProperty CSSProperty() {
         return CSS;

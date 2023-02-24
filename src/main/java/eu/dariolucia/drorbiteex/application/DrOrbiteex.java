@@ -48,7 +48,6 @@ public class DrOrbiteex extends Application {
     private static final String DEFAULT_ORBIT_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_ORBIT_CONFIG_FILE_NAME;
     private static final String DEFAULT_GS_CONFIG_FILE_NAME = "groundstations.xml";
     private static final String DEFAULT_GS_CONFIG_LOCATION = DEFAULT_CONFIG_FOLDER + File.separator + DEFAULT_GS_CONFIG_FILE_NAME;
-
     private static final String CONFIG_FOLDER_LOCATION_KEY = "drorbiteex.config";
     private static final String OREKIT_FOLDER_NAME = "orekit-data";
 

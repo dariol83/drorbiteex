@@ -24,7 +24,7 @@
 
 <Tab fx:id="orbitPane" text="Orbits" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitPane">
     <content>
-        <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5" style="-fx-background-color: #101010;">
+        <VBox minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" spacing="5">
             <children>
                 <ToolBar prefHeight="32.0" prefWidth="200.0" VBox.vgrow="NEVER">
                     <items>

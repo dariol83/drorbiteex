@@ -21,7 +21,7 @@
   ~ limitations under the License.
   -->
 
-<VBox style="-fx-background-color: #101010;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
+<VBox xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.Main">
    <children>
       <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="600.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
          <children>
@@ -113,7 +113,7 @@
                                       </tooltip>
                                   </ToggleButton>
                                   <Separator orientation="VERTICAL" />
-                                  <Label fx:id="currentTimeLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="140" minHeight="32" minWidth="140" style="-fx-border-color: #b9b9b9;" text="----.--.-- --:--:--" />
+                                  <Label fx:id="currentTimeLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="140" minHeight="32" minWidth="140" text="----.--.-- --:--:--" />
                                   <Separator orientation="VERTICAL" />
                                   <Button fx:id="editReplayDateTimeButton" disable="true" onAction="#editReplayDateTimeAction">
                                       <graphic>
