@@ -16,7 +16,7 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.model.collinearity.GroundStationTrackingErrorAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-public class GroundStationTrackingErrorAnalysisDialog implements Initializable {
+public class TrackingErrorAnalysisDialog implements Initializable {
 
     private static Date lastStartDate = new Date(); // now
     private static Date lastEndDate = new Date(lastStartDate.getTime() + (24 * 3600 * 1000)); // 1 day
@@ -106,7 +106,7 @@ public class GroundStationTrackingErrorAnalysisDialog implements Initializable {
         }
     }
 
-    public GroundStationTrackingErrorAnalysisRequest getResult() {
+    public TrackingErrorAnalysisRequest getResult() {
         try {
             Date start = DialogUtils.getDate(startDatePicker, startTimeText);
             Date end = DialogUtils.getDate(endDatePicker, endTimeText);
@@ -115,17 +115,17 @@ public class GroundStationTrackingErrorAnalysisDialog implements Initializable {
             Orbit targetOrbit = this.targetOrbitCombo.getSelectionModel().getSelectedItem();
             lastTargetOrbitName = targetOrbit.getName();
             Orbit referenceOrbit = this.referenceOrbitCombo.getSelectionModel().getSelectedItem();
-            lastReferenceOrbitName = targetOrbit.getName();
+            lastReferenceOrbitName = referenceOrbit.getName();
             int pointInterval = Integer.parseInt(intervalPeriodText.getText());
             lastPointInterval = pointInterval;
-            return new GroundStationTrackingErrorAnalysisRequest(this.groundStation, targetOrbit, referenceOrbit, start, end, pointInterval);
+            return new TrackingErrorAnalysisRequest(this.groundStation, targetOrbit, referenceOrbit, start, end, pointInterval);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public static GroundStationTrackingErrorAnalysisRequest openDialog(Window owner, GroundStation gs, List<Orbit> orbits) {
+    public static TrackingErrorAnalysisRequest openDialog(Window owner, GroundStation gs, List<Orbit> orbits) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -134,11 +134,11 @@ public class GroundStationTrackingErrorAnalysisDialog implements Initializable {
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = GroundStationTrackingErrorAnalysisDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/GroundStationTrackingErrorAnalysisDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = TrackingErrorAnalysisDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TrackingErrorAnalysisDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
-            GroundStationTrackingErrorAnalysisDialog controller = loader.getController();
+            TrackingErrorAnalysisDialog controller = loader.getController();
             controller.initialise(d, gs, orbits);
 
             d.getDialogPane().setContent(root);

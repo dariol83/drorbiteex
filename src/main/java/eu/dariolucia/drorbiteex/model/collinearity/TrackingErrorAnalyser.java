@@ -24,21 +24,17 @@ import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
-public class GroundStationTrackingErrorAnalyser {
+public class TrackingErrorAnalyser {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
 
-    public static List<TrackingErrorPoint> analyse(GroundStationTrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
+    public static List<TrackingErrorPoint> analyse(TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
             monitor = DUMMY_MONITOR;
         }
@@ -47,7 +43,7 @@ public class GroundStationTrackingErrorAnalyser {
         }
         GroundStation groundStation = request.getGroundStation();
         Orbit refOrbit = request.getReferenceOrbit();
-        Orbit targetOrbit = request.getReferenceOrbit();
+        Orbit targetOrbit = request.getTargetOrbit();
 
         // Set configuration to all orbits
         OrbitParameterConfiguration orbitConf = refOrbit.getOrbitConfiguration().copy();
@@ -88,7 +84,7 @@ public class GroundStationTrackingErrorAnalyser {
         private final ITaskProgressMonitor monitor;
 
         public Worker(GroundStation groundStation, Orbit referenceOrbit, Orbit targetOrbit,
-                      GroundStationTrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) {
+                      TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) {
             this.groundStation = groundStation.copy();
             this.groundStation.setReducedProcessing();
             this.groundStation.setConfiguration(groundStation.getConfiguration());

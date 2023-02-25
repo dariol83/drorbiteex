@@ -21,7 +21,7 @@ import eu.dariolucia.drorbiteex.model.station.GroundStation;
 
 import java.util.Date;
 
-public class GroundStationTrackingErrorAnalysisRequest {
+public class TrackingErrorAnalysisRequest {
 
     private final GroundStation groundStation;
 
@@ -31,10 +31,10 @@ public class GroundStationTrackingErrorAnalysisRequest {
     private final Date endTime;
     private final int intervalPeriod;
 
-    public GroundStationTrackingErrorAnalysisRequest(GroundStation groundStation,
-                                                     Orbit targetOrbit, Orbit referenceOrbit,
-                                                     Date startTime, Date endTime,
-                                                     int intervalPeriod) {
+    public TrackingErrorAnalysisRequest(GroundStation groundStation,
+                                        Orbit targetOrbit, Orbit referenceOrbit,
+                                        Date startTime, Date endTime,
+                                        int intervalPeriod) {
         // Copy the ground station and the reference orbit
         this.groundStation = groundStation.copy();
         this.referenceOrbit = referenceOrbit.copy();

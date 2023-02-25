@@ -552,7 +552,7 @@ public class GroundStationPane implements Initializable {
         if(gs != null) {
             List<Orbit> orbits = orbitSupplier.get();
             // open dialog
-            GroundStationTrackingErrorAnalysisRequest sgr = GroundStationTrackingErrorAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
+            TrackingErrorAnalysisRequest sgr = TrackingErrorAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
             if(sgr != null) {
                 IMonitorableCallable<List<TrackingErrorPoint>> task = monitor -> {
                     ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
@@ -567,7 +567,7 @@ public class GroundStationPane implements Initializable {
                         }
                     };
                     try {
-                        return GroundStationTrackingErrorAnalyser.analyse(sgr, monitorBridge);
+                        return TrackingErrorAnalyser.analyse(sgr, monitorBridge);
                     } catch (Exception e) {
                         e.printStackTrace();
                         throw e;
@@ -575,7 +575,7 @@ public class GroundStationPane implements Initializable {
                 };
                 ProgressDialog.Result<List<TrackingErrorPoint>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Tracking Error Analysis", task);
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
-                    // TODO: SkyCoverageReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
+                    TrackingErrorReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert("Tracking Error Analysis", "Tracking error computation for " + gs.getGroundStation().getName(),
                             "Task cancelled by user");

@@ -19,6 +19,7 @@ package eu.dariolucia.drorbiteex.model.util;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
@@ -43,5 +44,14 @@ public class TimeUtils {
     public static String formatDate(Instant time) {
         Date d = time != null ? new Date(time.toEpochMilli()) : null;
         return formatDate(d);
+    }
+
+    public static Date parseDate(String s) throws ParseException {
+        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return DATE_FORMAT.parse(s);
+    }
+
+    public static Instant parseDateToInstant(String s) throws ParseException {
+        return parseDate(s).toInstant();
     }
 }
