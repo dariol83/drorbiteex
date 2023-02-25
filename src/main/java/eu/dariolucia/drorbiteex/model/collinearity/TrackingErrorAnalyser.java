@@ -139,6 +139,7 @@ public class TrackingErrorAnalyser {
         private Date currentDate = null;
         private TrackPoint referenceOrbitCurrentPosition = null;
         private Vector3D groundStationPoint;
+        private TrackingErrorPoint lastNoVisibilityPoint;
 
         public DataCollector(Orbit referenceOrbit) {
             this.referenceOrbit = referenceOrbit;
@@ -184,6 +185,8 @@ public class TrackingErrorAnalyser {
                 if((this.referenceOrbitCurrentPosition == null || this.referenceOrbitCurrentPosition.getElevation() < 0) &&
                         (point == null || point.getElevation() < 0)) {
                     this.events.add(TrackingErrorPoint.noVisibility(currentDate.toInstant()));
+                    // Clear up current date
+                    this.currentDate = null;
                     return;
                 }
                 // Time discrepancy --> return
@@ -192,8 +195,18 @@ public class TrackingErrorAnalyser {
                 }
                 // If we are here, it means that at least one satellite is in visibility: compute error
                 TrackingErrorPoint event = calculateError(this.currentDate, this.referenceOrbitCurrentPosition, point);
-                // Create collinearity event
+                // Add error point, but check first if a no-visibility for the previous step is needed
+                if(!events.isEmpty()) {
+                    // Get last recorded event
+                    TrackingErrorPoint lastRecorded = this.events.get(this.events.size() - 1);
+                    if(this.lastNoVisibilityPoint != null && lastRecorded != this.lastNoVisibilityPoint) {
+                        this.events.add(this.lastNoVisibilityPoint);
+                        this.lastNoVisibilityPoint = null;
+                    }
+                }
                 this.events.add(event);
+                // Clear up current date
+                this.currentDate = null;
             }
         }
 
@@ -219,6 +232,15 @@ public class TrackingErrorAnalyser {
         }
 
         public void setCurrentTime(Date currentDate) {
+            // Current date must be null here! If not, it means no point was added
+            // To avoid too many points, find a clever solution (i.e. if the previous point was already a non visibility point,
+            // then do not add the point)
+            if(this.currentDate != null) {
+                this.lastNoVisibilityPoint = TrackingErrorPoint.noVisibility(currentDate.toInstant());
+                if((this.events.isEmpty() || !this.events.get(this.events.size() - 1).isNoVisibility())) {
+                    this.events.add(this.lastNoVisibilityPoint);
+                }
+            }
             this.currentDate = currentDate;
         }
     }

@@ -104,7 +104,7 @@
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
-                                        <Image url="@/scatter-plot-custom.png" />
+                                        <Image url="@/chart-line.png" />
                                     </image>
                                 </ImageView>
                             </graphic>

@@ -45,4 +45,8 @@ public class TrackingErrorPoint {
     public double getElevationError() {
         return elevationError;
     }
+
+    public boolean isNoVisibility() {
+        return azimuthError == -1 && elevationError == -1;
+    }
 }
