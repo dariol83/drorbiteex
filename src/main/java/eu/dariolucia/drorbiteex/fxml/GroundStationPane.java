@@ -20,7 +20,6 @@ import eu.dariolucia.drorbiteex.fxml.progress.IMonitorableCallable;
 import eu.dariolucia.drorbiteex.fxml.progress.ProgressDialog;
 import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.collinearity.*;
-import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
 import eu.dariolucia.drorbiteex.model.schedule.ScheduleGenerationRequest;
@@ -28,6 +27,7 @@ import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.GroundStationParameterConfiguration;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -37,10 +37,8 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
-import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -74,6 +72,7 @@ public class GroundStationPane implements Initializable {
     public Button exportGroundTrackButton;
     public Button collinearityAnalysisButton;
     public Button skyCoverageAnalysisButton;
+    public Button trackingErrorAnalysisButton;
     public Button editGroundStationButton;
     public Button deleteGroundStationButton;
 
@@ -109,6 +108,7 @@ public class GroundStationPane implements Initializable {
         generateScheduleButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         collinearityAnalysisButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         skyCoverageAnalysisButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
+        trackingErrorAnalysisButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         editGroundStationButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         deleteGroundStationButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         exportVisibilityButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
@@ -547,7 +547,48 @@ public class GroundStationPane implements Initializable {
         }
     }
 
+    public void onTrackingErrorAnalysisAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            List<Orbit> orbits = orbitSupplier.get();
+            // open dialog
+            GroundStationTrackingErrorAnalysisRequest sgr = GroundStationTrackingErrorAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
+            if(sgr != null) {
+                IMonitorableCallable<List<TrackingErrorPoint>> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Tracking Error Analysis", current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return GroundStationTrackingErrorAnalyser.analyse(sgr, monitorBridge);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<List<TrackingErrorPoint>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Tracking Error Analysis", task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    // TODO: SkyCoverageReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Tracking Error Analysis", "Tracking error computation for " + gs.getGroundStation().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("Tracking Error Analysis", "Tracking error computation for " + gs.getGroundStation().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
+        }
+    }
+
     public void setGroundStationPolarPlot(PolarPlot polarPlot) {
         this.groundStationPolarPlot = polarPlot;
     }
+
 }
