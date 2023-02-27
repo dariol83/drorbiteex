@@ -5,6 +5,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
 import java.util.List;
@@ -101,7 +102,7 @@ public class PolarPlotPainter {
 
     public void drawAngleText(Color color, PolarPlot.PlotPosition position, String text) {
         Font previous = gc.getFont();
-        gc.setFont(new Font(previous.getName(), previous.getSize() - 2));
+        gc.setFont(Font.font("Sans Serif", FontWeight.NORMAL, previous.getSize() - 2));
         gc.setStroke(color);
         switch (position) {
             case TOP_LEFT:

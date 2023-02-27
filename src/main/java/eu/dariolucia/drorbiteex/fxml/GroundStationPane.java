@@ -67,12 +67,12 @@ public class GroundStationPane implements Initializable {
     // Polar plot for pass tracking
     public PolarPlot polarPlotController;
     public VBox polarPlotParent;
-    public Button generateScheduleButton;
-    public Button exportVisibilityButton;
+    public SplitMenuButton generateScheduleButton;
+    public MenuItem exportVisibilityButton;
     public Button exportGroundTrackButton;
-    public Button collinearityAnalysisButton;
-    public Button skyCoverageAnalysisButton;
-    public Button trackingErrorAnalysisButton;
+    public MenuItem collinearityAnalysisButton;
+    public MenuItem skyCoverageAnalysisButton;
+    public MenuItem trackingErrorAnalysisButton;
     public Button editGroundStationButton;
     public Button deleteGroundStationButton;
 

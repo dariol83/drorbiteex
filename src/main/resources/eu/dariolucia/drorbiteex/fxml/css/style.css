@@ -793,3 +793,53 @@ HBox, VBox {
         -fx-border-color: red;
         -fx-background-color: transparent;
 }
+
+.chart {
+    -fx-text-fill: lime;
+    -fx-background-color: #101010;
+    -fx-padding: 5px;
+}
+
+.chart-content {
+    -fx-text-fill: lime;
+    -fx-background-color: #101010;
+}
+
+.chart-plot-background {
+    -fx-background-color: #101010;
+}
+.chart-vertical-grid-lines {
+    -fx-stroke: transparent;
+}
+.chart-horizontal-grid-lines {
+    -fx-stroke: lime;
+}
+
+.axis-label {
+   -fx-text-fill: lime;
+}
+
+.axis {
+    -fx-font-size: 8pt;
+    -fx-tick-label-fill: lime;
+    -fx-font-family: monospace;
+}
+
+.axis-tick-mark {
+    -fx-stroke: lime;
+}
+.axis-minor-tick-mark {
+    -fx-stroke: lime;
+}
+
+.axis:left {-fx-border-color: transparent lime transparent transparent;}
+.axis:bottom{-fx-border-color: lime transparent transparent;}
+
+.chart-series-line {
+    -fx-stroke-width: 1px;
+    -fx-effect: null;
+}
+
+.default-color0.chart-area-symbol { -fx-background-color: transparent; }
+.default-color0.chart-series-area-line { -fx-stroke: lime; }
+.default-color0.chart-series-area-fill { -fx-fill: darkseagreen; }

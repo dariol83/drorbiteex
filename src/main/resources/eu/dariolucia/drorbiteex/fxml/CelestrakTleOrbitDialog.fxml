@@ -30,6 +30,7 @@
   ~ limitations under the License.
   -->
 
+<?import javafx.scene.text.Font?>
 <AnchorPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.CelestrakTleOrbitDialog">
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -46,7 +47,7 @@
             <HBox VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Name" />
-                  <TextField fx:id="nameText" minWidth="150.0" prefWidth="150.0" promptText="Spacecraft Name" disable="true" />
+                  <TextField fx:id="nameText" minWidth="150.0" prefWidth="150.0" promptText="Spacecraft Name" />
                </children>
             </HBox>
             <HBox VBox.vgrow="NEVER">
@@ -76,6 +77,13 @@
                <children>
                   <Label minWidth="150.0" prefWidth="150.0" text=" " />
                   <Button fx:id="tleReloadButton" minWidth="420.0"  prefWidth="420.0" text="Reload TLE" onAction="#onReloadTleAction"/>
+               </children>
+            </HBox>
+            <Separator prefWidth="200.0" />
+            <HBox VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefWidth="150.0" text="Details" />
+                  <TextArea fx:id="tleDetailsTextArea" minWidth="420.0" prefHeight="150.0" prefWidth="420.0" editable="false" style="-fx-font-family: 'monospaced';" />
                </children>
             </HBox>
             <Separator prefWidth="200.0" />

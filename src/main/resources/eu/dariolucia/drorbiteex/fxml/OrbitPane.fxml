@@ -36,9 +36,6 @@
                                     </image>
                                 </ImageView>
                             </graphic>
-                            <tooltip>
-                                <Tooltip text="New TLE Orbit..." />
-                            </tooltip>
                             <items>
                                 <MenuItem onAction="#onNewCelestrakOrbitAction" text="Celestrak...">
                                     <graphic>

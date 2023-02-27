@@ -55,6 +55,13 @@
             <Separator prefWidth="200.0" />
             <HBox VBox.vgrow="NEVER">
                <children>
+                  <Label minWidth="150.0" prefWidth="150.0" text="Details" />
+                  <TextArea fx:id="tleDetailsTextArea" minWidth="420.0" prefHeight="150.0" prefWidth="420.0" editable="false" style="-fx-font-family: 'monospaced';"/>
+               </children>
+            </HBox>
+            <Separator prefWidth="200.0" />
+            <HBox VBox.vgrow="NEVER">
+               <children>
                   <Label minWidth="150.0" prefWidth="150.0" text="Colour" />
                   <ColorPicker fx:id="colorPicker" minWidth="150.0" prefWidth="150.0" />
                </children>

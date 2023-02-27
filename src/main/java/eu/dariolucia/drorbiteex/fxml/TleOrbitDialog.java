@@ -27,20 +27,21 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Window;
+import org.orekit.propagation.analytical.tle.TLE;
 
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 import java.util.UUID;
 
 public class TleOrbitDialog implements Initializable {
     public TextField codeText;
     public TextField nameText;
     public TextArea tleTextArea;
-
     public ColorPicker colorPicker;
-
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
+    public TextArea tleDetailsTextArea;
 
     private String error;
 
@@ -49,8 +50,74 @@ public class TleOrbitDialog implements Initializable {
         codeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         nameText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         tleTextArea.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        tleTextArea.textProperty().addListener((prop, oldVal, newVal) -> showTleDetails());
+        tleDetailsTextArea.setText("Invalid TLE data");
 
         validate();
+    }
+
+    private void showTleDetails() {
+        try {
+            String tle = tleTextArea.getText();
+            String toShow = showTleDetails(tle);
+            //
+            tleDetailsTextArea.setText(toShow);
+        } catch (Exception e) {
+            tleDetailsTextArea.setText("Invalid TLE data");
+        }
+    }
+
+    private static String mapEphemerisType(int type) {
+        switch (type) {
+            case TLE.DEFAULT: return "Default";
+            case TLE.SGP: return "SGP";
+            case TLE.SGP4: return "SGP4";
+            case TLE.SGP8: return "SGP8";
+            case TLE.SDP4: return "SDP4";
+            case TLE.SDP8: return "SDP8";
+            default: return "Unknown";
+        }
+    }
+
+    public static String showTleDetails(String tle) {
+        try {
+            TLE tleObject = new TLE(tle.substring(0, tle.indexOf("\n")).trim(), tle.substring(tle.indexOf("\n")).trim());
+            //
+            StringBuilder sb = new StringBuilder();
+            addLine(sb, tleObject.getSatelliteNumber(), "Satellite Number");
+            addLine(sb, tleObject.getDate().toString(TimeZone.getTimeZone("UTC")), "TLE Date");
+            addLine(sb, tleObject.getRevolutionNumberAtEpoch(), "Orbit Number");
+            addLine(sb, tleObject.getE(), "Eccentricity");
+            addLine(sb, tleObject.getBStar(), "Ballistic Coeff.");
+            addLine(sb, tleObject.getClassification(), "Classification");
+            addLine(sb, tleObject.getElementNumber(), "Element Number");
+            addLine(sb, mapEphemerisType(tleObject.getEphemerisType()), "Ephemeris Type");
+            addLine(sb, tleObject.getLaunchNumber(), "Launch Number");
+            addLine(sb, tleObject.getLaunchPiece(), "Launch Piece");
+            addLine(sb, tleObject.getLaunchYear(), "Launch Year");
+            addLine(sb, tleObject.getMeanAnomaly(), "Mean Anomaly");
+            addLine(sb, tleObject.getMeanMotion(), "Mean Motion");
+            addLine(sb, tleObject.getMeanMotionFirstDerivative(), "Mean Motion'");
+            addLine(sb, tleObject.getMeanMotionSecondDerivative(), "Mean Motion''");
+            addLine(sb, tleObject.getPerigeeArgument(), "Perigee");
+            addLine(sb, tleObject.getRaan(), "RAAN");
+            //
+            return sb.toString();
+        } catch (Exception e) {
+            return "Invalid TLE data";
+        }
+    }
+
+    private static void addLine(StringBuilder sb, String argument, String name) {
+        sb.append(String.format("%-20s:\t%s%n", name, argument));
+    }
+
+    private static void addLine(StringBuilder sb, double argument, String name) {
+        sb.append(String.format("%-20s:\t%f%n", name, argument));
+    }
+
+    private static void addLine(StringBuilder sb, int argument, String name) {
+        sb.append(String.format("%-20s:\t%d%n", name, argument));
     }
 
     private void validate() {
@@ -64,6 +131,9 @@ public class TleOrbitDialog implements Initializable {
             if(tleTextArea.getText().isBlank()) {
                 throw new IllegalStateException("TLE field is blank");
             }
+            String tle = tleTextArea.getText();
+            new TLE(tle.substring(0, tle.indexOf("\n")).trim(), tle.substring(tle.indexOf("\n")).trim());
+
             error = null;
             validData.setValue(true);
         } catch (Exception e) {
@@ -71,7 +141,6 @@ public class TleOrbitDialog implements Initializable {
             validData.setValue(false);
         }
     }
-
 
     private void setOriginalOrbit(Orbit gs) {
         codeText.setText(gs.getCode());

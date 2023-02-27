@@ -40,7 +40,7 @@
                                 <Tooltip text="New Ground Station..." />
                             </tooltip>
                         </Button>
-                        <Button fx:id="generateScheduleButton" mnemonicParsing="false" onAction="#onGenerateScheduleAction">
+                        <SplitMenuButton fx:id="generateScheduleButton" mnemonicParsing="false" onAction="#onGenerateScheduleAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -48,22 +48,50 @@
                                     </image>
                                 </ImageView>
                             </graphic>
+                            <items>
+                                <MenuItem fx:id="exportVisibilityButton" mnemonicParsing="false" onAction="#onExportVisibilityWindowsAction" text="Export visibility windows...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/view-list.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                                <MenuItem fx:id="collinearityAnalysisButton" mnemonicParsing="false" onAction="#onCollinearityAnalysisAction" text="Collinearity analysis...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/angle-acute.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                                <MenuItem fx:id="skyCoverageAnalysisButton" mnemonicParsing="false" onAction="#onSkyCoverageAnalysisAction" text="Sky coverage analysis...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/scatter-plot-custom.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                                <MenuItem fx:id="trackingErrorAnalysisButton" mnemonicParsing="false" onAction="#onTrackingErrorAnalysisAction" text="Tracking error analysis...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/chart-line.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                            </items>
                             <tooltip>
                                 <Tooltip text="Generate schedule..." />
                             </tooltip>
-                        </Button>
-                        <Button fx:id="exportVisibilityButton" mnemonicParsing="false" onAction="#onExportVisibilityWindowsAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/view-list.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Export currently computed visibility windows..." />
-                            </tooltip>
-                        </Button>
+                        </SplitMenuButton>
+
+
                         <Button fx:id="exportGroundTrackButton" mnemonicParsing="false" onAction="#onExportGroundTrackAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
@@ -76,42 +104,7 @@
                                 <Tooltip text="Export currently computed ground track..." />
                             </tooltip>
                         </Button>
-                        <Button fx:id="collinearityAnalysisButton" mnemonicParsing="false" onAction="#onCollinearityAnalysisAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/angle-acute.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Compute collinearity events..." />
-                            </tooltip>
-                        </Button>
-                        <Button fx:id="skyCoverageAnalysisButton" mnemonicParsing="false" onAction="#onSkyCoverageAnalysisAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/scatter-plot-custom.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Compute sky coverage..." />
-                            </tooltip>
-                        </Button>
-                        <Button fx:id="trackingErrorAnalysisButton" mnemonicParsing="false" onAction="#onTrackingErrorAnalysisAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/chart-line.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Compute tracking error..." />
-                            </tooltip>
-                        </Button>
+
                         <Button fx:id="editGroundStationButton" mnemonicParsing="false" onAction="#onEditGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">

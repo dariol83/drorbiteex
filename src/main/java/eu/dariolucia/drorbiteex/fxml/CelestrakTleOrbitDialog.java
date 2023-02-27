@@ -31,6 +31,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Window;
+import org.orekit.propagation.analytical.tle.TLE;
 
 import java.net.URL;
 import java.util.Optional;
@@ -49,6 +50,7 @@ public class CelestrakTleOrbitDialog implements Initializable {
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     public Button tleReloadButton;
     public ProgressIndicator tleProgress;
+    public TextArea tleDetailsTextArea;
 
     private String error;
 
@@ -58,8 +60,21 @@ public class CelestrakTleOrbitDialog implements Initializable {
         nameText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         tleTextArea.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        tleTextArea.textProperty().addListener((prop, oldVal, newVal) -> showTleDetails());
+        tleDetailsTextArea.setText("Invalid TLE data");
 
         validate();
+    }
+
+    private void showTleDetails() {
+        try {
+            String tle = tleTextArea.getText();
+            String toShow = TleOrbitDialog.showTleDetails(tle);
+            //
+            tleDetailsTextArea.setText(toShow);
+        } catch (Exception e) {
+            tleDetailsTextArea.setText("Invalid TLE data");
+        }
     }
 
     private void validate() {
@@ -73,6 +88,9 @@ public class CelestrakTleOrbitDialog implements Initializable {
             if(tleTextArea.getText().isBlank()) {
                 throw new IllegalStateException("TLE field is blank");
             }
+            String tle = tleTextArea.getText();
+            new TLE(tle.substring(0, tle.indexOf("\n")).trim(), tle.substring(tle.indexOf("\n")).trim());
+
             error = null;
             validData.setValue(true);
         } catch (Exception e) {

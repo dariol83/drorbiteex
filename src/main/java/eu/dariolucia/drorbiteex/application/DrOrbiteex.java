@@ -41,7 +41,7 @@ import java.util.Optional;
 public class DrOrbiteex extends Application {
 
     public static final String APPLICATION_NAME = "Dr. Orbiteex";
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.1.0-beta";
 
     private static final String DEFAULT_CONFIG_FOLDER = System.getProperty("user.home") + File.separator + "drorbiteex";
     private static final String DEFAULT_ORBIT_CONFIG_FILE_NAME = "orbits.xml";
@@ -53,6 +53,7 @@ public class DrOrbiteex extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        System.setProperty("prism.lcdtext", "false");
         Stage substage = new Stage();
         // First the splash
         {

@@ -24,7 +24,8 @@
    <children>
       <VBox spacing="5" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <Label fx:id="periodLabel" text="---" />
+            <Label fx:id="periodLabel" text="---" alignment="CENTER" textAlignment="CENTER" />
+            <Separator />
             <AreaChart fx:id="azimuthErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
               <xAxis>
                 <NumberAxis fx:id="azimuthErrorTimeAxis" side="BOTTOM" />
@@ -41,6 +42,7 @@
                   <NumberAxis fx:id="elevationErrorValueAxis" side="LEFT" />
                </yAxis>
             </AreaChart>
+             <fx:include fx:id="rangeSelector" source="range/RangeSelector.fxml" />
          </children>
       </VBox>
    </children>
