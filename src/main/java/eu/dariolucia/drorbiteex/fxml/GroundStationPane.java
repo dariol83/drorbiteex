@@ -554,7 +554,7 @@ public class GroundStationPane implements Initializable {
             // open dialog
             TrackingErrorAnalysisRequest sgr = TrackingErrorAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
             if(sgr != null) {
-                IMonitorableCallable<List<TrackingErrorPoint>> task = monitor -> {
+                IMonitorableCallable<Map<String, List<TrackingErrorPoint>>> task = monitor -> {
                     ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
                         @Override
                         public void progress(long current, long total, String message) {
@@ -573,7 +573,7 @@ public class GroundStationPane implements Initializable {
                         throw e;
                     }
                 };
-                ProgressDialog.Result<List<TrackingErrorPoint>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Tracking Error Analysis", task);
+                ProgressDialog.Result<Map<String, List<TrackingErrorPoint>>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Tracking Error Analysis", task);
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
                     TrackingErrorReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {

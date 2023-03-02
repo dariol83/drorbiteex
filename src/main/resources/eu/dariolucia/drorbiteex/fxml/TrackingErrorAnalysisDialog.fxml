@@ -30,13 +30,7 @@
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
                   <Label minWidth="140.0" prefHeight="24.0" prefWidth="140.0" text="Target Orbit" />
-                  <VBox>
-                     <children>
-                        <HBox>
-                           <ComboBox fx:id="targetOrbitCombo" prefWidth="155.0" />
-                        </HBox>
-                     </children>
-                  </VBox>
+                  <ListView fx:id="orbitList" prefHeight="150.0" prefWidth="255.0" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">

@@ -346,29 +346,4 @@ public class ExportScheduleDialog implements Initializable {
         }
     }
 
-    private static class OrbitWrapper {
-        private final Orbit orbit;
-        private final SimpleBooleanProperty selectedProperty = new SimpleBooleanProperty(false);
-
-        public OrbitWrapper(Orbit orbit) {
-            this.orbit = orbit;
-        }
-
-        public Orbit getOrbit() {
-            return orbit;
-        }
-
-        public boolean isSelected() {
-            return selectedProperty.get();
-        }
-
-        public SimpleBooleanProperty selectedProperty() {
-            return selectedProperty;
-        }
-
-        @Override
-        public String toString() {
-            return orbit.getName();
-        }
-    }
 }

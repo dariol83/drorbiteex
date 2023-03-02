@@ -26,22 +26,22 @@
          <children>
             <Label fx:id="periodLabel" text="---" alignment="CENTER" textAlignment="CENTER" />
             <Separator />
-            <AreaChart fx:id="azimuthErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
+            <LineChart fx:id="azimuthErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
               <xAxis>
                 <NumberAxis fx:id="azimuthErrorTimeAxis" side="BOTTOM" />
               </xAxis>
               <yAxis>
                 <NumberAxis fx:id="azimuthErrorValueAxis" side="LEFT" />
               </yAxis>
-            </AreaChart>
-            <AreaChart fx:id="elevationErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
+            </LineChart>
+            <LineChart fx:id="elevationErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
                <xAxis>
                   <NumberAxis fx:id="elevationErrorTimeAxis" side="BOTTOM" />
                </xAxis>
                <yAxis>
                   <NumberAxis fx:id="elevationErrorValueAxis" side="LEFT" />
                </yAxis>
-            </AreaChart>
+            </LineChart>
              <fx:include fx:id="rangeSelector" source="range/RangeSelector.fxml" />
          </children>
       </VBox>

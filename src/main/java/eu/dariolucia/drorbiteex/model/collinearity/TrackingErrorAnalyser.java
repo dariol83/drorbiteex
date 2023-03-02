@@ -25,16 +25,18 @@ import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TrackingErrorAnalyser {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
 
-    public static List<TrackingErrorPoint> analyse(TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
+    public static Map<String, List<TrackingErrorPoint>> analyse(TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
             monitor = DUMMY_MONITOR;
         }
@@ -43,7 +45,7 @@ public class TrackingErrorAnalyser {
         }
         GroundStation groundStation = request.getGroundStation();
         Orbit refOrbit = request.getReferenceOrbit();
-        Orbit targetOrbit = request.getTargetOrbit();
+        List<Orbit> targetOrbits = request.getTargetOrbits();
 
         // Set configuration to all orbits
         OrbitParameterConfiguration orbitConf = refOrbit.getOrbitConfiguration().copy();
@@ -51,7 +53,7 @@ public class TrackingErrorAnalyser {
         orbitConf.setRecomputeFullDataInterval(Integer.MAX_VALUE);
         orbitConf.setAfterPropagationSteps(0);
         orbitConf.setBeforePropagationSteps(0);
-        targetOrbit.setOrbitConfiguration(orbitConf);
+        targetOrbits.forEach(o -> o.setOrbitConfiguration(orbitConf));
         refOrbit.setOrbitConfiguration(orbitConf);
 
         ExecutorService service = Executors.newFixedThreadPool(1, (r) -> {
@@ -59,13 +61,39 @@ public class TrackingErrorAnalyser {
             t.setDaemon(true);
             return t;
         });
-        Worker chunkWorker = new Worker(groundStation, refOrbit, targetOrbit, request, monitor);
-        Future<List<TrackingErrorPoint>> futureTask = service.submit(chunkWorker);
+        Map<String, List<TrackingErrorPoint>> orbit2points = new HashMap<>();
+        List<String> names = new ArrayList<>();
+        List<Future<List<TrackingErrorPoint>>> futures = new ArrayList<>();
+        AtomicLong progressCounter = new AtomicLong();
+        // Compute the number of total steps
+        long maxProgress = 0;
+        Date currentDate = request.getStartTime();
+        while(currentDate.before(request.getEndTime())) {
+            // Next step
+            currentDate = new Date(currentDate.getTime() + request.getIntervalPeriod() * 1000L);
+            ++maxProgress;
+        }
+        maxProgress *= targetOrbits.size();
+        for(Orbit t : targetOrbits) {
+            Worker chunkWorker = new Worker(groundStation, refOrbit, t, request, monitor, progressCounter, maxProgress);
+            Future<List<TrackingErrorPoint>> futureTask = service.submit(chunkWorker);
+            names.add(t.getName());
+            futures.add(futureTask);
+        }
         // Shutdown the executor
         service.shutdown();
         // Get the results of the futures
         try {
-            return futureTask.get();
+            for(int i = 0; i < futures.size(); ++i) {
+                if (monitor.isCancelled()) {
+                    service.shutdownNow();
+                    return null;
+                }
+                List<TrackingErrorPoint> data = futures.get(i).get();
+                orbit2points.put(names.get(i), data);
+            }
+            monitor.progress(1, 1, "Done");
+            return orbit2points;
         } catch (Exception e) {
             e.printStackTrace();
             throw new IOException(e);
@@ -82,9 +110,11 @@ public class TrackingErrorAnalyser {
         private final Orbit targetOrbit;
         private final int pointInterval;
         private final ITaskProgressMonitor monitor;
+        private final AtomicLong currentProgress;
+        private final long maxProgress;
 
         public Worker(GroundStation groundStation, Orbit referenceOrbit, Orbit targetOrbit,
-                      TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) {
+                      TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor, AtomicLong currentProgress, long maxProgress) {
             this.groundStation = groundStation.copy();
             this.groundStation.setReducedProcessing();
             this.groundStation.setConfiguration(groundStation.getConfiguration());
@@ -96,6 +126,8 @@ public class TrackingErrorAnalyser {
             this.targetOrbit = targetOrbit.copy();
             this.targetOrbit.setOrbitConfiguration(referenceOrbit.getOrbitConfiguration());
             this.pointInterval = request.getIntervalPeriod() * 1000;
+            this.currentProgress = currentProgress;
+            this.maxProgress = maxProgress;
         }
 
         @Override
@@ -112,9 +144,7 @@ public class TrackingErrorAnalyser {
             DataCollector dataCollector = new DataCollector(this.referenceOrbit);
             this.groundStation.addListener(dataCollector);
             // Iterate from start to end
-            long totalProgress = end.getTime() - start.getTime();
-            long currentProgress = 0;
-            monitor.progress(currentProgress, totalProgress, toString());
+            monitor.progress(currentProgress.get(), maxProgress, toString());
             Date currentDate = start;
             while(currentDate.before(end) && !monitor.isCancelled()) {
                 // Set the time in the data collector
@@ -125,8 +155,7 @@ public class TrackingErrorAnalyser {
                 targetOrbit.updateOrbitTime(currentDate, false);
                 // Next step
                 currentDate = new Date(currentDate.getTime() + this.pointInterval);
-                currentProgress += this.pointInterval;
-                monitor.progress(currentProgress, totalProgress, toString());
+                monitor.progress(currentProgress.incrementAndGet(), maxProgress, toString());
             }
             // Get the events
             return dataCollector.getEvents();

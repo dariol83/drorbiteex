@@ -840,6 +840,23 @@ HBox, VBox {
     -fx-effect: null;
 }
 
-.default-color0.chart-area-symbol { -fx-background-color: transparent; }
-.default-color0.chart-series-area-line { -fx-stroke: lime; }
-.default-color0.chart-series-area-fill { -fx-fill: darkseagreen; }
+.chart-legend {
+   -fx-background-color:  transparent;
+   -fx-padding: 20px;
+}
+
+.chart-legend-item-symbol {
+   -fx-background-radius: 0;
+   -fx-background-radius: 3px ;
+   -fx-padding: 3px ;
+}
+
+.chart-legend-item {
+    -fx-text-fill: lime;
+}
+
+.chart-area-symbol {
+    -fx-background-radius: 1px ;
+    -fx-padding: 1px ;
+}
+
