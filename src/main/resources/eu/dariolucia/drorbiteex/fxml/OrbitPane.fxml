@@ -72,7 +72,7 @@
                                 <Tooltip text="Refresh Celestrak Orbits" />
                             </tooltip>
                         </Button>
-                        <Button fx:id="exportOemOrbitButton" mnemonicParsing="false" onAction="#onExportOemOrbitAction">
+                        <SplitMenuButton fx:id="exportOemOrbitButton" mnemonicParsing="false" onAction="#onExportOemOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
                                     <image>
@@ -80,10 +80,22 @@
                                     </image>
                                 </ImageView>
                             </graphic>
+                            <items>
+                                <MenuItem fx:id="orbitErrorAnalysisButton" mnemonicParsing="false" onAction="#onOrbitErrorAnalysisAction" text="Orbit error analysis...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/chart-line.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                            </items>
                             <tooltip>
                                 <Tooltip text="Export OEM..." />
                             </tooltip>
-                        </Button>
+                        </SplitMenuButton>
+
                         <Button fx:id="editOrbitButton" mnemonicParsing="false" onAction="#onEditOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">

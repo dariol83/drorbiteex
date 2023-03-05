@@ -18,35 +18,35 @@ package eu.dariolucia.drorbiteex.model.collinearity;
 
 import java.time.Instant;
 
-public class TrackingErrorPoint {
+public class ErrorPoint {
 
-    public static TrackingErrorPoint noVisibility(Instant time) {
-        return new TrackingErrorPoint(time, -1, -1);
+    public static ErrorPoint noVisibility(Instant time) {
+        return new ErrorPoint(time, -1, -1);
     }
 
     private final Instant time;
-    private final double azimuthError;
-    private final double elevationError;
+    private final double error1;
+    private final double error2;
 
-    public TrackingErrorPoint(Instant time, double azimuthError, double elevationError) {
+    public ErrorPoint(Instant time, double error1, double error2) {
         this.time = time;
-        this.azimuthError = azimuthError;
-        this.elevationError = elevationError;
+        this.error1 = error1;
+        this.error2 = error2;
     }
 
     public Instant getTime() {
         return time;
     }
 
-    public double getAzimuthError() {
-        return azimuthError;
+    public double getError1() {
+        return error1;
     }
 
-    public double getElevationError() {
-        return elevationError;
+    public double getError2() {
+        return error2;
     }
 
     public boolean isNoVisibility() {
-        return azimuthError == -1 && elevationError == -1;
+        return error1 == -1 && error2 == -1;
     }
 }

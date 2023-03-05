@@ -23,22 +23,28 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TrackingErrorAnalysisRequest extends AbstractOrbitAnalysisRequest {
+public class AbstractOrbitAnalysisRequest extends AbstractTimeIntervalAnalysisRequest {
 
-    private final GroundStation groundStation;
+    private final Orbit referenceOrbit;
+    private final List<Orbit> targetOrbits;
+    private final int intervalPeriod;
 
-    public TrackingErrorAnalysisRequest(Date startTime, Date endTime,
-                                        Orbit referenceOrbit,
-                                        List<Orbit> targetOrbits,
-                                        int intervalPeriod,
-                                        GroundStation groundStation) {
-        super(startTime, endTime, referenceOrbit, targetOrbits, intervalPeriod);
-        // Copy the ground station
-        this.groundStation = groundStation.copy();
+    public AbstractOrbitAnalysisRequest(Date startTime, Date endTime, Orbit referenceOrbit, List<Orbit> targetOrbits, int intervalPeriod) {
+        super(startTime, endTime);
+        this.referenceOrbit = referenceOrbit.copy();
+        this.targetOrbits = targetOrbits.stream().map(Orbit::copy).collect(Collectors.toList());
+        this.intervalPeriod = intervalPeriod;
     }
 
-    public GroundStation getGroundStation() {
-        return groundStation;
+    public Orbit getReferenceOrbit() {
+        return referenceOrbit;
     }
 
+    public List<Orbit> getTargetOrbits() {
+        return targetOrbits;
+    }
+
+    public int getIntervalPeriod() {
+        return intervalPeriod;
+    }
 }

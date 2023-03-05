@@ -36,7 +36,7 @@ public class TrackingErrorAnalyser {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
 
-    public static Map<String, List<TrackingErrorPoint>> analyse(TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
+    public static Map<String, List<ErrorPoint>> analyse(TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
             monitor = DUMMY_MONITOR;
         }
@@ -61,9 +61,9 @@ public class TrackingErrorAnalyser {
             t.setDaemon(true);
             return t;
         });
-        Map<String, List<TrackingErrorPoint>> orbit2points = new HashMap<>();
+        Map<String, List<ErrorPoint>> orbit2points = new HashMap<>();
         List<String> names = new ArrayList<>();
-        List<Future<List<TrackingErrorPoint>>> futures = new ArrayList<>();
+        List<Future<List<ErrorPoint>>> futures = new ArrayList<>();
         AtomicLong progressCounter = new AtomicLong();
         // Compute the number of total steps
         long maxProgress = 0;
@@ -76,7 +76,7 @@ public class TrackingErrorAnalyser {
         maxProgress *= targetOrbits.size();
         for(Orbit t : targetOrbits) {
             Worker chunkWorker = new Worker(groundStation, refOrbit, t, request, monitor, progressCounter, maxProgress);
-            Future<List<TrackingErrorPoint>> futureTask = service.submit(chunkWorker);
+            Future<List<ErrorPoint>> futureTask = service.submit(chunkWorker);
             names.add(t.getName());
             futures.add(futureTask);
         }
@@ -89,7 +89,7 @@ public class TrackingErrorAnalyser {
                     service.shutdownNow();
                     return null;
                 }
-                List<TrackingErrorPoint> data = futures.get(i).get();
+                List<ErrorPoint> data = futures.get(i).get();
                 orbit2points.put(names.get(i), data);
             }
             monitor.progress(1, 1, "Done");
@@ -102,7 +102,7 @@ public class TrackingErrorAnalyser {
         }
     }
 
-    private static class Worker implements Callable<List<TrackingErrorPoint>> {
+    private static class Worker implements Callable<List<ErrorPoint>> {
         private final GroundStation groundStation;
         private final Orbit referenceOrbit;
         private final Date start;
@@ -136,7 +136,7 @@ public class TrackingErrorAnalyser {
         }
 
         @Override
-        public List<TrackingErrorPoint> call() {
+        public List<ErrorPoint> call() {
             // Register the ground station to the orbits
             this.targetOrbit.addListener(this.groundStation);
             this.referenceOrbit.addListener(this.groundStation);
@@ -158,24 +158,24 @@ public class TrackingErrorAnalyser {
                 monitor.progress(currentProgress.incrementAndGet(), maxProgress, toString());
             }
             // Get the events
-            return dataCollector.getEvents();
+            return dataCollector.getData();
         }
     }
 
     private static class DataCollector implements IGroundStationListener {
-        private final List<TrackingErrorPoint> events = new LinkedList<>();
+        private final List<ErrorPoint> data = new LinkedList<>();
         private final Orbit referenceOrbit;
         private Date currentDate = null;
         private TrackPoint referenceOrbitCurrentPosition = null;
         private Vector3D groundStationPoint;
-        private TrackingErrorPoint lastNoVisibilityPoint;
+        private ErrorPoint lastNoVisibilityPoint;
 
         public DataCollector(Orbit referenceOrbit) {
             this.referenceOrbit = referenceOrbit;
         }
 
-        public List<TrackingErrorPoint> getEvents() {
-            return events;
+        public List<ErrorPoint> getData() {
+            return data;
         }
 
         @Override
@@ -213,7 +213,7 @@ public class TrackingErrorAnalyser {
                 // Elevation of reference orbit < 0 && elevation of target orbit < 0 --> return empty point, none of the two orbits is in visibility
                 if((this.referenceOrbitCurrentPosition == null || this.referenceOrbitCurrentPosition.getElevation() < 0) &&
                         (point == null || point.getElevation() < 0)) {
-                    this.events.add(TrackingErrorPoint.noVisibility(currentDate.toInstant()));
+                    this.data.add(ErrorPoint.noVisibility(currentDate.toInstant()));
                     // Clear up current date
                     this.currentDate = null;
                     return;
@@ -223,33 +223,33 @@ public class TrackingErrorAnalyser {
                     return;
                 }
                 // If we are here, it means that at least one satellite is in visibility: compute error
-                TrackingErrorPoint event = calculateError(this.currentDate, this.referenceOrbitCurrentPosition, point);
+                ErrorPoint event = calculateError(this.currentDate, this.referenceOrbitCurrentPosition, point);
                 // Add error point, but check first if a no-visibility for the previous step is needed
-                if(!events.isEmpty()) {
+                if(!data.isEmpty()) {
                     // Get last recorded event
-                    TrackingErrorPoint lastRecorded = this.events.get(this.events.size() - 1);
+                    ErrorPoint lastRecorded = this.data.get(this.data.size() - 1);
                     if(this.lastNoVisibilityPoint != null && lastRecorded != this.lastNoVisibilityPoint) {
-                        this.events.add(this.lastNoVisibilityPoint);
+                        this.data.add(this.lastNoVisibilityPoint);
                         this.lastNoVisibilityPoint = null;
                     }
                 }
-                this.events.add(event);
+                this.data.add(event);
                 // Clear up current date
                 this.currentDate = null;
             }
         }
 
-        private TrackingErrorPoint calculateError(Date currentDate, TrackPoint reference, TrackPoint target) {
+        private ErrorPoint calculateError(Date currentDate, TrackPoint reference, TrackPoint target) {
             if(reference == null) {
-                return new TrackingErrorPoint(currentDate.toInstant(),
+                return new ErrorPoint(currentDate.toInstant(),
                         -1, // Azimuth error cannot be computed
                         Math.abs(target.getElevation()));
             } else if(target == null) {
-                return new TrackingErrorPoint(currentDate.toInstant(),
+                return new ErrorPoint(currentDate.toInstant(),
                         -1, // Azimuth error cannot be computed
                         Math.abs(reference.getElevation()));
             } else {
-                return new TrackingErrorPoint(currentDate.toInstant(),
+                return new ErrorPoint(currentDate.toInstant(),
                         computeAzimuthError(reference.getAzimuth(), target.getAzimuth()),
                         Math.abs(reference.getElevation() - target.getElevation()));
             }
@@ -265,9 +265,9 @@ public class TrackingErrorAnalyser {
             // To avoid too many points, find a clever solution (i.e. if the previous point was already a non visibility point,
             // then do not add the point)
             if(this.currentDate != null) {
-                this.lastNoVisibilityPoint = TrackingErrorPoint.noVisibility(currentDate.toInstant());
-                if((this.events.isEmpty() || !this.events.get(this.events.size() - 1).isNoVisibility())) {
-                    this.events.add(this.lastNoVisibilityPoint);
+                this.lastNoVisibilityPoint = ErrorPoint.noVisibility(currentDate.toInstant());
+                if((this.data.isEmpty() || !this.data.get(this.data.size() - 1).isNoVisibility())) {
+                    this.data.add(this.lastNoVisibilityPoint);
                 }
             }
             this.currentDate = currentDate;

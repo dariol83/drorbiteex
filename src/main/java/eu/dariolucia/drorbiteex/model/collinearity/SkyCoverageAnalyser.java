@@ -41,11 +41,9 @@ import java.util.stream.Collectors;
 
 public class SkyCoverageAnalyser {
 
-    private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
-
     public static Canvas analyse(SkyCoverageAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
-            monitor = DUMMY_MONITOR;
+            monitor = ITaskProgressMonitor.DUMMY_MONITOR;
         }
         if(monitor.isCancelled()) {
             return null;

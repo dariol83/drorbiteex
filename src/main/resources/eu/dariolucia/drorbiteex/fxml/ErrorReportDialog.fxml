@@ -20,26 +20,26 @@
   ~ limitations under the License.
   -->
 
-<AnchorPane maxHeight="1.7976931348623157E308" prefHeight="500.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.TrackingErrorReportDialog">
+<AnchorPane maxHeight="1.7976931348623157E308" prefHeight="500.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.ErrorReportDialog">
    <children>
       <VBox spacing="5" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <Label fx:id="periodLabel" text="---" alignment="CENTER" textAlignment="CENTER" />
             <Separator />
-            <LineChart fx:id="azimuthErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
+            <LineChart fx:id="error1Chart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
               <xAxis>
-                <NumberAxis fx:id="azimuthErrorTimeAxis" side="BOTTOM" />
+                <NumberAxis fx:id="error1TimeAxis" side="BOTTOM" />
               </xAxis>
               <yAxis>
-                <NumberAxis fx:id="azimuthErrorValueAxis" side="LEFT" />
+                <NumberAxis fx:id="error1ValueAxis" side="LEFT" />
               </yAxis>
             </LineChart>
-            <LineChart fx:id="elevationErrorChart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
+            <LineChart fx:id="error2Chart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
                <xAxis>
-                  <NumberAxis fx:id="elevationErrorTimeAxis" side="BOTTOM" />
+                  <NumberAxis fx:id="error2TimeAxis" side="BOTTOM" />
                </xAxis>
                <yAxis>
-                  <NumberAxis fx:id="elevationErrorValueAxis" side="LEFT" />
+                  <NumberAxis fx:id="error2ValueAxis" side="LEFT" />
                </yAxis>
             </LineChart>
              <fx:include fx:id="rangeSelector" source="range/RangeSelector.fxml" />

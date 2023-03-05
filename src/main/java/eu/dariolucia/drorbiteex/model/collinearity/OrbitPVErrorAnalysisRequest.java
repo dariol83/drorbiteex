@@ -21,24 +21,14 @@ import eu.dariolucia.drorbiteex.model.station.GroundStation;
 
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class TrackingErrorAnalysisRequest extends AbstractOrbitAnalysisRequest {
+public class OrbitPVErrorAnalysisRequest extends AbstractOrbitAnalysisRequest {
 
-    private final GroundStation groundStation;
-
-    public TrackingErrorAnalysisRequest(Date startTime, Date endTime,
-                                        Orbit referenceOrbit,
-                                        List<Orbit> targetOrbits,
-                                        int intervalPeriod,
-                                        GroundStation groundStation) {
+    public OrbitPVErrorAnalysisRequest(Date startTime, Date endTime,
+                                       Orbit referenceOrbit,
+                                       List<Orbit> targetOrbits,
+                                       int intervalPeriod) {
         super(startTime, endTime, referenceOrbit, targetOrbits, intervalPeriod);
-        // Copy the ground station
-        this.groundStation = groundStation.copy();
-    }
-
-    public GroundStation getGroundStation() {
-        return groundStation;
     }
 
 }

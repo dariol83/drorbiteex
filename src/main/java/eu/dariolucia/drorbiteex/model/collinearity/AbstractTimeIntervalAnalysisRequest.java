@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package eu.dariolucia.drorbiteex.model.util;
+package eu.dariolucia.drorbiteex.model.collinearity;
 
-public interface ITaskProgressMonitor {
+import java.util.Date;
 
-    ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
+public class AbstractTimeIntervalAnalysisRequest {
+    protected final Date startTime;
+    protected final Date endTime;
 
-    default void progress(long current, long total, String message) {
-        // Nothing
+    public AbstractTimeIntervalAnalysisRequest(Date startTime, Date endTime) {
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
-    default boolean isCancelled() {
-        return false;
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public Date getEndTime() {
+        return endTime;
     }
 }

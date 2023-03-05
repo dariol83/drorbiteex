@@ -24,11 +24,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-public class SkyCoverageAnalysisRequest {
+public class SkyCoverageAnalysisRequest extends AbstractTimeIntervalAnalysisRequest {
 
     private final GroundStation groundStation;
-    private final Date startTime;
-    private final Date endTime;
     private final int cores;
     private final Set<String> orbitExclusions;
     private final int minHeight;
@@ -36,14 +34,13 @@ public class SkyCoverageAnalysisRequest {
     private final String celestrakGroup;
     private final List<Orbit> targetOrbits;
 
-    public SkyCoverageAnalysisRequest(GroundStation groundStation, Date startTime, Date endTime,
+    public SkyCoverageAnalysisRequest(Date startTime, Date endTime, GroundStation groundStation,
                                       int cores,
                                       Collection<String> orbitExclusions, Integer minHeight, Integer maxHeight,
                                       String celestrakGroup, List<Orbit> targetOrbits) {
+        super(startTime, endTime);
         // Copy the ground station and the reference orbit
         this.groundStation = groundStation.copy();
-        this.startTime = startTime;
-        this.endTime = endTime;
         this.cores = cores;
         this.orbitExclusions = Set.copyOf(orbitExclusions);
         this.minHeight = minHeight != null ? minHeight : 0;
@@ -66,14 +63,6 @@ public class SkyCoverageAnalysisRequest {
 
     public GroundStation getGroundStation() {
         return groundStation;
-    }
-
-    public Date getStartTime() {
-        return startTime;
-    }
-
-    public Date getEndTime() {
-        return endTime;
     }
 
     public int getCores() {

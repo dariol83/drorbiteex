@@ -190,7 +190,7 @@ public class CollinearityAnalysisDialog implements Initializable {
             lastMaxHeight = maxHeight;
             lastCelestrakOrbits = celestrakGroupRadio.isSelected();
             lastCelestrakGroup = celestrakGroupCombo.getSelectionModel().getSelectedItem();
-            return new CollinearityAnalysisRequest(this.groundStation, orbit, start, end, minAngSep,
+            return new CollinearityAnalysisRequest(start, end, this.groundStation, orbit, minAngSep,
                     pointInterval, nbCores, List.copyOf(exclusionList.getItems()), minHeight, maxHeight,
                     celestrakGroupRadio.isSelected() ? celestrakGroupCombo.getSelectionModel().getSelectedItem() : null,
                     applicationGroupRadio.isSelected() ? getTargetOrbitList(this.orbitList.getItems(), orbit) : null);

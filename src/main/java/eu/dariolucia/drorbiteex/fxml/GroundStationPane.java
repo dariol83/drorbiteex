@@ -548,17 +548,18 @@ public class GroundStationPane implements Initializable {
     }
 
     public void onTrackingErrorAnalysisAction(ActionEvent actionEvent) {
+        final String taskName = "Tracking Error Analysis";
         GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
         if(gs != null) {
             List<Orbit> orbits = orbitSupplier.get();
             // open dialog
             TrackingErrorAnalysisRequest sgr = TrackingErrorAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
             if(sgr != null) {
-                IMonitorableCallable<Map<String, List<TrackingErrorPoint>>> task = monitor -> {
+                IMonitorableCallable<Map<String, List<ErrorPoint>>> task = monitor -> {
                     ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
                         @Override
                         public void progress(long current, long total, String message) {
-                            monitor.progress("Tracking Error Analysis", current, total, message);
+                            monitor.progress(taskName, current, total, message);
                         }
 
                         @Override
@@ -573,14 +574,18 @@ public class GroundStationPane implements Initializable {
                         throw e;
                     }
                 };
-                ProgressDialog.Result<Map<String, List<TrackingErrorPoint>>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Tracking Error Analysis", task);
+                ProgressDialog.Result<Map<String, List<ErrorPoint>>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), taskName, task);
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
-                    TrackingErrorReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
+                    ErrorReportDialog.openDialog(groundStationList.getScene().getWindow(),
+                            "Tracking error result for " + sgr.getGroundStation().getName(),
+                            TimeUtils.formatDate(sgr.getStartTime()) + " - " + TimeUtils.formatDate(sgr.getEndTime()) + " - Reference orbit: " + sgr.getReferenceOrbit().getName(),
+                            new String[] {"Azimuth", "Elevation"},
+                            taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
-                    DialogUtils.alert("Tracking Error Analysis", "Tracking error computation for " + gs.getGroundStation().getName(),
+                    DialogUtils.alert(taskName, "Tracking error computation for " + gs.getGroundStation().getName(),
                             "Task cancelled by user");
                 } else {
-                    DialogUtils.alert("Tracking Error Analysis", "Tracking error computation for " + gs.getGroundStation().getName(),
+                    DialogUtils.alert(taskName, "Tracking error computation for " + gs.getGroundStation().getName(),
                             "Error: " + taskResult.getError().getMessage());
                 }
             }

@@ -28,15 +28,10 @@ public class CollinearityEvent {
 
     private final GroundStation groundStation;
     private final Orbit referenceOrbit;
-
     private final Orbit targetOrbit;
-
     private final Instant time;
-
     private final TrackPoint referencePoint;
-
     private final TrackPoint targetPoint;
-
     private final double angularSeparation;
 
     public CollinearityEvent(GroundStation groundStation, Orbit referenceOrbit, Orbit targetOrbit, Instant time, TrackPoint referencePoint, TrackPoint targetPoint, double angularSeparation) {

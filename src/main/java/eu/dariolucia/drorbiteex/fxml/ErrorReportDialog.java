@@ -17,12 +17,9 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.fxml.range.RangeSelector;
-import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalysisRequest;
-import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorPoint;
-import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -37,20 +34,17 @@ import javafx.stage.Window;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ResourceBundle;
 
-public class TrackingErrorReportDialog implements Initializable {
+public class ErrorReportDialog implements Initializable {
 
     public Label periodLabel;
-    public LineChart<Long, Double> azimuthErrorChart;
-    public NumberAxis azimuthErrorTimeAxis;
-    public NumberAxis azimuthErrorValueAxis;
-    public LineChart<Long, Double> elevationErrorChart;
-    public NumberAxis elevationErrorTimeAxis;
-    public NumberAxis elevationErrorValueAxis;
-    private TrackingErrorAnalysisRequest request;
-
+    public LineChart<Long, Double> error1Chart;
+    public NumberAxis error1TimeAxis;
+    public NumberAxis error1ValueAxis;
+    public LineChart<Long, Double> error2Chart;
+    public NumberAxis error2TimeAxis;
+    public NumberAxis error2ValueAxis;
     public RangeSelector rangeSelectorController;
     private NumberToDateAxisFormatter longFormatter;
 
@@ -58,25 +52,23 @@ public class TrackingErrorReportDialog implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         //
         longFormatter = new NumberToDateAxisFormatter();
-        azimuthErrorChart.setCreateSymbols(false);
-        elevationErrorChart.setCreateSymbols(false);
-        azimuthErrorTimeAxis.setTickLabelFormatter(longFormatter);
-        elevationErrorTimeAxis.setTickLabelFormatter(longFormatter);
-        azimuthErrorTimeAxis.setMinorTickVisible(false);
-        elevationErrorTimeAxis.setMinorTickVisible(false);
-        azimuthErrorTimeAxis.setTickUnit(3600000);
-        elevationErrorTimeAxis.setTickUnit(3600000);
+        error1Chart.setCreateSymbols(false);
+        error2Chart.setCreateSymbols(false);
+        error1TimeAxis.setTickLabelFormatter(longFormatter);
+        error2TimeAxis.setTickLabelFormatter(longFormatter);
+        error1TimeAxis.setMinorTickVisible(false);
+        error2TimeAxis.setMinorTickVisible(false);
+        error1TimeAxis.setTickUnit(3600000);
+        error2TimeAxis.setTickUnit(3600000);
 
-        azimuthErrorChart.setLegendVisible(true);
-        azimuthErrorChart.setTitle("Azimuth Error");
-        elevationErrorChart.setLegendVisible(true);
-        elevationErrorChart.setTitle("Elevation Error");
+        error1Chart.setLegendVisible(true);
+        error2Chart.setLegendVisible(true);
 
         rangeSelectorController.rangeProperty().addListener((w,o,n) -> updateChartRange(n.getKey(), n.getValue()));
         rangeSelectorController.setLabelFormatter(longFormatter);
 
-        attachMenu(azimuthErrorChart);
-        attachMenu(elevationErrorChart);
+        attachMenu(error1Chart);
+        attachMenu(error2Chart);
     }
 
     private void attachMenu(LineChart<Long, Double> chart) {
@@ -96,32 +88,32 @@ public class TrackingErrorReportDialog implements Initializable {
     }
 
     private void updateChartRange(long min, long max) {
-        azimuthErrorTimeAxis.setAutoRanging(false);
-        azimuthErrorTimeAxis.setLowerBound(min);
-        azimuthErrorTimeAxis.setUpperBound(max);
-        elevationErrorTimeAxis.setAutoRanging(false);
-        elevationErrorTimeAxis.setLowerBound(min);
-        elevationErrorTimeAxis.setUpperBound(max);
+        error1TimeAxis.setAutoRanging(false);
+        error1TimeAxis.setLowerBound(min);
+        error1TimeAxis.setUpperBound(max);
+        error2TimeAxis.setAutoRanging(false);
+        error2TimeAxis.setLowerBound(min);
+        error2TimeAxis.setUpperBound(max);
         // tick unit is in fraction of ten
-        azimuthErrorTimeAxis.setTickUnit((max - min) / 10.0);
-        elevationErrorTimeAxis.setTickUnit((max - min) / 10.0);
+        error1TimeAxis.setTickUnit((max - min) / 10.0);
+        error2TimeAxis.setTickUnit((max - min) / 10.0);
     }
 
-    public static void openDialog(Window owner, TrackingErrorAnalysisRequest request, Map<String, List<TrackingErrorPoint>> points) {
+    public static void openDialog(Window owner, String title, String description, String[] datasetLabels, Map<String, List<ErrorPoint>> points) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Tracking error result for " + request.getGroundStation().getName());
+            d.setTitle(title);
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = TrackingErrorReportDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TrackingErrorReportDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = ErrorReportDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/ErrorReportDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
-            TrackingErrorReportDialog controller = loader.getController();
-            controller.initialise(request, points);
+            ErrorReportDialog controller = loader.getController();
+            controller.initialise(description, datasetLabels, points);
 
             d.getDialogPane().setContent(root);
             d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
@@ -132,9 +124,8 @@ public class TrackingErrorReportDialog implements Initializable {
         }
     }
 
-    private void initialise(TrackingErrorAnalysisRequest request, Map<String, List<TrackingErrorPoint>> points) {
-        this.request = request;
-        this.periodLabel.setText(TimeUtils.formatDate(request.getStartTime()) + " - " + TimeUtils.formatDate(request.getEndTime()) + " - Reference orbit: " + request.getReferenceOrbit().getName());
+    private void initialise(String description, String[] datasetLabels, Map<String, List<ErrorPoint>> points) {
+        this.periodLabel.setText(description);
 
         if(points.isEmpty()) {
             this.periodLabel.setText("No data collected");
@@ -144,7 +135,7 @@ public class TrackingErrorReportDialog implements Initializable {
         // Get min-max time range
         long minTime = Long.MAX_VALUE;
         long maxTime = Long.MIN_VALUE;
-        for(Map.Entry<String, List<TrackingErrorPoint>> e : points.entrySet()) {
+        for(Map.Entry<String, List<ErrorPoint>> e : points.entrySet()) {
             if(!e.getValue().isEmpty()) {
                 if(minTime > e.getValue().get(0).getTime().toEpochMilli()) {
                     minTime = e.getValue().get(0).getTime().toEpochMilli();
@@ -154,22 +145,25 @@ public class TrackingErrorReportDialog implements Initializable {
                 }
             }
 
-            // Create azimuth series
+            // Create error1 series
             XYChart.Series<Long, Double> azSeries = new XYChart.Series<>();
             azSeries.setName(e.getKey());
-            for(TrackingErrorPoint tp : e.getValue()) {
-                azSeries.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getAzimuthError()));
+            for(ErrorPoint tp : e.getValue()) {
+                azSeries.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getError1()));
             }
-            azimuthErrorChart.getData().add(azSeries);
+            error1Chart.getData().add(azSeries);
 
-            // Create elevation series
+            // Create error2 series
             XYChart.Series<Long, Double> elSeries = new XYChart.Series<>();
             elSeries.setName(e.getKey());
-            for(TrackingErrorPoint tp : e.getValue()) {
-                elSeries.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getElevationError()));
+            for(ErrorPoint tp : e.getValue()) {
+                elSeries.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getError2()));
             }
-            elevationErrorChart.getData().add(elSeries);
+            error2Chart.getData().add(elSeries);
         }
+        error1Chart.setTitle(datasetLabels[0]);
+        error2Chart.setTitle(datasetLabels[1]);
+
         rangeSelectorController.setBounds(minTime, maxTime);
         updateChartRange(minTime, maxTime);
     }

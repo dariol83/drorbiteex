@@ -171,7 +171,7 @@ public class SkyCoverageAnalysisDialog implements Initializable {
             lastMaxHeight = maxHeight;
             lastCelestrakOrbits = celestrakGroupRadio.isSelected();
             lastCelestrakGroup = celestrakGroupCombo.getSelectionModel().getSelectedItem();
-            return new SkyCoverageAnalysisRequest(this.groundStation, start, end, nbCores, List.copyOf(exclusionList.getItems()), minHeight, maxHeight,
+            return new SkyCoverageAnalysisRequest(start, end, this.groundStation, nbCores, List.copyOf(exclusionList.getItems()), minHeight, maxHeight,
                     celestrakGroupRadio.isSelected() ? celestrakGroupCombo.getSelectionModel().getSelectedItem() : null,
                     applicationGroupRadio.isSelected() ? this.orbitList : null);
         } catch (Exception e) {

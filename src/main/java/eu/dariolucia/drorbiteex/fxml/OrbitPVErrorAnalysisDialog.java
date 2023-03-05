@@ -16,9 +16,8 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ChangeListener;
@@ -34,12 +33,11 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class TrackingErrorAnalysisDialog implements Initializable {
+public class OrbitPVErrorAnalysisDialog implements Initializable {
 
     private static Date lastStartDate = new Date(); // now
     private static Date lastEndDate = new Date(lastStartDate.getTime() + (24 * 3600 * 1000)); // 1 day
     private static final List<String> lastSelectedOrbitNames = new LinkedList<>();
-    private static String lastReferenceOrbitName = null;
     private static int lastPointInterval = 5; // in seconds
 
     public DatePicker startDatePicker;
@@ -47,14 +45,13 @@ public class TrackingErrorAnalysisDialog implements Initializable {
     public DatePicker endDatePicker;
     public TextField endTimeText;
 
-    public ComboBox<Orbit> referenceOrbitCombo;
     public ListView<OrbitWrapper> orbitList;
     public TextField intervalPeriodText;
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     private String error;
 
-    private GroundStation groundStation;
+    private Orbit referenceOrbit;
     private Dialog<?> dialog;
 
     @Override
@@ -67,7 +64,6 @@ public class TrackingErrorAnalysisDialog implements Initializable {
         startTimeText.textProperty().addListener(validationBroker);
         endDatePicker.valueProperty().addListener(validationBroker);
         endTimeText.textProperty().addListener(validationBroker);
-        referenceOrbitCombo.getSelectionModel().selectedItemProperty().addListener(validationBroker);
         intervalPeriodText.textProperty().addListener(validationBroker);
 
         validate();
@@ -87,9 +83,7 @@ public class TrackingErrorAnalysisDialog implements Initializable {
             if(endTimeText.getText().isBlank()) {
                 throw new IllegalStateException("End time field is blank");
             }
-            if(referenceOrbitCombo.getSelectionModel().getSelectedItem() == null) {
-                throw new IllegalStateException("Orbit not selected");
-            }
+
             Integer.parseInt(intervalPeriodText.getText());
 
             DialogUtils.getDate(startDatePicker, startTimeText);
@@ -103,7 +97,7 @@ public class TrackingErrorAnalysisDialog implements Initializable {
         }
     }
 
-    public TrackingErrorAnalysisRequest getResult() {
+    public OrbitPVErrorAnalysisRequest getResult() {
         try {
             Date start = DialogUtils.getDate(startDatePicker, startTimeText);
             Date end = DialogUtils.getDate(endDatePicker, endTimeText);
@@ -112,31 +106,30 @@ public class TrackingErrorAnalysisDialog implements Initializable {
             List<Orbit> orbits = orbitList.getItems().stream().filter(OrbitWrapper::isSelected).map(OrbitWrapper::getOrbit).collect(Collectors.toList());
             lastSelectedOrbitNames.clear();
             lastSelectedOrbitNames.addAll(orbits.stream().map(Orbit::getName).collect(Collectors.toList()));
-            Orbit referenceOrbit = this.referenceOrbitCombo.getSelectionModel().getSelectedItem();
-            lastReferenceOrbitName = referenceOrbit.getName();
+
             int pointInterval = Integer.parseInt(intervalPeriodText.getText());
             lastPointInterval = pointInterval;
-            return new TrackingErrorAnalysisRequest(start, end, referenceOrbit, orbits, pointInterval, this.groundStation);
+            return new OrbitPVErrorAnalysisRequest(start, end, referenceOrbit, orbits, pointInterval);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public static TrackingErrorAnalysisRequest openDialog(Window owner, GroundStation gs, List<Orbit> orbits) {
+    public static OrbitPVErrorAnalysisRequest openDialog(Window owner, Orbit gs, List<Orbit> orbits) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Run ground station tracking error analysis for " + gs.getName());
+            d.setTitle("Run orbit error analysis for " + gs.getName());
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = TrackingErrorAnalysisDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TrackingErrorAnalysisDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = OrbitPVErrorAnalysisDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/OrbitPVErrorAnalysisDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
-            TrackingErrorAnalysisDialog controller = loader.getController();
+            OrbitPVErrorAnalysisDialog controller = loader.getController();
             controller.initialise(d, gs, orbits);
 
             d.getDialogPane().setContent(root);
@@ -156,30 +149,21 @@ public class TrackingErrorAnalysisDialog implements Initializable {
         }
     }
 
-    private void initialise(Dialog<?> d, GroundStation gs, List<Orbit> orbits) {
+    private void initialise(Dialog<?> d, Orbit gs, List<Orbit> orbits) {
         this.dialog = d;
-        this.groundStation = gs;
+        this.referenceOrbit = gs;
         this.startDatePicker.setValue(DialogUtils.toDateText(lastStartDate));
         this.startTimeText.setText(DialogUtils.toTimeText(lastStartDate));
         this.endDatePicker.setValue(DialogUtils.toDateText(lastEndDate));
         this.endTimeText.setText(DialogUtils.toTimeText(lastEndDate));
         this.intervalPeriodText.setText(String.valueOf(lastPointInterval));
 
-        Orbit selectedTargetOrbit = null;
-        Orbit selectedReferenceOrbit = null;
         for(Orbit o : orbits) {
-            this.referenceOrbitCombo.getItems().add(o);
             OrbitWrapper ow = new OrbitWrapper(o);
             if(lastSelectedOrbitNames.contains(ow.getOrbit().getName())) {
                 ow.selectedProperty().set(true);
             }
             this.orbitList.getItems().add(ow);
-            if(lastReferenceOrbitName != null && lastReferenceOrbitName.equals(o.getName())) {
-                selectedReferenceOrbit = o;
-            }
-        }
-        if(selectedReferenceOrbit != null) {
-            this.referenceOrbitCombo.getSelectionModel().select(selectedReferenceOrbit);
         }
 
         validate();

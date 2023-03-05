@@ -16,9 +16,17 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.fxml.progress.IMonitorableCallable;
+import eu.dariolucia.drorbiteex.fxml.progress.ProgressDialog;
 import eu.dariolucia.drorbiteex.model.ModelManager;
+import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
+import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalyser;
+import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -31,11 +39,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.util.StringConverter;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class OrbitPane implements Initializable {
 
@@ -47,9 +53,10 @@ public class OrbitPane implements Initializable {
     public OrbitDetailPanel orbitDetailPanelController;
     public ToggleButton satelliteAutotrackButton;
     public Label orbitInfoLabel;
-    public Button exportOemOrbitButton;
+    public SplitMenuButton exportOemOrbitButton;
     public Button editOrbitButton;
     public Button deleteOrbitButton;
+    public MenuItem orbitErrorAnalysisButton;
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
@@ -103,6 +110,7 @@ public class OrbitPane implements Initializable {
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         // Button enablement
         exportOemOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        orbitErrorAnalysisButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         editOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         deleteOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         satelliteAutotrackButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
@@ -322,5 +330,50 @@ public class OrbitPane implements Initializable {
 
     public void updateSpacecraftPosition(Orbit orbit, SpacecraftPosition currentPosition) {
         this.orbitDetailPanelController.updatePosition(orbit, currentPosition);
+    }
+
+    public void onOrbitErrorAnalysisAction(ActionEvent actionEvent) {
+        final String taskName = "Orbit Error Analysis";
+        OrbitGraphics gs = orbitList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            List<Orbit> orbits = getOrbitGraphics().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
+            // open dialog
+            OrbitPVErrorAnalysisRequest sgr = OrbitPVErrorAnalysisDialog.openDialog(orbitList.getScene().getWindow(), gs.getOrbit(), orbits);
+            if(sgr != null) {
+                IMonitorableCallable<Map<String, List<ErrorPoint>>> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress(taskName, current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return OrbitPVErrorAnalyser.analyse(sgr, monitorBridge);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<Map<String, List<ErrorPoint>>> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), taskName, task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    ErrorReportDialog.openDialog(orbitList.getScene().getWindow(),
+                            "Orbit error result for " + sgr.getReferenceOrbit().getName(),
+                            TimeUtils.formatDate(sgr.getStartTime()) + " - " + TimeUtils.formatDate(sgr.getEndTime()) + " - Reference orbit: " + sgr.getReferenceOrbit().getName(),
+                            new String[] {"Position", "Velocity"},
+                            taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert(taskName, "Orbit error computation for " + gs.getOrbit().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert(taskName, "Orbit error computation for " + gs.getOrbit().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
+        }
     }
 }
