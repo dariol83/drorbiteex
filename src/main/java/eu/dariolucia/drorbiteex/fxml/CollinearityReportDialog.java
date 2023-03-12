@@ -40,8 +40,6 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -158,7 +156,7 @@ public class CollinearityReportDialog implements Initializable {
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
             CollinearityReportDialog controller = loader.getController();
-            controller.initialise(request, events);
+            controller.configure(request, events);
 
             d.getDialogPane().setContent(root);
             d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
@@ -169,7 +167,7 @@ public class CollinearityReportDialog implements Initializable {
         }
     }
 
-    private void initialise(CollinearityAnalysisRequest request, List<CollinearityEvent> events) {
+    private void configure(CollinearityAnalysisRequest request, List<CollinearityEvent> events) {
         this.request = request;
         this.filteredList = new FilteredList<>(FXCollections.observableList(events), e -> true);
         this.sortedList = new SortedList<>(this.filteredList);

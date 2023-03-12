@@ -81,6 +81,15 @@
                                 </ImageView>
                             </graphic>
                             <items>
+                                <MenuItem fx:id="exportTleOrbitButton" mnemonicParsing="false" onAction="#onExportTleOrbitAction" text="Export TLE...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/export-tle.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
                                 <MenuItem fx:id="orbitErrorAnalysisButton" mnemonicParsing="false" onAction="#onOrbitErrorAnalysisAction" text="Orbit error analysis...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">

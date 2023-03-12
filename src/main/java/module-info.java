@@ -27,6 +27,7 @@ open module eu.dariolucia.drorbiteex {
     exports eu.dariolucia.drorbiteex.model.util;
     exports eu.dariolucia.drorbiteex.model.schedule;
     exports eu.dariolucia.drorbiteex.model.oem;
+    exports eu.dariolucia.drorbiteex.model.tle;
     exports eu.dariolucia.drorbiteex.model.collinearity;
 
     uses eu.dariolucia.drorbiteex.model.schedule.IScheduleExporter;

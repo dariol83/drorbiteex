@@ -23,7 +23,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
@@ -77,7 +76,7 @@ public class SkyCoverageReportDialog implements Initializable {
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
             SkyCoverageReportDialog controller = loader.getController();
-            controller.initialise(request, plot);
+            controller.configure(request, plot);
 
             d.getDialogPane().setContent(root);
             d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
@@ -88,7 +87,7 @@ public class SkyCoverageReportDialog implements Initializable {
         }
     }
 
-    private void initialise(SkyCoverageAnalysisRequest request, Canvas plot) {
+    private void configure(SkyCoverageAnalysisRequest request, Canvas plot) {
         this.request = request;
         this.image.setPreserveRatio(true);
         this.image.setFitWidth(-1);

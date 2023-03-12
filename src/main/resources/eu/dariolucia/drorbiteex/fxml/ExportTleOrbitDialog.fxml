@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.collections.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  ~ Copyright (c) 2023 Dario Lucia (https://www.dariolucia.eu)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.ExportTleOrbitDialog">
+   <children>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <children>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Start Date/Time" />
+                  <DatePicker fx:id="startDatePicker" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
+                  <TextField fx:id="startTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
+               </children>
+            </HBox>
+            <Separator />
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Satellite Number" />
+                  <TextField fx:id="satNumberText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Classification" />
+                  <TextField fx:id="classificationText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Launch Year" />
+                  <TextField fx:id="launchYearText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Launch Number" />
+                  <TextField fx:id="launchNumberText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Launch Piece" />
+                  <TextField fx:id="launchPieceText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Revolutions at epoch" />
+                  <TextField fx:id="revolutionsText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Element Number" />
+                  <TextField fx:id="elementNumberText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

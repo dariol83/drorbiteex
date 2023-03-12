@@ -16,28 +16,21 @@
 
 package eu.dariolucia.drorbiteex.model.orbit;
 
-import eu.dariolucia.drorbiteex.model.oem.*;
+import eu.dariolucia.drorbiteex.model.oem.OemExporterProcess;
+import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
+import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
-import org.orekit.attitudes.Attitude;
-import org.orekit.bodies.CelestialBodyFactory;
-import org.orekit.files.ccsds.definitions.BodyFacade;
-import org.orekit.files.ccsds.definitions.FrameFacade;
-import org.orekit.files.ccsds.definitions.TimeSystem;
-import org.orekit.files.ccsds.ndm.WriterBuilder;
-import org.orekit.files.ccsds.ndm.odm.oem.EphemerisWriter;
-import org.orekit.files.ccsds.ndm.odm.oem.InterpolationMethod;
-import org.orekit.files.ccsds.ndm.odm.oem.OemMetadata;
-import org.orekit.files.ccsds.section.Header;
-import org.orekit.files.ccsds.utils.FileFormat;
-import org.orekit.files.general.OrekitEphemerisFile;
-import org.orekit.frames.Frame;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.OrbitType;
+import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.tle.TLE;
+import org.orekit.propagation.analytical.tle.TLEPropagator;
+import org.orekit.propagation.conversion.FiniteDifferencePropagatorConverter;
+import org.orekit.propagation.conversion.TLEPropagatorBuilder;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.AbsolutePVCoordinates;
-import org.orekit.utils.TimeStampedPVCoordinates;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -126,7 +119,7 @@ public class OrbitManager {
         this.orbits.values().forEach(o -> o.removeListener(l));
     }
 
-    public void clearListeners(IOrbitListener l) {
+    public void clearListeners() {
         this.listeners.clear();
     }
 
@@ -145,7 +138,9 @@ public class OrbitManager {
     }
 
     public void updateOrbitTime(Date time, boolean forceUpdate) {
-        LOGGER.log(Level.FINER, "Updating orbit time to " + time + ", force update " + forceUpdate);
+        if(LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINER, String.format("Updating orbit time to %s, force update %s", time, forceUpdate));
+        }
         this.lastReferenceTime = time;
         this.listeners.forEach(o -> o.startOrbitTimeUpdate(time, forceUpdate));
         for(Orbit ob : this.orbits.values()) {
@@ -172,5 +167,60 @@ public class OrbitManager {
             o.setOrbitConfiguration(this.configuration);
         }
         refresh();
+    }
+
+    public String exportTle(TleGenerationRequest tleGenerationRequest) {
+        // First, copy the orbit
+        Orbit toPropagate = tleGenerationRequest.getOrbit().copy();
+        AbsoluteDate startTime = TimeUtils.toAbsoluteDate(tleGenerationRequest.getStartTime());
+        Propagator p = toPropagate.getModel().getPropagator();
+        SpacecraftState firstState = p.propagate(startTime);
+
+        // Let's go for the TLE (https://forum.orekit.org/t/generation-of-tle/265/4)
+        // You need an initial TLE for the job... so let's build one
+        TLE initialTle = null;
+        if(toPropagate.getModel() instanceof TleOrbitModel) {
+            // Original orbit is a TLE
+            String tleFromModel = ((TleOrbitModel) toPropagate.getModel()).getTle();
+            String[] split = tleFromModel.split("\n", -1);
+            initialTle = new TLE(split[0], split[1]);
+        } else {
+            // Original orbit is a OEM
+            initialTle = initialiseTleFromOem(toPropagate.getModel(), tleGenerationRequest);
+        }
+        // Now derive the TLE
+        TLE fitted = TLE.stateToTLE(firstState, initialTle);
+        return fitted.getLine1() + "\n" + fitted.getLine2();
+    }
+
+    private TLE initialiseTleFromOem(IOrbitModel model, TleGenerationRequest request) {
+        int satNumber = request.getSatNumber();
+        char classification = request.getClassification();
+        int launchYear = request.getLaunchYear();
+        int launchNumber = request.getLaunchNumber();
+        String launchPiece = request.getLaunchPiece();
+        int revolutionNumberAtEpoch = request.getRevolutionNumberAtEpoch();
+        int elementNumber = request.getElementNumber();
+
+        // Set meanMotionFirstDerivative, meanMotionSecondDerivative, bStar to zero
+        double meanMotionFirstDerivative = 0;
+        double meanMotionSecondDerivative = 0;
+        double bStar = 0;
+
+        // Get the inner orbit and convert to Keplerian orbit if needed
+        KeplerianOrbit keplerianOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(model.getPropagator().getInitialState().getOrbit());
+        AbsoluteDate epoch = model.getPropagator().getInitialState().getDate();
+        double e = keplerianOrbit.getE();
+        double i = keplerianOrbit.getI();
+        double meanMotion = keplerianOrbit.getKeplerianMeanMotion();
+        int ephemerisType = TLE.DEFAULT;
+
+        double pa = keplerianOrbit.getPerigeeArgument();
+        double raan = keplerianOrbit.getRightAscensionOfAscendingNode();
+        double meanAnomaly = keplerianOrbit.getMeanAnomaly();
+
+        return new TLE(satNumber, classification, launchYear, launchNumber, launchPiece, ephemerisType, elementNumber,
+                epoch, meanMotion, meanMotionFirstDerivative, meanMotionSecondDerivative, e, i, pa, raan, meanAnomaly, revolutionNumberAtEpoch,
+                bStar);
     }
 }

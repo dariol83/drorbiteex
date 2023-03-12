@@ -25,6 +25,7 @@ import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -57,6 +58,7 @@ public class OrbitPane implements Initializable {
     public Button editOrbitButton;
     public Button deleteOrbitButton;
     public MenuItem orbitErrorAnalysisButton;
+    public MenuItem exportTleOrbitButton;
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
     // Ground track combo selection
     public ComboBox<Object> groundTrackCombo;
@@ -110,6 +112,7 @@ public class OrbitPane implements Initializable {
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         // Button enablement
         exportOemOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        exportTleOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         orbitErrorAnalysisButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         editOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         deleteOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
@@ -160,7 +163,15 @@ public class OrbitPane implements Initializable {
     }
 
     public void onNewOrbitAction(ActionEvent actionEvent) {
-        Orbit gs = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow());
+        addNewTleOrbit(null, null);
+    }
+
+    public void onNewOrbitAction(Orbit referenceOrbit, String tle) {
+        addNewTleOrbit(referenceOrbit, tle);
+    }
+
+    private void addNewTleOrbit(Orbit referenceOrbit, String tle) {
+        Orbit gs = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), referenceOrbit, tle);
         if(gs != null) {
             BackgroundThread.runLater(() -> manager.getOrbitManager().newOrbit(
                     gs.getCode(), gs.getName(), gs.getColor(), gs.isVisible(), gs.getModel()
@@ -244,7 +255,7 @@ public class OrbitPane implements Initializable {
                     BackgroundThread.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
             } else if(orbit.getModel()  instanceof TleOrbitModel) {
-                Orbit ob = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
+                Orbit ob = TleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, null);
                 if (ob != null) {
                     BackgroundThread.runLater(() -> originalOrbit.getOrbit().update(ob));
                 }
@@ -373,6 +384,27 @@ public class OrbitPane implements Initializable {
                     DialogUtils.alert(taskName, "Orbit error computation for " + gs.getOrbit().getName(),
                             "Error: " + taskResult.getError().getMessage());
                 }
+            }
+        }
+    }
+
+    public void onExportTleOrbitAction(ActionEvent actionEvent) {
+        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        if(originalOrbit != null) {
+            Orbit orbit = originalOrbit.getOrbit();
+            TleGenerationRequest tleGenerationRequest = ExportTleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
+            if(tleGenerationRequest != null) {
+                BackgroundThread.runLater(() -> {
+                    try {
+                        final String result = manager.getOrbitManager().exportTle(tleGenerationRequest);
+                        Platform.runLater(() -> {
+                            TleReportDialog.openDialog(orbitList.getScene().getWindow(), result, tleGenerationRequest, this);
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Platform.runLater(() -> DialogUtils.alert("TLE Export", "Orbit of " + orbit.getName() + " not exported", "Error: " + e.getMessage()));
+                    }
+                });
             }
         }
     }

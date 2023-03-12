@@ -113,7 +113,7 @@ public class ErrorReportDialog implements Initializable {
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
             ErrorReportDialog controller = loader.getController();
-            controller.initialise(description, datasetLabels, points);
+            controller.configure(description, datasetLabels, points);
 
             d.getDialogPane().setContent(root);
             d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
@@ -124,7 +124,7 @@ public class ErrorReportDialog implements Initializable {
         }
     }
 
-    private void initialise(String description, String[] datasetLabels, Map<String, List<ErrorPoint>> points) {
+    private void configure(String description, String[] datasetLabels, Map<String, List<ErrorPoint>> points) {
         this.periodLabel.setText(description);
 
         if(points.isEmpty()) {

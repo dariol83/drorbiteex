@@ -120,6 +120,10 @@ public class TleOrbitDialog implements Initializable {
         sb.append(String.format("%-20s:\t%d%n", name, argument));
     }
 
+    private static void addLine(StringBuilder sb, char argument, String name) {
+        sb.append(String.format("%-20s:\t%s%n", name, argument));
+    }
+
     private void validate() {
         try {
             if(codeText.getText().isBlank()) {
@@ -145,11 +149,14 @@ public class TleOrbitDialog implements Initializable {
     private void setOriginalOrbit(Orbit gs) {
         codeText.setText(gs.getCode());
         nameText.setText(gs.getName());
-        nameText.setDisable(true); // Let's avoid mess with change of names... only code is displayed anyway
         if(gs.getModel() instanceof TleOrbitModel) {
             tleTextArea.setText(((TleOrbitModel) gs.getModel()).getTle());
         }
         colorPicker.setValue(Color.valueOf(gs.getColor()));
+    }
+
+    private void setTle(String tle) {
+        tleTextArea.setText(tle);
     }
 
     public Orbit getResult() {
@@ -157,10 +164,10 @@ public class TleOrbitDialog implements Initializable {
     }
 
     public static Orbit openDialog(Window owner) {
-        return openDialog(owner, null);
+        return openDialog(owner, null, null);
     }
 
-    public static Orbit openDialog(Window owner, Orbit gs) {
+    public static Orbit openDialog(Window owner, Orbit initialOrbit, String tle) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -174,8 +181,11 @@ public class TleOrbitDialog implements Initializable {
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
             TleOrbitDialog controller = loader.getController();
-            if(gs != null) {
-                controller.setOriginalOrbit(gs);
+            if(initialOrbit != null) {
+                controller.setOriginalOrbit(initialOrbit);
+            }
+            if(tle != null) {
+                controller.setTle(tle);
             }
 
             d.getDialogPane().setContent(root);

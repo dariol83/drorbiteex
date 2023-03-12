@@ -137,7 +137,7 @@ public class TrackingErrorAnalysisDialog implements Initializable {
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
             TrackingErrorAnalysisDialog controller = loader.getController();
-            controller.initialise(d, gs, orbits);
+            controller.configure(d, gs, orbits);
 
             d.getDialogPane().setContent(root);
             d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
@@ -156,7 +156,7 @@ public class TrackingErrorAnalysisDialog implements Initializable {
         }
     }
 
-    private void initialise(Dialog<?> d, GroundStation gs, List<Orbit> orbits) {
+    private void configure(Dialog<?> d, GroundStation gs, List<Orbit> orbits) {
         this.dialog = d;
         this.groundStation = gs;
         this.startDatePicker.setValue(DialogUtils.toDateText(lastStartDate));
