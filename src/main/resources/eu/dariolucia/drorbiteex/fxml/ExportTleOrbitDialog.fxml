@@ -69,6 +69,13 @@
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Epoch" />
+                  <DatePicker fx:id="epochDatePicker" minWidth="150.0" prefWidth="150.0" promptText="DD/MM/YYYY" />
+                  <TextField fx:id="epochTimeText" minWidth="100.0" prefWidth="100.0" promptText="HH:MM:SS" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Revolutions at epoch" />
                   <TextField fx:id="revolutionsText" minWidth="150.0" prefWidth="150.0" />
                </children>
@@ -77,6 +84,13 @@
                <children>
                   <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Element Number" />
                   <TextField fx:id="elementNumberText" minWidth="150.0" prefWidth="150.0" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label minWidth="150.0" prefHeight="24.0" prefWidth="150.0" text="Load from existing TLE" />
+                  <ComboBox fx:id="tleOrbitLoadCombo" minWidth="150.0" prefWidth="150.0" />
+                  <Button fx:id="tleOrbitLoadButton" minWidth="100.0" prefWidth="100.0" text="Load" onAction="#onLoadDataFromTleOrbitAction" />
                </children>
             </HBox>
          </children>

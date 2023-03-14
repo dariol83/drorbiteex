@@ -20,19 +20,23 @@ import eu.dariolucia.drorbiteex.model.orbit.OemOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Modality;
 import javafx.stage.Window;
+import javafx.util.StringConverter;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.time.TimeScalesFactory;
 
 import java.net.URL;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -48,6 +52,10 @@ public class ExportTleOrbitDialog implements Initializable {
     public TextField launchPieceText;
     public TextField revolutionsText;
     public TextField elementNumberText;
+    public DatePicker epochDatePicker;
+    public TextField epochTimeText;
+    public ComboBox<Orbit> tleOrbitLoadCombo;
+    public Button tleOrbitLoadButton;
     private String error;
     private Orbit orbit;
 
@@ -62,6 +70,8 @@ public class ExportTleOrbitDialog implements Initializable {
         launchPieceText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         revolutionsText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         elementNumberText.textProperty().addListener((prop, oldVal, newVal) -> validate());
+        epochDatePicker.valueProperty().addListener((prop, oldVal, newVal) -> validate());
+        epochTimeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         validate();
     }
@@ -71,6 +81,12 @@ public class ExportTleOrbitDialog implements Initializable {
                 throw new IllegalStateException("Start date field is blank");
             }
             if(startTimeText.getText().isBlank()) {
+                throw new IllegalStateException("Start time field is blank");
+            }
+            if(epochDatePicker.valueProperty().isNull().get()) {
+                throw new IllegalStateException("Start date field is blank");
+            }
+            if(epochTimeText.getText().isBlank()) {
                 throw new IllegalStateException("Start time field is blank");
             }
 
@@ -92,6 +108,7 @@ public class ExportTleOrbitDialog implements Initializable {
             Integer.parseInt(elementNumberText.getText());
 
             DialogUtils.getDate(startDatePicker, startTimeText);
+            DialogUtils.getDate(epochDatePicker, epochTimeText);
             error = null;
             validData.setValue(true);
         } catch (Exception e) {
@@ -103,12 +120,14 @@ public class ExportTleOrbitDialog implements Initializable {
     public TleGenerationRequest getResult() {
         try {
             Date start = DialogUtils.getDate(startDatePicker, startTimeText);
+            Date epoch = DialogUtils.getDate(epochDatePicker, epochTimeText);
             return new TleGenerationRequest(orbit, start,
                     Integer.parseInt(satNumberText.getText()),
                     classificationText.getText().charAt(0),
                     Integer.parseInt(launchYearText.getText()),
                     Integer.parseInt(launchNumberText.getText()),
                     launchPieceText.getText(),
+                    epoch,
                     Integer.parseInt(revolutionsText.getText()),
                     Integer.parseInt(elementNumberText.getText()));
         } catch (Exception e) {
@@ -117,7 +136,7 @@ public class ExportTleOrbitDialog implements Initializable {
         }
     }
 
-    public static TleGenerationRequest openDialog(Window owner, Orbit gs) {
+    public static TleGenerationRequest openDialog(Window owner, Orbit gs, List<Orbit> orbitList) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -131,7 +150,7 @@ public class ExportTleOrbitDialog implements Initializable {
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
             ExportTleOrbitDialog controller = loader.getController();
-            controller.configure(gs);
+            controller.configure(gs, orbitList);
 
             d.getDialogPane().setContent(root);
             d.getDialogPane().getStylesheets().addAll(root.getStylesheets());
@@ -150,22 +169,14 @@ public class ExportTleOrbitDialog implements Initializable {
         }
     }
 
-    private void configure(Orbit gs) {
+    private void configure(Orbit gs, List<Orbit> orbitList) {
         this.orbit = gs;
-        Date refDate = new Date();
+        Date refDate;
         if(gs.getModel() instanceof TleOrbitModel) {
-            String tleFromModel = ((TleOrbitModel) gs.getModel()).getTle();
-            String[] split = tleFromModel.split("\n", -1);
-            TLE originalTle = new TLE(split[0], split[1]);
+            TLE originalTle = getTleFromOrbit(gs);
             refDate = originalTle.getDate().toDate(TimeScalesFactory.getUTC());
             // Set fields to read-only, update fields
-            satNumberText.setText(String.valueOf(originalTle.getSatelliteNumber()));
-            classificationText.setText(String.valueOf(originalTle.getClassification()));
-            launchYearText.setText(String.valueOf(originalTle.getLaunchYear()));
-            launchNumberText.setText(String.valueOf(originalTle.getLaunchNumber()));
-            launchPieceText.setText(originalTle.getLaunchPiece());
-            revolutionsText.setText(String.valueOf(originalTle.getRevolutionNumberAtEpoch()));
-            elementNumberText.setText(String.valueOf(originalTle.getElementNumber()));
+            setTleFields(originalTle);
 
             satNumberText.setDisable(true);
             classificationText.setDisable(true);
@@ -174,10 +185,70 @@ public class ExportTleOrbitDialog implements Initializable {
             launchPieceText.setDisable(true);
             revolutionsText.setDisable(true);
             elementNumberText.setDisable(true);
-        } else if(gs.getModel() instanceof OemOrbitModel) {
+            epochTimeText.setDisable(true);
+            epochDatePicker.setDisable(true);
+            tleOrbitLoadCombo.setDisable(true);
+            tleOrbitLoadButton.setDisable(true);
+        } else {
             refDate = gs.getModel().getPropagator().getInitialState().getDate().toDate(TimeScalesFactory.getUTC());
+            // Configure the TLE load button
+            tleOrbitLoadCombo.setConverter(new StringConverter<>() {
+                @Override
+                public String toString(Orbit o) {
+                    if(o == null) {
+                        return "";
+                    } else {
+                        return o.getName();
+                    }
+                }
+
+                @Override
+                public Orbit fromString(String s) {
+                    if(s.isBlank()) {
+                        return null;
+                    }
+                    for(Orbit o : tleOrbitLoadCombo.getItems()) {
+                        if(o.getName().equals(s)) {
+                            return o;
+                        }
+                    }
+                    return null;
+                }
+            });
+            for(Orbit o : orbitList) {
+                if(o.getModel() instanceof TleOrbitModel) {
+                    this.tleOrbitLoadCombo.getItems().add(o);
+                }
+            }
         }
         this.startDatePicker.setValue(DialogUtils.toDateText(refDate));
         this.startTimeText.setText(DialogUtils.toTimeText(refDate));
+    }
+
+    private void setTleFields(TLE originalTle) {
+        Date refDate = originalTle.getDate().toDate(TimeScalesFactory.getUTC());
+        satNumberText.setText(String.valueOf(originalTle.getSatelliteNumber()));
+        classificationText.setText(String.valueOf(originalTle.getClassification()));
+        launchYearText.setText(String.valueOf(originalTle.getLaunchYear()));
+        launchNumberText.setText(String.valueOf(originalTle.getLaunchNumber()));
+        launchPieceText.setText(originalTle.getLaunchPiece());
+        revolutionsText.setText(String.valueOf(originalTle.getRevolutionNumberAtEpoch()));
+        elementNumberText.setText(String.valueOf(originalTle.getElementNumber()));
+        epochDatePicker.setValue(DialogUtils.toDateText(refDate));
+        epochTimeText.setText(DialogUtils.toTimeText(refDate));
+    }
+
+    public void onLoadDataFromTleOrbitAction(ActionEvent actionEvent) {
+        Orbit selected = this.tleOrbitLoadCombo.getValue();
+        if(selected != null) {
+            TLE originalTle = getTleFromOrbit(selected);
+            setTleFields(originalTle);
+        }
+    }
+
+    private static TLE getTleFromOrbit(Orbit selected) {
+        String tleFromModel = ((TleOrbitModel) selected.getModel()).getTle();
+        String[] split = tleFromModel.split("\n", -1);
+        return new TLE(split[0], split[1]);
     }
 }

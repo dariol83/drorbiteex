@@ -79,7 +79,7 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
 
     public ToggleButton minimapButton;
     public ToggleButton toggle3DviewButton;
-    private ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
+    private final ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
     // Label to indicate processing on going
     public Label processingLabel;

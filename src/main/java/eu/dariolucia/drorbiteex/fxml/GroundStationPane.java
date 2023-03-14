@@ -152,7 +152,7 @@ public class GroundStationPane implements Initializable {
             // Get all satellites in visibility of the ground station and add them to the polar plot
             Map<Orbit, TrackPoint> points = b.getGroundStation().getAllCurrentVisibilities();
             for(Map.Entry<Orbit, TrackPoint> e : points.entrySet()) {
-                groundStationPolarPlot.setSpacecraftPosition(e.getKey().getId(), e.getKey().getName(), new Point2D(e.getValue().getAzimuth(), e.getValue().getElevation()), Color.valueOf(e.getKey().getColor()));
+                groundStationPolarPlot.setSpacecraftPosition(e.getKey(), e.getKey().getName(), new Point2D(e.getValue().getAzimuth(), e.getValue().getElevation()), Color.valueOf(e.getKey().getColor()));
             }
         }
     }
@@ -353,7 +353,7 @@ public class GroundStationPane implements Initializable {
                 groundStationList.getSelectionModel().getSelectedItem().getGroundStation().getId().equals(groundStation.getId())) {
             // Update ground station plot
             groundStationPolarPlot.setSpacecraftPosition(
-                    orbit.getId(),
+                    orbit,
                     orbit.getName(),
                     point != null ? new Point2D(point.getAzimuth(), point.getElevation()) : null,
                     Color.valueOf(orbit.getColor()));

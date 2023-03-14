@@ -115,8 +115,8 @@ public class CollinearityReportDialog implements Initializable {
             targetElAzLabel.setText(formatElAz(event.getTargetPoint()));
             angularSeparationLabel.setText(formatDouble(event.getAngularSeparation(), 3));
 
-            polarPlotController.setSpacecraftPosition(event.getReferenceOrbit().getId(), event.getReferenceOrbit().getName(), toPoint(event.getReferencePoint()), Color.valueOf(event.getReferenceOrbit().getColor()));
-            polarPlotController.setSpacecraftPosition(event.getTargetOrbit().getId(), event.getTargetOrbit().getName(), toPoint(event.getTargetPoint()), Color.valueOf(event.getTargetOrbit().getColor()));
+            polarPlotController.setSpacecraftPosition(event.getReferenceOrbit(), event.getReferenceOrbit().getName(), toPoint(event.getReferencePoint()), Color.valueOf(event.getReferenceOrbit().getColor()));
+            polarPlotController.setSpacecraftPosition(event.getTargetOrbit(), event.getTargetOrbit().getName(), toPoint(event.getTargetPoint()), Color.valueOf(event.getTargetOrbit().getColor()));
         }
     }
 

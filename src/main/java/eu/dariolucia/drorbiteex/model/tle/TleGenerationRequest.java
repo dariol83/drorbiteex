@@ -30,10 +30,11 @@ public class TleGenerationRequest {
     private final int launchNumber;
     private final String launchPiece;
     private final int revolutionNumberAtEpoch;
+    private final Date epoch;
     private final int elementNumber;
 
     public TleGenerationRequest(Orbit orbit, Date startTime,
-                                int satNumber, char classification, int launchYear, int launchNumber, String launchPiece, int revolutionNumberAtEpoch, int elementNumber) {
+                                int satNumber, char classification, int launchYear, int launchNumber, String launchPiece, Date epoch, int revolutionNumberAtEpoch, int elementNumber) {
         this.orbit = orbit;
         this.startTime = startTime;
         this.satNumber = satNumber;
@@ -41,6 +42,7 @@ public class TleGenerationRequest {
         this.launchYear = launchYear;
         this.launchNumber = launchNumber;
         this.launchPiece = launchPiece;
+        this.epoch = epoch;
         this.revolutionNumberAtEpoch = revolutionNumberAtEpoch;
         this.elementNumber = elementNumber;
     }
@@ -79,5 +81,9 @@ public class TleGenerationRequest {
 
     public int getElementNumber() {
         return elementNumber;
+    }
+
+    public Date getEpoch() {
+        return epoch;
     }
 }

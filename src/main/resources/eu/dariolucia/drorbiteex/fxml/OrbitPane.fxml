@@ -163,12 +163,25 @@
                             <Tooltip text="Toggle satellite autotrack" />
                         </tooltip>
                     </ToggleButton>
-                    <Label text="Visibility" />
-                    <ComboBox fx:id="groundTrackCombo" maxHeight="32" minHeight="32" minWidth="150.0" onAction="#onGroundTrackComboSelected">
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="gsOrbitLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="160.0" minHeight="32" minWidth="160.0" prefWidth="160.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
                         <tooltip>
-                            <Tooltip text="Activate ground station visibility circles" />
+                            <Tooltip text="Selected ground station visibility" />
                         </tooltip>
-                    </ComboBox>
+                    </Label>
+                    <ToggleButton fx:id="gsVisibilityButton" mnemonicParsing="false" onAction="#onGsVisibilityButtonAction">
+                        <graphic>
+                            <ImageView pickOnBounds="true" preserveRatio="true">
+                                <image>
+                                    <Image url="@/circle-double.png" />
+                                </image>
+                            </ImageView>
+                        </graphic>
+                        <tooltip>
+                            <Tooltip text="Toggle ground station visibility" />
+                        </tooltip>
+                    </ToggleButton>
+
                 </items>
                 </ToolBar>
                 <Label fx:id="orbitInfoLabel" maxWidth="1.7976931348623157E308" minHeight="24" styleClass="label-clear" text="Orbit Information">

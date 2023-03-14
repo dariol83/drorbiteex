@@ -860,3 +860,6 @@ HBox, VBox {
     -fx-padding: 1px ;
 }
 
+.progress-indicator {
+    -fx-progress-color: lime;
+}

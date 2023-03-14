@@ -21,23 +21,19 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.paint.Color;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
 
@@ -138,17 +134,17 @@ public class PolarPlot implements Initializable {
             refresh();
         }
     }
-    public void setSpacecraftPosition(UUID id, String name, Point2D position, Color color) {
+    public void setSpacecraftPosition(Orbit orbit, String name, Point2D position, Color color) {
         if(position != null) {
-            SpacecraftTrackPoint stp = new SpacecraftTrackPoint(name, position);
-            this.positionMap.put(id, stp);
+            SpacecraftTrackPoint stp = new SpacecraftTrackPoint(name, position, orbit);
+            this.positionMap.put(orbit.getId(), stp);
             if(color != null) {
-                this.colorMap.put(id, color);
+                this.colorMap.put(orbit.getId(), color);
             }
 
             refresh();
         } else {
-            this.positionMap.remove(id);
+            this.positionMap.remove(orbit.getId());
 
             refresh();
         }
@@ -205,6 +201,9 @@ public class PolarPlot implements Initializable {
 
     private void drawSpacecraftLocation(PolarPlotPainter painter) {
         for(Map.Entry<UUID, SpacecraftTrackPoint> entry : this.positionMap.entrySet()) {
+            if(!entry.getValue().getOrbit().isVisible()) {
+                return;
+            }
             Color color = this.colorMap.get(entry.getKey());
             Point2D location = entry.getValue().getPoint();
             if (this.spacecraftDrawStrategy != null) {
@@ -249,7 +248,7 @@ public class PolarPlot implements Initializable {
                 if (currentTrack.contains(currentLocation.getTime())) {
                     // set spacecraft position
                     Point2D currentScPos = new Point2D(currentLocation.getAzimuth(), currentLocation.getElevation());
-                    setSpacecraftPosition(orbit.getId(), orbit.getName(), currentScPos, Color.valueOf(orbit.getColor()));
+                    setSpacecraftPosition(orbit, orbit.getName(), currentScPos, Color.valueOf(orbit.getColor()));
                 }
             }
         }
@@ -299,13 +298,12 @@ public class PolarPlot implements Initializable {
 
         private Point2D point;
 
-        public SpacecraftTrackPoint(String name) {
-            this(name, null);
-        }
+        private final Orbit orbit;
 
-        public SpacecraftTrackPoint(String name, Point2D point) {
+        public SpacecraftTrackPoint(String name, Point2D point, Orbit orbit) {
             this.name = name;
             this.point = point;
+            this.orbit = orbit;
         }
 
         public String getName() {
@@ -314,6 +312,10 @@ public class PolarPlot implements Initializable {
 
         public Point2D getPoint() {
             return point;
+        }
+
+        public Orbit getOrbit() {
+            return orbit;
         }
 
         public void setPoint(Point2D point) {

@@ -185,7 +185,7 @@ public class OrbitManager {
             String[] split = tleFromModel.split("\n", -1);
             initialTle = new TLE(split[0], split[1]);
         } else {
-            // Original orbit is a OEM
+            // Original orbit is not a TLE
             initialTle = initialiseTleFromOem(toPropagate.getModel(), tleGenerationRequest);
         }
         // Now derive the TLE
@@ -200,6 +200,8 @@ public class OrbitManager {
         int launchNumber = request.getLaunchNumber();
         String launchPiece = request.getLaunchPiece();
         int revolutionNumberAtEpoch = request.getRevolutionNumberAtEpoch();
+        Date epochDate = request.getEpoch();
+        AbsoluteDate epoch = TimeUtils.toAbsoluteDate(epochDate);
         int elementNumber = request.getElementNumber();
 
         // Set meanMotionFirstDerivative, meanMotionSecondDerivative, bStar to zero
@@ -209,7 +211,6 @@ public class OrbitManager {
 
         // Get the inner orbit and convert to Keplerian orbit if needed
         KeplerianOrbit keplerianOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(model.getPropagator().getInitialState().getOrbit());
-        AbsoluteDate epoch = model.getPropagator().getInitialState().getDate();
         double e = keplerianOrbit.getE();
         double i = keplerianOrbit.getI();
         double meanMotion = keplerianOrbit.getKeplerianMeanMotion();

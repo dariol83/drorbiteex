@@ -60,7 +60,7 @@ public class CelestrakDialog implements Initializable {
                 filteredList.setPredicate(s -> true);
             }
             else {
-                filteredList.setPredicate(s -> s.getName().contains(filter));
+                filteredList.setPredicate(s -> s.getName().toLowerCase().contains(filter.toLowerCase()));
             }
         });
     }

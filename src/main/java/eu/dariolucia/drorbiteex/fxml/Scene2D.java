@@ -277,7 +277,6 @@ public class Scene2D implements Initializable {
     public void configure(Region parentRegion) {
         scene2d.heightProperty().unbind();
         scene2d.widthProperty().unbind();
-
         scene2d.heightProperty().bind(parentRegion.heightProperty());
         scene2d.widthProperty().bind(parentRegion.widthProperty());
     }
@@ -315,8 +314,17 @@ public class Scene2D implements Initializable {
             }
         }
         if(orbitsSupplier != null) {
+            OrbitGraphics selectedOrbit = null;
             for (OrbitGraphics gs : orbitsSupplier.get()) {
-                gs.draw(gc, widgetViewport, latLonViewport, gs.equals(this.selectedOrbit));
+                if(gs.equals(this.selectedOrbit)) {
+                    selectedOrbit = gs;
+                } else {
+                    gs.draw(gc, widgetViewport, latLonViewport, false);
+                }
+            }
+            // Draw selected orbit at the end
+            if(selectedOrbit != null) {
+                selectedOrbit.draw(gc, widgetViewport, latLonViewport, true);
             }
         }
         gc.restore();

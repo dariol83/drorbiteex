@@ -33,6 +33,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
@@ -44,11 +45,11 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class OrbitPane implements Initializable {
-
-    private static final String NO_GROUND_TRACK = "             ";
+public class OrbitPane implements Initializable, IOrbitListener {
 
     public ListView<OrbitGraphics> orbitList;
+
+    public OrbitGraphics selectedGroundStationOrbit;
 
     // Orbit panel
     public OrbitDetailPanel orbitDetailPanelController;
@@ -59,54 +60,14 @@ public class OrbitPane implements Initializable {
     public Button deleteOrbitButton;
     public MenuItem orbitErrorAnalysisButton;
     public MenuItem exportTleOrbitButton;
+    public ToggleButton gsVisibilityButton;
+    public Label gsOrbitLabel;
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
-    // Ground track combo selection
-    public ComboBox<Object> groundTrackCombo;
     private ModelManager manager;
     private Runnable visibilitySelectionHandler;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Handle ground track list
-        groundTrackCombo.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Object o) {
-                if (o.equals(NO_GROUND_TRACK)) {
-                    return NO_GROUND_TRACK;
-                } else if (o instanceof OrbitGraphics) {
-                    return ((OrbitGraphics) o).getName();
-                } else {
-                    throw new IllegalStateException("Wrong conversion object: " + o);
-                }
-            }
-
-            @Override
-            public Object fromString(String s) {
-                if (s.equals(NO_GROUND_TRACK)) {
-                    return NO_GROUND_TRACK;
-                } else {
-                    for (OrbitGraphics ao : getOrbitGraphics()) {
-                        if (ao.getName().equals(s)) {
-                            return ao;
-                        }
-                    }
-                    throw new IllegalStateException("Wrong conversion string: " + s);
-                }
-            }
-        });
-        groundTrackCombo.getItems().add(NO_GROUND_TRACK);
-        getOrbitGraphics().addListener((ListChangeListener<OrbitGraphics>) c -> {
-            while (c.next()) {
-                for (OrbitGraphics remitem : c.getRemoved()) {
-                    groundTrackCombo.getItems().remove(remitem);
-                }
-                for (OrbitGraphics additem : c.getAddedSubList()) {
-                    groundTrackCombo.getItems().add(additem);
-                }
-            }
-        });
-        groundTrackCombo.getSelectionModel().select(0);
-
         orbitList.setCellFactory(CheckBoxListCell.forListView(OrbitGraphics::visibleProperty));
         orbitList.getSelectionModel().selectedItemProperty().addListener((o,a,b) -> updateOrbitPanelSelection(a, b));
         orbitList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -123,17 +84,8 @@ public class OrbitPane implements Initializable {
         this.visibilitySelectionHandler = handler;
     }
 
-    public void onGroundTrackComboSelected(ActionEvent actionEvent) {
-        this.visibilitySelectionHandler.run();
-    }
-
     public OrbitGraphics getSelectedOrbit() {
-        Object selectedSc = groundTrackCombo.getSelectionModel().getSelectedItem();
-        if(selectedSc.equals(NO_GROUND_TRACK)) {
-            return null;
-        } else {
-            return (OrbitGraphics) selectedSc;
-        }
+        return this.selectedGroundStationOrbit;
     }
 
     public ObservableList<OrbitGraphics> getOrbitGraphics() {
@@ -392,7 +344,8 @@ public class OrbitPane implements Initializable {
         OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
             Orbit orbit = originalOrbit.getOrbit();
-            TleGenerationRequest tleGenerationRequest = ExportTleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
+            List<Orbit> orbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
+            TleGenerationRequest tleGenerationRequest = ExportTleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, orbits);
             if(tleGenerationRequest != null) {
                 BackgroundThread.runLater(() -> {
                     try {
@@ -407,5 +360,62 @@ public class OrbitPane implements Initializable {
                 });
             }
         }
+    }
+
+    public void onGsVisibilityButtonAction(ActionEvent actionEvent) {
+        updateSelectedOrbit(null);
+        if(gsVisibilityButton.isSelected()) {
+            // Open menu
+            ContextMenu menu = new ContextMenu();
+            for(OrbitGraphics og : getOrbitGraphics()) {
+                MenuItem menuItem = new MenuItem(og.getOrbit().getCode());
+                menuItem.setOnAction(o -> {
+                    updateSelectedOrbit(og);
+                });
+                menu.getItems().add(menuItem);
+            }
+            menu.setOnHiding(o -> {
+                if(this.selectedGroundStationOrbit == null) {
+                    gsVisibilityButton.setSelected(false);
+                }
+            });
+            menu.show(this.gsVisibilityButton, Side.LEFT, 0, 0);
+        }
+    }
+
+    private void updateSelectedOrbit(OrbitGraphics og) {
+        if(this.selectedGroundStationOrbit != null) {
+            this.selectedGroundStationOrbit.getOrbit().removeListener(this);
+        }
+        this.selectedGroundStationOrbit = og;
+        if(this.selectedGroundStationOrbit != null) {
+            this.selectedGroundStationOrbit.getOrbit().addListener(this);
+        }
+        this.gsOrbitLabel.setText(og == null ? "---" : og.getOrbit().getCode());
+        this.visibilitySelectionHandler.run();
+    }
+
+    @Override
+    public void orbitAdded(OrbitManager manager, Orbit orbit) {
+        // Nothing to do
+    }
+
+    @Override
+    public void orbitRemoved(OrbitManager manager, Orbit orbit) {
+        // Nothing to do
+    }
+
+    @Override
+    public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
+        Platform.runLater(() -> {
+            if(this.selectedGroundStationOrbit != null && orbit.equals(this.selectedGroundStationOrbit.getOrbit())) {
+                this.gsOrbitLabel.setText(orbit.getName());
+            }
+        });
+    }
+
+    @Override
+    public void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
+        // Nothing to do
     }
 }
