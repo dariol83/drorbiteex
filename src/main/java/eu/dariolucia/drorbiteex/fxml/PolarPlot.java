@@ -202,7 +202,7 @@ public class PolarPlot implements Initializable {
     private void drawSpacecraftLocation(PolarPlotPainter painter) {
         for(Map.Entry<UUID, SpacecraftTrackPoint> entry : this.positionMap.entrySet()) {
             if(!entry.getValue().getOrbit().isVisible()) {
-                return;
+                continue;
             }
             Color color = this.colorMap.get(entry.getKey());
             Point2D location = entry.getValue().getPoint();
