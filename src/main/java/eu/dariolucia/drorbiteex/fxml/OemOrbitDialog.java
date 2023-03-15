@@ -16,7 +16,6 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.orbit.OemOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import javafx.application.Platform;
@@ -56,6 +55,8 @@ public class OemOrbitDialog implements Initializable {
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     public ProgressIndicator oemProgress;
 
+    private String oemString;
+
     private String error;
 
     @Override
@@ -71,12 +72,11 @@ public class OemOrbitDialog implements Initializable {
             if(codeText.getText().isBlank()) {
                 throw new IllegalStateException("Code field is blank");
             }
-            if(oemTextArea.getText().isBlank()) {
-                throw new IllegalStateException("OEM field is blank");
+            if(oemTextArea.getText().isBlank() || oemString == null) {
+                throw new IllegalStateException("OEM is blank/not loaded");
             }
-            // TODO: no, load the OEM in memory, but display only the first XXX lines here
             OemParser parser = new ParserBuilder().buildOemParser();
-            parser.parse(new DataSource("oem", () -> new ByteArrayInputStream(oemTextArea.getText().getBytes(StandardCharsets.UTF_8))));
+            parser.parse(new DataSource("oem", () -> new ByteArrayInputStream(oemString.getBytes(StandardCharsets.UTF_8))));
             error = null;
             validData.setValue(true);
         } catch (Exception e) {
@@ -90,12 +90,21 @@ public class OemOrbitDialog implements Initializable {
         nameText.setText(gs.getName());
         colorPicker.setValue(Color.valueOf(gs.getColor()));
         if(gs.getModel() instanceof OemOrbitModel) {
-            oemTextArea.setText(((OemOrbitModel) gs.getModel()).getOem());
+            oemString = ((OemOrbitModel) gs.getModel()).getOem();
+            updateTextAreaFromOemString();
+        }
+    }
+
+    private void updateTextAreaFromOemString() {
+        if(oemString.length() > 5000) {
+            oemTextArea.setText("-- OEM file too large to be displayed --");
+        } else {
+            oemTextArea.setText(oemString);
         }
     }
 
     public Orbit getResult() {
-        return new Orbit(UUID.randomUUID(), codeText.getText(), nameText.getText(), colorPicker.getValue().toString(), true, new OemOrbitModel(oemTextArea.getText()));
+        return new Orbit(UUID.randomUUID(), codeText.getText(), nameText.getText(), colorPicker.getValue().toString(), true, new OemOrbitModel(oemString));
     }
 
     public static Orbit openDialog(Window owner) {
@@ -155,7 +164,8 @@ public class OemOrbitDialog implements Initializable {
                     String newOem = readOem(selected);
                     Platform.runLater(() -> {
                         if (newOem != null) {
-                            oemTextArea.setText(newOem);
+                            oemString = newOem;
+                            updateTextAreaFromOemString();
                         }
                         oemTextArea.setDisable(false);
                         oemProgress.setVisible(false);
@@ -163,6 +173,7 @@ public class OemOrbitDialog implements Initializable {
                 } catch (Exception e) {
                     e.printStackTrace();
                     Platform.runLater(() -> {
+                        oemString = null;
                         oemTextArea.setText("--- Error reading file ---");
                         oemTextArea.setDisable(false);
                         oemProgress.setVisible(false);

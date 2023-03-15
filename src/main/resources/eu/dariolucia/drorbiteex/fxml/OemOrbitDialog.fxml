@@ -61,7 +61,7 @@
                   <Label minWidth="150.0" prefWidth="150.0" text="OEM" />
                   <StackPane minWidth="420.0" prefHeight="100.0" prefWidth="420.0">
                      <children>
-                        <TextArea fx:id="oemTextArea" />
+                        <TextArea fx:id="oemTextArea" editable="false"/>
                         <ProgressIndicator fx:id="oemProgress" visible="false" />
                      </children>
                   </StackPane>
