@@ -20,6 +20,8 @@
   ~ limitations under the License.
   -->
 
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitConfigurationDialog">
    <children>
       <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -49,6 +51,16 @@
                <children>
                   <Label minWidth="250.0" prefHeight="24.0" prefWidth="250.0" text="Recompute Full Data Interval (seconds)" />
                   <TextField fx:id="recomputeFullDataIntervalText" minWidth="100.0" prefWidth="100.0" promptText="600" />
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <ImageView fx:id="warningImage" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@/alert-outline-rod.png" />
+                     </image>
+                  </ImageView>
+                  <Label fx:id="warningLabel" HBox.hgrow="ALWAYS" styleClass="label-warning" prefHeight="24.0" visible="false" />
                </children>
             </HBox>
          </children>

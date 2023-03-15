@@ -74,6 +74,7 @@ public class OemOrbitDialog implements Initializable {
             if(oemTextArea.getText().isBlank()) {
                 throw new IllegalStateException("OEM field is blank");
             }
+            // TODO: no, load the OEM in memory, but display only the first XXX lines here
             OemParser parser = new ParserBuilder().buildOemParser();
             parser.parse(new DataSource("oem", () -> new ByteArrayInputStream(oemTextArea.getText().getBytes(StandardCharsets.UTF_8))));
             error = null;

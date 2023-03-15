@@ -69,7 +69,7 @@ public class GroundStationPane implements Initializable {
     public VBox polarPlotParent;
     public SplitMenuButton generateScheduleButton;
     public MenuItem exportVisibilityButton;
-    public Button exportGroundTrackButton;
+    public MenuItem exportGroundTrackButton;
     public MenuItem collinearityAnalysisButton;
     public MenuItem skyCoverageAnalysisButton;
     public MenuItem trackingErrorAnalysisButton;
@@ -114,6 +114,7 @@ public class GroundStationPane implements Initializable {
         exportVisibilityButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         exportGroundTrackButton.disableProperty().bind(passTable.getSelectionModel().selectedItemProperty().isNull());
 
+        polarPlotController.setIgnoreVisibility(true);
     }
 
     private void updatePolarPlotSize() {
@@ -579,7 +580,7 @@ public class GroundStationPane implements Initializable {
                     ErrorReportDialog.openDialog(groundStationList.getScene().getWindow(),
                             "Tracking error result for " + sgr.getGroundStation().getName(),
                             TimeUtils.formatDate(sgr.getStartTime()) + " - " + TimeUtils.formatDate(sgr.getEndTime()) + " - Reference orbit: " + sgr.getReferenceOrbit().getName(),
-                            new String[] {"Azimuth", "Elevation"},
+                            new String[] {"Azimuth (deg)", "Elevation (deg)"},
                             taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert(taskName, "Tracking error computation for " + gs.getGroundStation().getName(),

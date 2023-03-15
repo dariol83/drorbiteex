@@ -123,6 +123,21 @@ HBox, VBox {
     -fx-background-color: #282828;
 }
 
+.label-warning {
+    -fx-text-fill: palegoldenrod;
+    -fx-background-color: #282828;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+    -fx-border-color: palegoldenrod;
+}
+
+.image-warning {
+    -fx-background-color: palegoldenrod;
+    -fx-border-style: solid;
+    -fx-border-width: 1px;
+    -fx-border-color: palegoldenrod;
+}
+
 .radio-button {
     -fx-text-fill: lime;
     -fx-background-color: #101010;

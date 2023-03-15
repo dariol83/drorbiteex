@@ -33,6 +33,10 @@ public interface IOrbitListener {
         // Do nothing
     }
 
+    default void progressOrbitTimeUpdate(Date referenceTime, boolean isForced, long step, long total) {
+        // Do nothing
+    }
+
     default void endOrbitTimeUpdate(Date referenceTime, boolean isForced) {
         // Do nothing
     }

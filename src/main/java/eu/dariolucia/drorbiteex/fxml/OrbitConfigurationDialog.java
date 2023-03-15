@@ -17,30 +17,32 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
-import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import java.net.URL;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.UUID;
 
 public class OrbitConfigurationDialog implements Initializable {
-
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     public TextField beforePropagationStepsText;
     public TextField afterPropagationStepsText;
     public TextField propagationStepPeriodText;
     public TextField recomputeFullDataIntervalText;
+    public ImageView warningImage;
+    public Label warningLabel;
+
+    private int nbOrbits;
 
     private String error;
 
@@ -61,6 +63,12 @@ public class OrbitConfigurationDialog implements Initializable {
             Integer.parseInt(propagationStepPeriodText.getText());
             Integer.parseInt(recomputeFullDataIntervalText.getText());
 
+            if(performanceAssessmentPoor()) {
+                setWarning(" Potential performance issues ");
+            } else {
+                setWarning(null);
+            }
+
             error = null;
             validData.setValue(true);
         } catch (Exception e) {
@@ -69,7 +77,20 @@ public class OrbitConfigurationDialog implements Initializable {
         }
     }
 
-    private void initialise(OrbitParameterConfiguration p) {
+    private void setWarning(String message) {
+        warningLabel.setText(Objects.requireNonNullElse(message, ""));
+        warningImage.setVisible(message != null);
+        warningLabel.setVisible(message != null);
+    }
+
+    private boolean performanceAssessmentPoor() {
+        // Compute total points per orbit
+        long totalPoints = (Integer.parseInt(beforePropagationStepsText.getText()) + Integer.parseInt(afterPropagationStepsText.getText())) * nbOrbits;
+        return totalPoints > 5000;
+    }
+
+    private void initialise(OrbitParameterConfiguration p, int numOrbits) {
+        this.nbOrbits = numOrbits;
         beforePropagationStepsText.setText(String.valueOf(p.getBeforePropagationSteps()));
         afterPropagationStepsText.setText(String.valueOf(p.getAfterPropagationSteps()));
         propagationStepPeriodText.setText(String.valueOf(p.getStepInterval()));
@@ -84,7 +105,7 @@ public class OrbitConfigurationDialog implements Initializable {
                 );
     }
 
-    public static OrbitParameterConfiguration openDialog(Window owner, OrbitParameterConfiguration p) {
+    public static OrbitParameterConfiguration openDialog(Window owner, OrbitParameterConfiguration p, int numOrbits) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
@@ -99,7 +120,7 @@ public class OrbitConfigurationDialog implements Initializable {
             CssHolder.applyTo(root);
             OrbitConfigurationDialog controller = loader.getController();
             if(p != null) {
-                controller.initialise(p);
+                controller.initialise(p, numOrbits);
             }
 
             d.getDialogPane().setContent(root);

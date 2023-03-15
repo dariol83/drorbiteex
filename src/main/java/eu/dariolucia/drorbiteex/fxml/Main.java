@@ -81,7 +81,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public ToggleButton toggle3DviewButton;
     private final ChangeListener<Boolean> visibilityUpdateListener = (observableValue, aBoolean, t1) -> update2Dscene();
 
-    // Label to indicate processing on going
+    // Progress/Label to indicate processing on going
+    public ProgressBar processingProgressBar;
     public Label processingLabel;
 
     // Main scene parent node for 3D/2D views
@@ -304,9 +305,20 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     @Override
     public void startOrbitTimeUpdate(Date referenceTime, boolean isForced) {
         Platform.runLater(() -> {
-            processingLabel.setBackground(new Background(new BackgroundFill(Color.valueOf("green"), null, null)));
-            processingLabel.setText("UPDATE");
+            processingProgressBar.setBackground(new Background(new BackgroundFill(Color.PALEGOLDENROD, null, null)));
+            processingProgressBar.setProgress(0);
+            processingProgressBar.setVisible(true);
+            processingLabel.setText("0%");
             orbitUpdateInProgress = true;
+        });
+    }
+
+    @Override
+    public void progressOrbitTimeUpdate(Date referenceTime, boolean isForced, long step, long total) {
+        Platform.runLater(() -> {
+            double progress = (double) step / (double) total;
+            processingProgressBar.setProgress(progress);
+            processingLabel.setText(String.format("%d", (int) (progress * 100)) + "%");
         });
     }
 
@@ -314,7 +326,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public void endOrbitTimeUpdate(Date referenceTime, boolean isForced) {
         Platform.runLater(() -> {
             orbitUpdateInProgress = false;
-            processingLabel.setBackground(null);
+            processingProgressBar.setBackground(null);
+            processingProgressBar.setProgress(1.0);
+            processingProgressBar.setVisible(false);
             processingLabel.setText("IDLE");
             update2Dscene();
         });

@@ -58,6 +58,8 @@ public class PolarPlot implements Initializable {
 
     private ChangeListener<Object> refresher;
 
+    private boolean ignoreVisibility = false;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         this.refresher = (a,b,c) -> refresh();
@@ -99,6 +101,10 @@ public class PolarPlot implements Initializable {
         });
 
         refresh();
+    }
+
+    public void setIgnoreVisibility(boolean ignoreVisibility) {
+        this.ignoreVisibility = ignoreVisibility;
     }
 
     public Color getBackgroundColor() {
@@ -201,7 +207,7 @@ public class PolarPlot implements Initializable {
 
     private void drawSpacecraftLocation(PolarPlotPainter painter) {
         for(Map.Entry<UUID, SpacecraftTrackPoint> entry : this.positionMap.entrySet()) {
-            if(!entry.getValue().getOrbit().isVisible()) {
+            if(!ignoreVisibility && !entry.getValue().getOrbit().isVisible()) {
                 continue;
             }
             Color color = this.colorMap.get(entry.getKey());

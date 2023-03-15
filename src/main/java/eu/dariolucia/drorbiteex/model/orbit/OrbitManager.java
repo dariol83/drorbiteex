@@ -37,6 +37,7 @@ import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -143,9 +144,13 @@ public class OrbitManager {
         }
         this.lastReferenceTime = time;
         this.listeners.forEach(o -> o.startOrbitTimeUpdate(time, forceUpdate));
+        AtomicLong currentStep = new AtomicLong(0);
+        long totalSteps = this.orbits.values().size();
         for(Orbit ob : this.orbits.values()) {
             try {
                 ob.updateOrbitTime(time, forceUpdate);
+                long currentProgress = currentStep.incrementAndGet();
+                this.listeners.forEach(o -> o.progressOrbitTimeUpdate(time, forceUpdate, currentProgress, totalSteps));
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Error when propagating orbit for " + ob.getName(), e);
             }

@@ -58,6 +58,15 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
+                                <MenuItem fx:id="exportGroundTrackButton" mnemonicParsing="false" onAction="#onExportGroundTrackAction" text="Export ground track......">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/radar.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
                                 <MenuItem fx:id="collinearityAnalysisButton" mnemonicParsing="false" onAction="#onCollinearityAnalysisAction" text="Collinearity analysis...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">
@@ -90,21 +99,6 @@
                                 <Tooltip text="Generate schedule..." />
                             </tooltip>
                         </SplitMenuButton>
-
-
-                        <Button fx:id="exportGroundTrackButton" mnemonicParsing="false" onAction="#onExportGroundTrackAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/radar.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Export currently computed ground track..." />
-                            </tooltip>
-                        </Button>
-
                         <Button fx:id="editGroundStationButton" mnemonicParsing="false" onAction="#onEditGroundStationAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">

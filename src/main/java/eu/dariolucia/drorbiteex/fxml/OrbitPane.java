@@ -45,7 +45,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class OrbitPane implements Initializable, IOrbitListener {
+public class OrbitPane implements Initializable {
 
     public ListView<OrbitGraphics> orbitList;
 
@@ -241,7 +241,7 @@ public class OrbitPane implements Initializable, IOrbitListener {
 
     public void onSettingsOrbitAction(ActionEvent actionEvent) {
         OrbitParameterConfiguration originalProps = this.manager.getOrbitManager().getConfiguration();
-        OrbitParameterConfiguration props = OrbitConfigurationDialog.openDialog(orbitList.getParent().getScene().getWindow(), originalProps);
+        OrbitParameterConfiguration props = OrbitConfigurationDialog.openDialog(orbitList.getParent().getScene().getWindow(), originalProps, orbitList.getItems().size());
         if(props != null) {
             BackgroundThread.runLater(() -> manager.updateOrbitParameters(props)); // This triggers a full update
         }
@@ -327,7 +327,7 @@ public class OrbitPane implements Initializable, IOrbitListener {
                     ErrorReportDialog.openDialog(orbitList.getScene().getWindow(),
                             "Orbit error result for " + sgr.getReferenceOrbit().getName(),
                             TimeUtils.formatDate(sgr.getStartTime()) + " - " + TimeUtils.formatDate(sgr.getEndTime()) + " - Reference orbit: " + sgr.getReferenceOrbit().getName(),
-                            new String[] {"Position", "Velocity"},
+                            new String[] {"Position (m)", "Velocity (m/s)"},
                             taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert(taskName, "Orbit error computation for " + gs.getOrbit().getName(),
@@ -363,59 +363,29 @@ public class OrbitPane implements Initializable, IOrbitListener {
     }
 
     public void onGsVisibilityButtonAction(ActionEvent actionEvent) {
-        updateSelectedOrbit(null);
-        if(gsVisibilityButton.isSelected()) {
-            // Open menu
-            ContextMenu menu = new ContextMenu();
-            for(OrbitGraphics og : getOrbitGraphics()) {
-                MenuItem menuItem = new MenuItem(og.getOrbit().getCode());
-                menuItem.setOnAction(o -> {
-                    updateSelectedOrbit(og);
-                });
-                menu.getItems().add(menuItem);
-            }
-            menu.setOnHiding(o -> {
-                if(this.selectedGroundStationOrbit == null) {
-                    gsVisibilityButton.setSelected(false);
-                }
-            });
-            menu.show(this.gsVisibilityButton, Side.LEFT, 0, 0);
+        // Open menu
+        ContextMenu menu = new ContextMenu();
+        for(OrbitGraphics og : getOrbitGraphics()) {
+            CheckMenuItem menuItem = new CheckMenuItem(og.getOrbit().getCode());
+            menuItem.setSelected(this.selectedGroundStationOrbit != null && og.getOrbit().equals(this.selectedGroundStationOrbit.getOrbit()));
+            menuItem.setOnAction(o -> updateSelectedOrbit(menuItem.isSelected() ? og : null));
+            menu.getItems().add(menuItem);
         }
+        menu.setOnHiding(o -> gsVisibilityButton.setSelected(this.selectedGroundStationOrbit != null));
+        menu.show(this.gsVisibilityButton, Side.RIGHT, 0, 0);
     }
 
     private void updateSelectedOrbit(OrbitGraphics og) {
-        if(this.selectedGroundStationOrbit != null) {
-            this.selectedGroundStationOrbit.getOrbit().removeListener(this);
-        }
         this.selectedGroundStationOrbit = og;
-        if(this.selectedGroundStationOrbit != null) {
-            this.selectedGroundStationOrbit.getOrbit().addListener(this);
-        }
         this.gsOrbitLabel.setText(og == null ? "---" : og.getOrbit().getCode());
         this.visibilitySelectionHandler.run();
     }
 
-    @Override
-    public void orbitAdded(OrbitManager manager, Orbit orbit) {
-        // Nothing to do
-    }
-
-    @Override
-    public void orbitRemoved(OrbitManager manager, Orbit orbit) {
-        // Nothing to do
-    }
-
-    @Override
     public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
-        Platform.runLater(() -> {
-            if(this.selectedGroundStationOrbit != null && orbit.equals(this.selectedGroundStationOrbit.getOrbit())) {
+        if(this.selectedGroundStationOrbit != null && orbit.equals(this.selectedGroundStationOrbit.getOrbit())) {
                 this.gsOrbitLabel.setText(orbit.getName());
-            }
-        });
+        }
+        updateSpacecraftPosition(orbit, currentPosition);
     }
 
-    @Override
-    public void spacecraftPositionUpdated(Orbit orbit, SpacecraftPosition currentPosition) {
-        // Nothing to do
-    }
 }

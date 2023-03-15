@@ -188,11 +188,16 @@
                                       </tooltip>
                                   </ToggleButton>
                                   <Separator orientation="VERTICAL" />
-                                  <Label fx:id="processingLabel" alignment="CENTER" contentDisplay="CENTER" maxHeight="32" maxWidth="80.0" minHeight="32" minWidth="80.0" prefWidth="80.0" style="-fx-border-color: #b9b9b9;" text="---" textAlignment="CENTER">
-                                      <tooltip>
-                                          <Tooltip text="Processing status" />
-                                      </tooltip>
-                                  </Label>
+                                  <StackPane style="-fx-border-color: #b9b9b9;" maxHeight="32" maxWidth="80" minHeight="32" minWidth="80" prefWidth="80">
+                                      <children>
+                                          <ProgressBar fx:id="processingProgressBar" visible="false" maxHeight="32" maxWidth="80" minHeight="32" minWidth="80" prefWidth="80">
+                                              <tooltip>
+                                                  <Tooltip text="Processing status" />
+                                              </tooltip>
+                                          </ProgressBar>
+                                          <Label fx:id="processingLabel" text="IDLE" textAlignment="CENTER" alignment="CENTER" />
+                                      </children>
+                                  </StackPane>
                                   <Separator orientation="VERTICAL" />
                                   <Button mnemonicParsing="false" onAction="#onAboutAction">
                                       <graphic>

@@ -55,23 +55,20 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
+                                <MenuItem onAction="#onRefreshCelestrakOrbitAction" text="Refresh Celestrak Orbits">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/refresh.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
                             </items>
                             <tooltip>
                                 <Tooltip text="Add new orbit" />
                             </tooltip>
                         </SplitMenuButton>
-                        <Button mnemonicParsing="false" onAction="#onRefreshCelestrakOrbitAction">
-                            <graphic>
-                                <ImageView pickOnBounds="true" preserveRatio="true">
-                                    <image>
-                                        <Image url="@/refresh.png" />
-                                    </image>
-                                </ImageView>
-                            </graphic>
-                            <tooltip>
-                                <Tooltip text="Refresh Celestrak Orbits" />
-                            </tooltip>
-                        </Button>
                         <SplitMenuButton fx:id="exportOemOrbitButton" mnemonicParsing="false" onAction="#onExportOemOrbitAction">
                             <graphic>
                                 <ImageView pickOnBounds="true" preserveRatio="true">
@@ -178,7 +175,7 @@
                             </ImageView>
                         </graphic>
                         <tooltip>
-                            <Tooltip text="Toggle ground station visibility" />
+                            <Tooltip text="Toggle ground station visibility circle for a given orbit" />
                         </tooltip>
                     </ToggleButton>
 

@@ -74,6 +74,13 @@ public class ErrorReportDialog implements Initializable {
     private void attachMenu(LineChart<Long, Double> chart) {
         chart.setOnContextMenuRequested(e -> {
             ContextMenu m = new ContextMenu();
+            for(XYChart.Series<Long, Double> s : chart.getData()) {
+                CheckMenuItem mItem = new CheckMenuItem(s.getName());
+                mItem.setSelected(s.getNode().isVisible());
+                mItem.setOnAction(o -> s.getNode().setVisible(mItem.isSelected()));
+                m.getItems().add(mItem);
+            }
+            m.getItems().add(new SeparatorMenuItem());
             final MenuItem copyItem = new MenuItem("Copy image to clipboard");
             copyItem.setOnAction(event -> {
                 WritableImage image = new WritableImage((int) chart.getWidth(), (int) chart.getHeight());
