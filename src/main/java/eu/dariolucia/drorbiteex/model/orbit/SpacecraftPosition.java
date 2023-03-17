@@ -70,4 +70,11 @@ public final class SpacecraftPosition {
     public Date getTime() {
         return time;
     }
+
+    public Vector3D computeVisibilityVectorFrom(Vector3D poiPositionVector) {
+        return new Vector3D(
+                positionVector.getX() - poiPositionVector.getX(),
+                positionVector.getY() - poiPositionVector.getY(),
+                positionVector.getZ() - poiPositionVector.getZ()).normalize();
+    }
 }

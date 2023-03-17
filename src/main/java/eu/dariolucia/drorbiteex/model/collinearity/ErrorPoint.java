@@ -20,33 +20,27 @@ import java.time.Instant;
 
 public class ErrorPoint {
 
-    public static ErrorPoint noVisibility(Instant time) {
-        return new ErrorPoint(time, -1, -1);
-    }
-
     private final Instant time;
-    private final double error1;
-    private final double error2;
+    private final double[] errors;
 
-    public ErrorPoint(Instant time, double error1, double error2) {
+    public ErrorPoint(Instant time, double... errors) {
         this.time = time;
-        this.error1 = error1;
-        this.error2 = error2;
+        this.errors = errors;
     }
 
     public Instant getTime() {
         return time;
     }
 
-    public double getError1() {
-        return error1;
+    public double[] getErrors() {
+        return errors;
     }
 
-    public double getError2() {
-        return error2;
+    public double getErrorAt(int idx) {
+        return errors[idx];
     }
 
-    public boolean isNoVisibility() {
-        return error1 == -1 && error2 == -1;
+    public int getNbErrors() {
+        return errors.length;
     }
 }

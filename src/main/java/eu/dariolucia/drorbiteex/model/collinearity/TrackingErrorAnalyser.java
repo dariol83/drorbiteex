@@ -34,6 +34,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class TrackingErrorAnalyser {
 
+    public static final int ERROR_POINT_AZ_ERROR_IDX = 0;
+    public static final int ERROR_POINT_EL_ERROR_IDX = 1;
+    public static final int ERROR_POINT_ANGLE_ERROR_IDX = 2;
+
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
 
     public static Map<String, List<ErrorPoint>> analyse(TrackingErrorAnalysisRequest request, ITaskProgressMonitor monitor) throws IOException {
@@ -56,7 +60,7 @@ public class TrackingErrorAnalyser {
         targetOrbits.forEach(o -> o.setOrbitConfiguration(orbitConf));
         refOrbit.setOrbitConfiguration(orbitConf);
 
-        ExecutorService service = Executors.newFixedThreadPool(1, (r) -> {
+        ExecutorService service = Executors.newSingleThreadExecutor((r) -> {
             Thread t = new Thread(r, "Ground Station Tracking Error Analyser Task");
             t.setDaemon(true);
             return t;
@@ -213,7 +217,7 @@ public class TrackingErrorAnalyser {
                 // Elevation of reference orbit < 0 && elevation of target orbit < 0 --> return empty point, none of the two orbits is in visibility
                 if((this.referenceOrbitCurrentPosition == null || this.referenceOrbitCurrentPosition.getElevation() < 0) &&
                         (point == null || point.getElevation() < 0)) {
-                    this.data.add(ErrorPoint.noVisibility(currentDate.toInstant()));
+                    this.data.add(new ErrorPoint(currentDate.toInstant(), -1.0, -1.0, -1.0));
                     // Clear up current date
                     this.currentDate = null;
                     return;
@@ -243,16 +247,25 @@ public class TrackingErrorAnalyser {
             if(reference == null) {
                 return new ErrorPoint(currentDate.toInstant(),
                         -1, // Azimuth error cannot be computed
-                        Math.abs(target.getElevation()));
+                        Math.abs(target.getElevation()),
+                        -1);
             } else if(target == null) {
                 return new ErrorPoint(currentDate.toInstant(),
                         -1, // Azimuth error cannot be computed
-                        Math.abs(reference.getElevation()));
+                        Math.abs(reference.getElevation()),
+                        -1);
             } else {
                 return new ErrorPoint(currentDate.toInstant(),
                         computeAzimuthError(reference.getAzimuth(), target.getAzimuth()),
-                        Math.abs(reference.getElevation() - target.getElevation()));
+                        Math.abs(reference.getElevation() - target.getElevation()),
+                        computeAngleDifference(reference, target));
             }
+        }
+
+        private double computeAngleDifference(TrackPoint reference, TrackPoint target) {
+            Vector3D referenceVector = reference.getSpacecraftPosition().computeVisibilityVectorFrom(this.groundStationPoint);
+            Vector3D targetVector = target.getSpacecraftPosition().computeVisibilityVectorFrom(this.groundStationPoint);
+            return Math.toDegrees(Math.abs(Math.acos(referenceVector.dotProduct(targetVector))));
         }
 
         private double computeAzimuthError(double refAz, double tarAz) {
@@ -265,12 +278,16 @@ public class TrackingErrorAnalyser {
             // To avoid too many points, find a clever solution (i.e. if the previous point was already a non visibility point,
             // then do not add the point)
             if(this.currentDate != null) {
-                this.lastNoVisibilityPoint = ErrorPoint.noVisibility(currentDate.toInstant());
-                if((this.data.isEmpty() || !this.data.get(this.data.size() - 1).isNoVisibility())) {
+                this.lastNoVisibilityPoint = new ErrorPoint(currentDate.toInstant(), -1.0, -1.0, -1.0);
+                if((this.data.isEmpty() || visible(this.data.get(this.data.size() - 1)))) {
                     this.data.add(this.lastNoVisibilityPoint);
                 }
             }
             this.currentDate = currentDate;
+        }
+
+        private boolean visible(ErrorPoint point) {
+            return point.getErrorAt(ERROR_POINT_AZ_ERROR_IDX) != -1 || point.getErrorAt(ERROR_POINT_EL_ERROR_IDX) != -1;
         }
     }
 }

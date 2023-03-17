@@ -18,8 +18,13 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.fxml.range.RangeSelector;
 import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -27,83 +32,40 @@ import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 import javafx.stage.Window;
+import javafx.util.Pair;
 
 import java.net.URL;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ErrorReportDialog implements Initializable {
 
+    public static final int CHART_WIDTH = 800;
+    public static final int CHART_HEIGHT = 200;
     public Label periodLabel;
-    public LineChart<Long, Double> error1Chart;
-    public NumberAxis error1TimeAxis;
-    public NumberAxis error1ValueAxis;
-    public LineChart<Long, Double> error2Chart;
-    public NumberAxis error2TimeAxis;
-    public NumberAxis error2ValueAxis;
     public RangeSelector rangeSelectorController;
+    public VBox chartParent;
     private NumberToDateAxisFormatter longFormatter;
+    private final List<ChartManager> charts = new LinkedList<>();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         //
         longFormatter = new NumberToDateAxisFormatter();
-        error1Chart.setCreateSymbols(false);
-        error2Chart.setCreateSymbols(false);
-        error1TimeAxis.setTickLabelFormatter(longFormatter);
-        error2TimeAxis.setTickLabelFormatter(longFormatter);
-        error1TimeAxis.setMinorTickVisible(false);
-        error2TimeAxis.setMinorTickVisible(false);
-        error1TimeAxis.setTickUnit(3600000);
-        error2TimeAxis.setTickUnit(3600000);
-
-        error1Chart.setLegendVisible(true);
-        error2Chart.setLegendVisible(true);
-
         rangeSelectorController.rangeProperty().addListener((w,o,n) -> updateChartRange(n.getKey(), n.getValue()));
         rangeSelectorController.setLabelFormatter(longFormatter);
-
-        attachMenu(error1Chart);
-        attachMenu(error2Chart);
-    }
-
-    private void attachMenu(LineChart<Long, Double> chart) {
-        chart.setOnContextMenuRequested(e -> {
-            ContextMenu m = new ContextMenu();
-            for(XYChart.Series<Long, Double> s : chart.getData()) {
-                CheckMenuItem mItem = new CheckMenuItem(s.getName());
-                mItem.setSelected(s.getNode().isVisible());
-                mItem.setOnAction(o -> s.getNode().setVisible(mItem.isSelected()));
-                m.getItems().add(mItem);
-            }
-            m.getItems().add(new SeparatorMenuItem());
-            final MenuItem copyItem = new MenuItem("Copy image to clipboard");
-            copyItem.setOnAction(event -> {
-                WritableImage image = new WritableImage((int) chart.getWidth(), (int) chart.getHeight());
-                image = chart.snapshot(null, image);
-                ClipboardContent content = new ClipboardContent();
-                content.putImage(image);
-                Clipboard.getSystemClipboard().setContent(content);
-            });
-            m.getItems().add(copyItem);
-            m.show(chart.getScene().getWindow(), e.getScreenX(), e.getScreenY());
-        });
     }
 
     private void updateChartRange(long min, long max) {
-        error1TimeAxis.setAutoRanging(false);
-        error1TimeAxis.setLowerBound(min);
-        error1TimeAxis.setUpperBound(max);
-        error2TimeAxis.setAutoRanging(false);
-        error2TimeAxis.setLowerBound(min);
-        error2TimeAxis.setUpperBound(max);
-        // tick unit is in fraction of ten
-        error1TimeAxis.setTickUnit((max - min) / 10.0);
-        error2TimeAxis.setTickUnit((max - min) / 10.0);
+        charts.forEach(cm -> cm.updateChartRange(min, max));
     }
 
     public static void openDialog(Window owner, String title, String description, String[] datasetLabels, Map<String, List<ErrorPoint>> points) {
@@ -139,6 +101,12 @@ public class ErrorReportDialog implements Initializable {
             return;
         }
 
+        // Create the chart managers based on the dataset labels
+        for(String chartName : datasetLabels) {
+            ChartManager cm = new ChartManager(chartName, chartParent);
+            this.charts.add(cm);
+        }
+
         // Get min-max time range
         long minTime = Long.MAX_VALUE;
         long maxTime = Long.MIN_VALUE;
@@ -152,26 +120,150 @@ public class ErrorReportDialog implements Initializable {
                 }
             }
 
-            // Create error1 series
-            XYChart.Series<Long, Double> azSeries = new XYChart.Series<>();
-            azSeries.setName(e.getKey());
-            for(ErrorPoint tp : e.getValue()) {
-                azSeries.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getError1()));
+            // Create error series
+            String itemName = e.getKey();
+            List<ErrorPoint> errorPoints = e.getValue();
+            // You have one value for each dataset
+            // Inefficient
+            for(int i = 0; i < datasetLabels.length; ++i) {
+                XYChart.Series<Number, Number> series = new XYChart.Series<>();
+                series.setName(itemName);
+                for (ErrorPoint tp : errorPoints) {
+                    series.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getErrorAt(i)));
+                }
+                charts.get(i).add(series);
             }
-            error1Chart.getData().add(azSeries);
-
-            // Create error2 series
-            XYChart.Series<Long, Double> elSeries = new XYChart.Series<>();
-            elSeries.setName(e.getKey());
-            for(ErrorPoint tp : e.getValue()) {
-                elSeries.getData().add(new XYChart.Data<>(tp.getTime().toEpochMilli(), tp.getError2()));
-            }
-            error2Chart.getData().add(elSeries);
         }
-        error1Chart.setTitle(datasetLabels[0]);
-        error2Chart.setTitle(datasetLabels[1]);
-
         rangeSelectorController.setBounds(minTime, maxTime);
         updateChartRange(minTime, maxTime);
+    }
+
+    private class ChartManager {
+        private final LineChart<Number, Number> errorChart;
+        private final NumberAxis errorTimeAxis;
+        private final NumberAxis errorValueAxis;
+        private final Label mousePositionLabel;
+        private boolean autorange = true;
+
+        public ChartManager(String chartName, VBox parent) {
+            this.mousePositionLabel = new Label("");
+            this.mousePositionLabel.setTextAlignment(TextAlignment.LEFT);
+            this.mousePositionLabel.setAlignment(Pos.CENTER_LEFT);
+            this.mousePositionLabel.setMinSize(CHART_WIDTH, 24);
+            this.mousePositionLabel.setMaxSize(CHART_WIDTH, 24);
+            this.mousePositionLabel.setPrefSize(CHART_WIDTH, 24);
+
+            this.errorTimeAxis = new NumberAxis();
+            this.errorValueAxis = new NumberAxis();
+            this.errorTimeAxis.setAutoRanging(false);
+            this.errorTimeAxis.setTickLabelFormatter(longFormatter);
+            this.errorTimeAxis.setMinorTickVisible(false);
+            this.errorTimeAxis.setTickUnit(3600000);
+            this.errorValueAxis.setAutoRanging(false);
+            this.errorValueAxis.setMinorTickVisible(false);
+
+
+            this.errorChart = new LineChart<>(this.errorTimeAxis, this.errorValueAxis);
+            this.errorChart.setLegendVisible(true);
+            this.errorChart.setLegendSide(Side.RIGHT);
+            this.errorChart.setCreateSymbols(false);
+            this.errorChart.setTitle(chartName);
+            this.errorChart.setMinSize(CHART_WIDTH, CHART_HEIGHT);
+            this.errorChart.setMaxSize(CHART_WIDTH, CHART_HEIGHT);
+            this.errorChart.setPrefSize(CHART_WIDTH, CHART_HEIGHT);
+            this.errorChart.setOnContextMenuRequested(e -> {
+                ContextMenu m = new ContextMenu();
+                for(XYChart.Series<Number, Number> s : this.errorChart.getData()) {
+                    CheckMenuItem mItem = new CheckMenuItem(s.getName());
+                    mItem.setSelected(s.getNode().isVisible());
+                    mItem.setOnAction(o -> s.getNode().setVisible(mItem.isSelected()));
+                    m.getItems().add(mItem);
+                }
+                m.getItems().add(new SeparatorMenuItem());
+                final MenuItem copyItem = new MenuItem("Copy image to clipboard");
+                copyItem.setOnAction(event -> {
+                    WritableImage image = new WritableImage((int) this.errorChart.getWidth(), (int) this.errorChart.getHeight());
+                    image = this.errorChart.snapshot(null, image);
+                    ClipboardContent content = new ClipboardContent();
+                    content.putImage(image);
+                    Clipboard.getSystemClipboard().setContent(content);
+                });
+                m.getItems().add(copyItem);
+                m.getItems().add(new SeparatorMenuItem());
+                final MenuItem yRangeItem = new MenuItem("Set value range...");
+                yRangeItem.setOnAction(this::openRangeSettingDialog);
+                m.getItems().add(yRangeItem);
+
+                m.show(this.errorChart.getScene().getWindow(), e.getScreenX(), e.getScreenY());
+            });
+            this.errorChart.setOnMouseMoved((MouseEvent event) -> {
+                Point2D mouseSceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
+                double x = errorTimeAxis.sceneToLocal(mouseSceneCoords).getX();
+                double y = errorValueAxis.sceneToLocal(mouseSceneCoords).getY();
+                String time = longFormatter.toString(errorTimeAxis.getValueForDisplay(x));
+                double value = errorValueAxis.getValueForDisplay(y).doubleValue();
+                mousePositionLabel.setText(time + "\t\t" + value);
+            });
+            this.errorChart.setOnMouseExited((MouseEvent event) -> {
+                mousePositionLabel.setText("");
+            });
+
+            parent.getChildren().add(this.errorChart);
+            parent.getChildren().add(this.mousePositionLabel);
+        }
+
+        private void openRangeSettingDialog(ActionEvent event) {
+            Bounds bounds = errorChart.getBoundsInLocal();
+            Bounds screenBounds = errorChart.localToScreen(bounds);
+            double x = screenBounds.getMinX();
+            double y = screenBounds.getMinY();
+            // double height = screenBounds.getHeight();
+            RangePickerPanel.openDialog(new Pair<>(errorValueAxis.getLowerBound(), errorValueAxis.getUpperBound()),
+                    this::setRange,
+                    () -> this.autorange = true,
+                    new Point2D(x, y));
+        }
+
+        private void setRange(Pair<Double, Double> doubleDoublePair) {
+            this.autorange = false;
+            this.errorValueAxis.setTickUnit((doubleDoublePair.getValue() - doubleDoublePair.getKey()) / 10.0);
+            this.errorValueAxis.setLowerBound(doubleDoublePair.getKey());
+            this.errorValueAxis.setUpperBound(doubleDoublePair.getValue());
+        }
+
+        public void updateChartRange(long min, long max) {
+            errorTimeAxis.setAutoRanging(false);
+            errorTimeAxis.setLowerBound(min);
+            errorTimeAxis.setUpperBound(max);
+            // tick unit is in fraction of ten
+            errorTimeAxis.setTickUnit((max - min) / 10.0);
+            if(autorange) {
+                // compute yValue min max
+                double yMin = Double.MAX_VALUE, yMax = Double.MIN_VALUE;
+                for (XYChart.Series<Number, Number> s : errorChart.getData()) {
+                    for (XYChart.Data<Number, Number> d : s.getData()) {
+                        if (d.getXValue().longValue() < min) {
+                            continue;
+                        }
+                        if (d.getXValue().longValue() > max) {
+                            break;
+                        }
+                        if (yMin > d.getYValue().doubleValue()) {
+                            yMin = d.getYValue().doubleValue();
+                        }
+                        if (yMax < d.getYValue().doubleValue()) {
+                            yMax = d.getYValue().doubleValue();
+                        }
+                    }
+                }
+                errorValueAxis.setTickUnit((yMax - yMin) / 10.0);
+                errorValueAxis.setLowerBound(yMin - (yMax - yMin) / 100.0);
+                errorValueAxis.setUpperBound(yMax + (yMax - yMin) / 100.0);
+            }
+        }
+
+        public void add(XYChart.Series<Number, Number> series) {
+            errorChart.getData().add(series);
+        }
     }
 }

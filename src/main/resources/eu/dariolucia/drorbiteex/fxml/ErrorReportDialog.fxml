@@ -26,22 +26,7 @@
          <children>
             <Label fx:id="periodLabel" text="---" alignment="CENTER" textAlignment="CENTER" />
             <Separator />
-            <LineChart fx:id="error1Chart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
-              <xAxis>
-                <NumberAxis fx:id="error1TimeAxis" side="BOTTOM" />
-              </xAxis>
-              <yAxis>
-                <NumberAxis fx:id="error1ValueAxis" side="LEFT" />
-              </yAxis>
-            </LineChart>
-            <LineChart fx:id="error2Chart" minHeight="300" maxHeight="300" minWidth="800" maxWidth="800">
-               <xAxis>
-                  <NumberAxis fx:id="error2TimeAxis" side="BOTTOM" />
-               </xAxis>
-               <yAxis>
-                  <NumberAxis fx:id="error2ValueAxis" side="LEFT" />
-               </yAxis>
-            </LineChart>
+            <VBox VBox.vgrow="ALWAYS" fx:id="chartParent" />
              <fx:include fx:id="rangeSelector" source="range/RangeSelector.fxml" />
          </children>
       </VBox>

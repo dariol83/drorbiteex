@@ -580,7 +580,7 @@ public class GroundStationPane implements Initializable {
                     ErrorReportDialog.openDialog(groundStationList.getScene().getWindow(),
                             "Tracking error result for " + sgr.getGroundStation().getName(),
                             TimeUtils.formatDate(sgr.getStartTime()) + " - " + TimeUtils.formatDate(sgr.getEndTime()) + " - Reference orbit: " + sgr.getReferenceOrbit().getName(),
-                            new String[] {"Azimuth (deg)", "Elevation (deg)"},
+                            new String[] {"Azimuth (deg)", "Elevation (deg)", "Angular Error (deg)"},
                             taskResult.getResult());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert(taskName, "Tracking error computation for " + gs.getGroundStation().getName(),

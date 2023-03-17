@@ -131,7 +131,7 @@ public class OrbitPVErrorAnalyser {
         public List<ErrorPoint> call() {
             try {
                 // Instantiate the data collector
-                DataCollector dataCollector = new DataCollector(this.referenceOrbit);
+                DataCollector dataCollector = new DataCollector();
                 // Register the data collector to the orbits
                 this.targetOrbit.addListener(dataCollector);
                 this.referenceOrbit.addListener(dataCollector);
@@ -163,14 +163,10 @@ public class OrbitPVErrorAnalyser {
 
     private static class DataCollector implements IOrbitListener {
         private final List<ErrorPoint> data = new LinkedList<>();
-        private final Orbit referenceOrbit;
         private Date currentDate = null;
         private SpacecraftPosition referenceOrbitCurrentPosition = null;
 
         private boolean refInProgress = false;
-        public DataCollector(Orbit referenceOrbit) {
-            this.referenceOrbit = referenceOrbit;
-        }
 
         public List<ErrorPoint> getData() {
             return data;

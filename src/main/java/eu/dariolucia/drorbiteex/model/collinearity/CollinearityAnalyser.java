@@ -305,11 +305,7 @@ public class CollinearityAnalyser {
                 this.currentDate = point.getTime();
                 this.referenceOrbitCurrentPosition = point;
                 // ... and compute the reference (normalized) vector
-                Vector3D scPositionPoint = point.getSpacecraftPosition().getPositionVector(); // S/C in earth coordinates
-                this.currentReferenceVector = new Vector3D(
-                        scPositionPoint.getX() - this.groundStationPoint.getX(),
-                        scPositionPoint.getY() - this.groundStationPoint.getY(),
-                        scPositionPoint.getZ() - this.groundStationPoint.getZ()).normalize();
+                this.currentReferenceVector = computeVector(point, this.groundStationPoint);
             } else {
                 // Target s/c: check collinearity if time is the same (with tolerance)
                 // No reference orbit info --> return
@@ -335,11 +331,7 @@ public class CollinearityAnalyser {
                 }
                 // If we are here, it means that both satellites are in visibility --> Compute angular separation:
                 // acos(dot product of normalised position vectors wrt ground station)
-                Vector3D scPositionPoint = point.getSpacecraftPosition().getPositionVector(); // S/C in earth coordinates
-                Vector3D targetVector = new Vector3D(
-                        scPositionPoint.getX() - this.groundStationPoint.getX(),
-                        scPositionPoint.getY() - this.groundStationPoint.getY(),
-                        scPositionPoint.getZ() - this.groundStationPoint.getZ()).normalize();
+                Vector3D targetVector = computeVector(point, this.groundStationPoint);
                 double result = this.currentReferenceVector.dotProduct(targetVector);
                 double angularSeparation = Math.abs(Math.acos(result));
                 angularSeparation = Math.toDegrees(angularSeparation);
@@ -349,6 +341,10 @@ public class CollinearityAnalyser {
                     this.events.add(event);
                 }
             }
+        }
+
+        public static Vector3D computeVector(TrackPoint point, Vector3D groundStationPoint) {
+            return point.getSpacecraftPosition().computeVisibilityVectorFrom(groundStationPoint);
         }
     }
 }
