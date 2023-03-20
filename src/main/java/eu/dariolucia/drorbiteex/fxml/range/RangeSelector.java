@@ -24,7 +24,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Region;
@@ -219,5 +221,48 @@ public class RangeSelector implements Initializable {
         upperBound.set(maxBound);
         currentLowerBound.set(minBound);
         currentUpperBound.set(maxBound);
+    }
+
+    public void onRegionClicked(MouseEvent mouseEvent) {
+        if(mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseButton.PRIMARY) {
+            // Extend
+            currentLowerBound.set(lowerBound.get());
+            currentUpperBound.set(upperBound.get());
+        }
+    }
+
+    public void zoomIn() {
+        zoom(true);
+    }
+
+    public void zoomOut() {
+        zoom(false);
+    }
+
+    private void zoom(boolean zoomIn) {
+        // Zoom by reducing left and right of a given amount (2% of total length for each side - 4% in total)
+        long zoomFactor = (upperBound.get() - lowerBound.get()) / 50;
+        zoomFactor = zoomIn ? zoomFactor : - zoomFactor;
+        long xMin = currentLowerBound.get() + zoomFactor;
+        if(xMin < lowerBound.get()) {
+            xMin = lowerBound.get();
+        }
+        long xMax = currentUpperBound.get() - zoomFactor;
+        if(xMax > upperBound.get()) {
+            xMax = upperBound.get();
+        }
+        if(xMax - xMin > zoomFactor) {
+            currentLowerBound.set(xMin);
+            currentUpperBound.set(xMax);
+        }
+    }
+
+    public void onRegionScroll(ScrollEvent scrollEvent) {
+        double scrolls = scrollEvent.getDeltaY();
+        if(scrolls > 0) {
+            zoomIn();
+        } else {
+            zoomOut();
+        }
     }
 }

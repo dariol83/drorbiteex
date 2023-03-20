@@ -547,4 +547,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         int nameSort = getName().compareTo(o.getName());
         return nameSort == 0 ? getId().compareTo(o.getId()) : nameSort;
     }
+
+    public org.orekit.estimation.measurements.GroundStation toOrekitGroundStation() {
+        return new org.orekit.estimation.measurements.GroundStation(this.stationFrame);
+    }
 }

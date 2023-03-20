@@ -18,6 +18,7 @@ package eu.dariolucia.drorbiteex.model.orbit;
 
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;

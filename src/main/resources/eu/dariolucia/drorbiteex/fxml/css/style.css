@@ -421,6 +421,10 @@ HBox, VBox {
 	-fx-background-color: #F1FEE5;
 }
 
+.color-picker .color-picker-label {
+	-fx-background-color: #101010;
+}
+
 .color-picker .arrow-button {
   -fx-background-color: darkgreen;
   -fx-mark-color: lime;

@@ -25,7 +25,7 @@
          <items>
             <Region fx:id="leftRegion"/>
             <Separator fx:id="minSeparator" style="-fx-cursor: h_resize;" onMousePressed="#onSeparatorDragPressed" onMouseReleased="#onSeparatorDragReleased" onMouseDragged="#onSeparatorDragged"/>
-            <Region fx:id="centerRegion" style="-fx-cursor: hand;" onMousePressed="#onRegionDragPressed" onMouseReleased="#onRegionDragReleased" onMouseDragged="#onRegionDragged" />
+            <Region fx:id="centerRegion" style="-fx-cursor: hand;" onMousePressed="#onRegionDragPressed" onMouseReleased="#onRegionDragReleased" onMouseDragged="#onRegionDragged" onMouseClicked="#onRegionClicked" onScroll="#onRegionScroll" />
             <Separator fx:id="maxSeparator" style="-fx-cursor: h_resize;" onMousePressed="#onSeparatorDragPressed" onMouseReleased="#onSeparatorDragReleased" onMouseDragged="#onSeparatorDragged"/>
             <Region fx:id="rightRegion" />
          </items>

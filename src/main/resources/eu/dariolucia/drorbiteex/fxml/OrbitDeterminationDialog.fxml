@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  ~ Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.OrbitDeterminationDialog">
+   <children>
+      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+         <children>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label text="Satellite Mass (kg)" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
+                  <TextField fx:id="massText" promptText="800.0" minWidth="100" maxWidth="100"/>
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <Label text="Cross-section (mq)" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
+                  <TextField fx:id="crossSectionText" minWidth="100" maxWidth="100"/>
+                  <Label text="Reflection Coefficient" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
+                  <TextField fx:id="crText" text="1.0" promptText="1.0" minWidth="100" maxWidth="100" />
+                  <Label text="Drag Coefficient" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
+                  <TextField fx:id="cdText" text="2.0" promptText="2.0" minWidth="100" maxWidth="100"/>
+               </children>
+            </HBox>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <CheckBox fx:id="useSunPerturbationCheckbox" text="Use Sun Perturbation" selected="true"/>
+                  <CheckBox fx:id="useMoonPerturbationCheckbox" text="Use Moon Perturbation" selected="true"/>
+                  <CheckBox fx:id="useRelativityCheckbox" text="Use Relativity Effects" selected="true"/>
+                  <CheckBox fx:id="useSolarRadiationPressureCheckbox" text="Use Solar Radiation Pressure" selected="true"/>
+                  <CheckBox fx:id="useAtmosphericDragCheckbox" text="Use Atmospheric Drag" selected="true"/>
+               </children>
+            </HBox>
+            <Separator />
+            <HBox spacing="5" VBox.vgrow="ALWAYS">
+               <children>
+                  <TableView fx:id="measurementTable" HBox.hgrow="ALWAYS">
+                     <columns>
+                        <TableColumn fx:id="timeColumn" text="Time" reorderable="false" maxWidth="200" minWidth="200" />
+                        <TableColumn fx:id="measureTypeColumn" reorderable="false" sortable="false" text="Type" maxWidth="100" minWidth="100" />
+                        <TableColumn fx:id="measureInfoColumn" reorderable="false" sortable="false" text="Measurement Info" maxWidth="300" minWidth="300"/>
+                     </columns>
+                  </TableView>
+                  <VBox spacing="5" HBox.hgrow="NEVER">
+                     <children>
+                        <Button text="TDM..." minWidth="100" maxWidth="100" onAction="#onTdmLoadAction"/>
+                        <Button text="OEM..." minWidth="100" maxWidth="100" />
+                        <Button text="Range..." minWidth="100" maxWidth="100" />
+                        <Button text="Position..." minWidth="100" maxWidth="100" />
+                        <Separator />
+                        <Button text="Delete..." minWidth="100" maxWidth="100" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

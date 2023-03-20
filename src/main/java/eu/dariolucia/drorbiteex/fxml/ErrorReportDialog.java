@@ -176,7 +176,10 @@ public class ErrorReportDialog implements Initializable {
                 for(XYChart.Series<Number, Number> s : this.errorChart.getData()) {
                     CheckMenuItem mItem = new CheckMenuItem(s.getName());
                     mItem.setSelected(s.getNode().isVisible());
-                    mItem.setOnAction(o -> s.getNode().setVisible(mItem.isSelected()));
+                    mItem.setOnAction(o -> {
+                        s.getNode().setVisible(mItem.isSelected());
+                        updateChartRange(this.errorTimeAxis.getLowerBound(), this.errorTimeAxis.getUpperBound());
+                    });
                     m.getItems().add(mItem);
                 }
                 m.getItems().add(new SeparatorMenuItem());
@@ -231,34 +234,41 @@ public class ErrorReportDialog implements Initializable {
             this.errorValueAxis.setUpperBound(doubleDoublePair.getValue());
         }
 
-        public void updateChartRange(long min, long max) {
+        public void updateChartRange(Number min, Number max) {
+            if(min == null || max == null) {
+                return;
+            }
             errorTimeAxis.setAutoRanging(false);
-            errorTimeAxis.setLowerBound(min);
-            errorTimeAxis.setUpperBound(max);
+            errorTimeAxis.setLowerBound(min.longValue());
+            errorTimeAxis.setUpperBound(max.longValue());
             // tick unit is in fraction of ten
-            errorTimeAxis.setTickUnit((max - min) / 10.0);
+            errorTimeAxis.setTickUnit((max.longValue() - min.longValue()) / 10.0);
             if(autorange) {
                 // compute yValue min max
                 double yMin = Double.MAX_VALUE, yMax = Double.MIN_VALUE;
                 for (XYChart.Series<Number, Number> s : errorChart.getData()) {
-                    for (XYChart.Data<Number, Number> d : s.getData()) {
-                        if (d.getXValue().longValue() < min) {
-                            continue;
-                        }
-                        if (d.getXValue().longValue() > max) {
-                            break;
-                        }
-                        if (yMin > d.getYValue().doubleValue()) {
-                            yMin = d.getYValue().doubleValue();
-                        }
-                        if (yMax < d.getYValue().doubleValue()) {
-                            yMax = d.getYValue().doubleValue();
+                    if(s.getNode().isVisible()) {
+                        for (XYChart.Data<Number, Number> d : s.getData()) {
+                            if (d.getXValue().longValue() < min.longValue()) {
+                                continue;
+                            }
+                            if (d.getXValue().longValue() > max.longValue()) {
+                                break;
+                            }
+                            if (yMin > d.getYValue().doubleValue()) {
+                                yMin = d.getYValue().doubleValue();
+                            }
+                            if (yMax < d.getYValue().doubleValue()) {
+                                yMax = d.getYValue().doubleValue();
+                            }
                         }
                     }
                 }
-                errorValueAxis.setTickUnit((yMax - yMin) / 10.0);
-                errorValueAxis.setLowerBound(yMin - (yMax - yMin) / 100.0);
-                errorValueAxis.setUpperBound(yMax + (yMax - yMin) / 100.0);
+                if(yMax != Double.MIN_VALUE && yMin != Double.MAX_VALUE) {
+                    errorValueAxis.setTickUnit((yMax - yMin) / 10.0);
+                    errorValueAxis.setLowerBound(yMin - (yMax - yMin) / 100.0);
+                    errorValueAxis.setUpperBound(yMax + (yMax - yMin) / 100.0);
+                }
             }
         }
 
