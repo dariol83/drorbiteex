@@ -33,6 +33,7 @@ import javafx.stage.StageStyle;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
+import org.orekit.models.earth.atmosphere.data.MarshallSolarActivityFutureEstimation;
 
 import java.io.File;
 import java.io.IOException;
@@ -99,6 +100,17 @@ public class DrOrbiteex extends Application {
                         "start Dr. Orbiteex JVM with the system property -D" + CONFIG_FOLDER_LOCATION_KEY + "=<path to your folder>");
                 e.printStackTrace();
                 System.exit(-1);
+            }
+            // Feed updated information for orbit determination to Orekit. If it fails, keep going
+            try {
+                MarshallSolarActivityFutureEstimation msafe = new MarshallSolarActivityFutureEstimation(
+                        MarshallSolarActivityFutureEstimation.DEFAULT_SUPPORTED_NAMES,
+                        MarshallSolarActivityFutureEstimation.StrengthLevel.AVERAGE);
+                DataProvidersManager orekitManager = DataContext.getDefault().getDataProvidersManager();
+                orekitManager.feed(msafe.getSupportedNames(), msafe); // Feeding the F10.7 bulletins to Orekit's data manager
+            } catch (Exception e) {
+                System.err.println("Cannot feed F10.7 bulletins to Orekit's data manager");
+                e.printStackTrace();
             }
             // Load the model manager
             ModelManager manager = new ModelManager(orbitFile, gsFile);

@@ -17,6 +17,7 @@
 package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.determination.Measurement;
+import eu.dariolucia.drorbiteex.model.determination.OemImporter;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationRequest;
 import eu.dariolucia.drorbiteex.model.determination.TdmImporter;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
@@ -42,6 +43,7 @@ import javafx.stage.Window;
 import java.io.File;
 import java.net.URL;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -112,7 +114,7 @@ public class OrbitDeterminationDialog implements Initializable {
             if(cdText.getText().isBlank() && !cdText.isDisabled()) {
                 throw new IllegalStateException("Drag coefficient field is blank");
             }
-            if(measurementTable.getItems().isEmpty()) {
+            if(measurementTable.getItems().isEmpty()) { // No measurements lead to exception
                 throw new IllegalStateException("No measurements");
             }
 
@@ -212,7 +214,7 @@ public class OrbitDeterminationDialog implements Initializable {
         fc.setTitle("Select TDM File");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("TDM file","*.xml", "*.tdm", "*.txt"));
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
-        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("OEM file","*.xml", "*.tdm", "*.txt"));
+        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("TDM file","*.xml", "*.tdm", "*.txt"));
 
         File selected = fc.showOpenDialog(measurementTable.getScene().getWindow());
         if(selected != null) {
@@ -227,6 +229,38 @@ public class OrbitDeterminationDialog implements Initializable {
                     e.printStackTrace();
                     Platform.runLater(() -> {
                         DialogUtils.alert("TDM import failed", "Cannot read TDM file", e.getMessage());
+                    });
+                }
+            });
+        }
+    }
+
+    public void onDeleteAction(ActionEvent actionEvent) {
+        List<Measurement> measToDelete = new ArrayList<>(this.measurementTable.getSelectionModel().getSelectedItems());
+        this.measurementTable.getItems().removeAll(measToDelete);
+        this.measurementTable.refresh();
+    }
+
+    public void onOemLoadAction(ActionEvent actionEvent) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Select OEM File");
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("OEM file","*.xml", "*.oem", "*.txt"));
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
+        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("OEM file","*.xml", "*.oem", "*.txt"));
+
+        File selected = fc.showOpenDialog(measurementTable.getScene().getWindow());
+        if(selected != null) {
+            // Read contents
+            BackgroundThread.runLater(() -> {
+                try {
+                    List<Measurement> measurements = OemImporter.load(selected.getAbsolutePath(), referenceOrbit);
+                    Platform.runLater(() -> {
+                        measurementTable.getItems().addAll(measurements);
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Platform.runLater(() -> {
+                        DialogUtils.alert("OEM import failed", "Cannot read OEM file", e.getMessage());
                     });
                 }
             });

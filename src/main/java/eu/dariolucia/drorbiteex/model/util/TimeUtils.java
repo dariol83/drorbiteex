@@ -31,6 +31,14 @@ public class TimeUtils {
         return new AbsoluteDate(time, TimeScalesFactory.getUTC());
     }
 
+    public static Date toDate(AbsoluteDate time) {
+         return time.toDate(TimeScalesFactory.getUTC());
+    }
+
+    public static Instant toInstant(AbsoluteDate time) {
+        return toDate(time).toInstant();
+    }
+
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 
     public static String formatDate(Date d) {

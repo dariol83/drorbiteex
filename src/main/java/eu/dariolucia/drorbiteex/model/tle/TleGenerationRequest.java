@@ -17,10 +17,27 @@
 package eu.dariolucia.drorbiteex.model.tle;
 
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import org.orekit.propagation.analytical.tle.TLE;
 
 import java.util.Date;
 
 public class TleGenerationRequest {
+
+    public static TleGenerationRequest fromOrbit(Orbit orbit) {
+        TLE initialTle = null;
+        if(orbit.getModel() instanceof TleOrbitModel) {
+            // Original orbit is a TLE
+            initialTle = ((TleOrbitModel) orbit.getModel()).getTleObject();
+        } else {
+            // Original orbit is not a TLE
+            initialTle = TleUtils.computeEmptyTleFrom(orbit.getModel().getPropagator());
+        }
+        return new TleGenerationRequest(orbit, TimeUtils.toDate(initialTle.getDate()),
+                initialTle.getSatelliteNumber(), initialTle.getClassification(), initialTle.getLaunchYear(), initialTle.getLaunchNumber(), initialTle.getLaunchPiece(),
+                TimeUtils.toDate(initialTle.getDate()), initialTle.getRevolutionNumberAtEpoch(), initialTle.getElementNumber());
+    }
 
     private final Orbit orbit;
     private final Date startTime;

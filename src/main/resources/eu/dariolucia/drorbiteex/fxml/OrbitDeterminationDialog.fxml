@@ -27,49 +27,59 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
          <children>
+            <Label maxWidth="5000" text="Satellite characteristics" styleClass="label-clear" />
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label text="Satellite Mass (kg)" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
-                  <TextField fx:id="massText" promptText="800.0" minWidth="100" maxWidth="100"/>
+                  <Label maxWidth="200" minWidth="200" text="Satellite Mass (kg)" />
+                  <TextField fx:id="massText" maxWidth="100" minWidth="100" promptText="800.0" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <Label text="Cross-section (mq)" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
-                  <TextField fx:id="crossSectionText" minWidth="100" maxWidth="100"/>
-                  <Label text="Reflection Coefficient" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
-                  <TextField fx:id="crText" text="1.0" promptText="1.0" minWidth="100" maxWidth="100" />
-                  <Label text="Drag Coefficient" minWidth="150" maxWidth="150" textAlignment="RIGHT" alignment="CENTER_RIGHT"/>
-                  <TextField fx:id="cdText" text="2.0" promptText="2.0" minWidth="100" maxWidth="100"/>
+                  <Label maxWidth="200" minWidth="200" text="Cross-section (mq)" />
+                  <TextField fx:id="crossSectionText" maxWidth="100" minWidth="100" />
+               </children>
+            </HBox>
+            <Label maxWidth="5000" text="Perturbations" styleClass="label-clear" />
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <CheckBox fx:id="useSolarRadiationPressureCheckbox" maxWidth="200" minWidth="200" selected="true" text="Solar Radiation Pressure" />
+                  <TextField fx:id="crText" maxWidth="100" minWidth="100" promptText="1.0" text="1.0" />
+                  <Label maxWidth="150" minWidth="150" text="Reflection Coefficient" />
+                  <CheckBox fx:id="useSunPerturbationCheckbox" selected="true" text="Sun Perturbation" />
                </children>
             </HBox>
             <HBox spacing="5" VBox.vgrow="NEVER">
                <children>
-                  <CheckBox fx:id="useSunPerturbationCheckbox" text="Use Sun Perturbation" selected="true"/>
-                  <CheckBox fx:id="useMoonPerturbationCheckbox" text="Use Moon Perturbation" selected="true"/>
-                  <CheckBox fx:id="useRelativityCheckbox" text="Use Relativity Effects" selected="true"/>
-                  <CheckBox fx:id="useSolarRadiationPressureCheckbox" text="Use Solar Radiation Pressure" selected="true"/>
-                  <CheckBox fx:id="useAtmosphericDragCheckbox" text="Use Atmospheric Drag" selected="true"/>
+                  <CheckBox fx:id="useAtmosphericDragCheckbox" maxWidth="200" minWidth="200"  selected="true" text="Atmospheric Drag" />
+                  <TextField fx:id="cdText" maxWidth="100" minWidth="100" promptText="2.0" text="2.0" />
+                  <Label maxWidth="150" minWidth="150" text="Drag Coefficient" />
+                  <CheckBox fx:id="useMoonPerturbationCheckbox" selected="true" text="Moon Perturbation" />
                </children>
             </HBox>
-            <Separator />
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <CheckBox fx:id="useRelativityCheckbox" selected="true" text="Relativity Effects" />
+               </children>
+            </HBox>
+            <Label maxWidth="5000" text="Measurements" styleClass="label-clear" />
             <HBox spacing="5" VBox.vgrow="ALWAYS">
                <children>
                   <TableView fx:id="measurementTable" HBox.hgrow="ALWAYS">
                      <columns>
-                        <TableColumn fx:id="timeColumn" text="Time" reorderable="false" maxWidth="200" minWidth="200" />
-                        <TableColumn fx:id="measureTypeColumn" reorderable="false" sortable="false" text="Type" maxWidth="100" minWidth="100" />
-                        <TableColumn fx:id="measureInfoColumn" reorderable="false" sortable="false" text="Measurement Info" maxWidth="300" minWidth="300"/>
+                        <TableColumn fx:id="timeColumn" maxWidth="200" minWidth="200" reorderable="false" text="Time" />
+                        <TableColumn fx:id="measureTypeColumn" maxWidth="100" minWidth="100" reorderable="false" sortable="false" text="Type" />
+                        <TableColumn fx:id="measureInfoColumn" maxWidth="350.0" minWidth="350.0" prefWidth="350.0" reorderable="false" sortable="false" text="Measurement Info" />
                      </columns>
                   </TableView>
                   <VBox spacing="5" HBox.hgrow="NEVER">
                      <children>
-                        <Button text="TDM..." minWidth="100" maxWidth="100" onAction="#onTdmLoadAction"/>
-                        <Button text="OEM..." minWidth="100" maxWidth="100" />
-                        <Button text="Range..." minWidth="100" maxWidth="100" />
-                        <Button text="Position..." minWidth="100" maxWidth="100" />
+                        <Button maxWidth="100" minWidth="100" onAction="#onTdmLoadAction" text="TDM..." />
+                        <Button maxWidth="100" minWidth="100" onAction="#onOemLoadAction" text="OEM..." />
+                        <Button maxWidth="100" minWidth="100" text="Range..." />
+                        <Button maxWidth="100" minWidth="100" text="Position..." />
                         <Separator />
-                        <Button text="Delete..." minWidth="100" maxWidth="100" />
+                        <Button maxWidth="100" minWidth="100" onAction="#onDeleteAction" text="Delete..." />
                      </children>
                   </VBox>
                </children>

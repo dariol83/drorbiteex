@@ -26,6 +26,7 @@ import org.orekit.time.TimeScalesFactory;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.Date;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
@@ -56,6 +57,11 @@ public class TleOrbitModel implements IOrbitModel {
     @XmlElement
     public synchronized String getTle() {
         return tle;
+    }
+
+    @XmlTransient
+    public synchronized TLE getTleObject() {
+        return this.tleObject;
     }
 
     private void setTle(String tle) {

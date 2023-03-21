@@ -19,6 +19,7 @@ package eu.dariolucia.drorbiteex.model.determination;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.estimation.measurements.AbstractMeasurement;
 import org.orekit.estimation.measurements.ObservableSatellite;
+import org.orekit.frames.Frame;
 import org.orekit.time.AbsoluteDate;
 
 import java.time.Instant;
@@ -44,7 +45,7 @@ public abstract class Measurement {
         return TimeUtils.toAbsoluteDate(new Date(getTime().toEpochMilli()));
     }
 
-    public abstract AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite);
+    public abstract AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite, Frame orbitFrame);
 
     public enum Type {
         RANGE,

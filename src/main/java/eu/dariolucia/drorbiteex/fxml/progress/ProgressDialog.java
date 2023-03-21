@@ -26,6 +26,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -176,6 +177,8 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
                     stage.close(); // Unblock showAndWait
                     stage = null;
                 }
+            } else if(current == -1) {
+                this.progress.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
             }
         });
     }

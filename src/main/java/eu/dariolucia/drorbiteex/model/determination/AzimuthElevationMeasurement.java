@@ -21,6 +21,7 @@ import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.estimation.measurements.AbstractMeasurement;
 import org.orekit.estimation.measurements.AngularAzEl;
 import org.orekit.estimation.measurements.ObservableSatellite;
+import org.orekit.frames.Frame;
 
 import java.time.Instant;
 import java.util.Date;
@@ -61,7 +62,7 @@ public class AzimuthElevationMeasurement extends Measurement {
     }
 
     @Override
-    public AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite) {
+    public AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite, Frame orbitFrame) {
         return new AngularAzEl(getStation().toOrekitGroundStation(), getAbsoluteDate(),
                 new double[] {Math.toRadians(azimuth), Math.toRadians(elevation)}, new double[] {0.2, 0.2}, new double[] {1.0, 1.0}, satellite);
     }

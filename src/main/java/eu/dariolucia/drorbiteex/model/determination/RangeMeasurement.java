@@ -22,6 +22,7 @@ import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.estimation.measurements.AbstractMeasurement;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.Range;
+import org.orekit.frames.Frame;
 
 import java.time.Instant;
 import java.util.Date;
@@ -56,11 +57,13 @@ public class RangeMeasurement extends Measurement {
     }
 
     @Override
-    public AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite) {
+    public AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite, Frame orbitFrame) {
         return new Range(getStation().toOrekitGroundStation(),
                 true,
                 getAbsoluteDate(),
-                range, 0.2, 1.0,
+                range, // TODO: multiply by Constants.SPEED_OF_LIGHT?
+                0.2,
+                1.0,
                 satellite);
     }
 }

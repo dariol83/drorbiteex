@@ -23,9 +23,14 @@ import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
 import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalyser;
+import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationCalculator;
+import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationRequest;
+import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationResult;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
+import eu.dariolucia.drorbiteex.model.tle.TleUtils;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -59,9 +64,11 @@ public class OrbitPane implements Initializable {
     public Button editOrbitButton;
     public Button deleteOrbitButton;
     public MenuItem orbitErrorAnalysisButton;
+    public MenuItem orbitDeterminationButton;
     public MenuItem exportTleOrbitButton;
     public ToggleButton gsVisibilityButton;
     public Label gsOrbitLabel;
+
     private Consumer<OrbitGraphics> autotrackSelectionConsumer;
     private ModelManager manager;
     private Runnable visibilitySelectionHandler;
@@ -75,6 +82,7 @@ public class OrbitPane implements Initializable {
         exportOemOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         exportTleOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         orbitErrorAnalysisButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        orbitDeterminationButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         editOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         deleteOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         satelliteAutotrackButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
@@ -381,11 +389,43 @@ public class OrbitPane implements Initializable {
         this.visibilitySelectionHandler.run();
     }
 
-    public void orbitModelDataUpdated(Orbit orbit, List<SpacecraftPosition> spacecraftPositions, SpacecraftPosition currentPosition) {
-        if(this.selectedGroundStationOrbit != null && orbit.equals(this.selectedGroundStationOrbit.getOrbit())) {
-                this.gsOrbitLabel.setText(orbit.getName());
-        }
-        updateSpacecraftPosition(orbit, currentPosition);
-    }
+    public void onOrbitDeterminationButtonAction(ActionEvent actionEvent) {
+        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        if(originalOrbit != null) {
+            Orbit orbit = originalOrbit.getOrbit();
+            OrbitDeterminationRequest request = OrbitDeterminationDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, manager.getGroundStationManager().getGroundStations());
+            if(request != null) {
+                IMonitorableCallable<OrbitDeterminationResult> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Orbit Determination", current, total, message);
+                        }
 
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return OrbitDeterminationCalculator.compute(request, monitorBridge);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<OrbitDeterminationResult> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Determination", task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    // TODO:
+                    System.out.println(taskResult.getResult().getEstimatedTle());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Orbit Determination", "Orbit determination  computation for " + originalOrbit.getOrbit().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("Orbit Determination", "Orbit determination error computation for " + originalOrbit.getOrbit().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
+        }
+    }
 }

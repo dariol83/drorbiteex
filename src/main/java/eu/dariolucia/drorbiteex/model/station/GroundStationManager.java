@@ -16,9 +16,6 @@
 
 package eu.dariolucia.drorbiteex.model.station;
 
-import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.orbit.OrbitParameterConfiguration;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -125,9 +122,6 @@ public class GroundStationManager {
         }
     }
 
-    public void exportVisibilityPasses(UUID groundStationID, OutputStream outputStream) throws IOException {
-        exportVisibilityPasses(groundStationID, outputStream, null);
-    }
     public void exportVisibilityPasses(UUID groundStationID, OutputStream outputStream, List<UUID> orbitsId) throws IOException {
         GroundStation gs = getGroundStation(groundStationID);
         if(gs == null) {

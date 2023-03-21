@@ -18,17 +18,13 @@ package eu.dariolucia.drorbiteex.model.orbit;
 
 import eu.dariolucia.drorbiteex.model.oem.OemExporterProcess;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
+import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
+import eu.dariolucia.drorbiteex.model.tle.TleUtils;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
-import org.orekit.orbits.KeplerianOrbit;
-import org.orekit.orbits.OrbitType;
-import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.tle.TLE;
-import org.orekit.propagation.analytical.tle.TLEPropagator;
-import org.orekit.propagation.conversion.FiniteDifferencePropagatorConverter;
-import org.orekit.propagation.conversion.TLEPropagatorBuilder;
 import org.orekit.time.AbsoluteDate;
 
 import java.io.IOException;
@@ -162,6 +158,10 @@ public class OrbitManager {
         return new OemExporterProcess().exportOem(request);
     }
 
+    public String exportTle(TleGenerationRequest request) {
+        return new TleExporterProcess().exportTle(request);
+    }
+
     public OrbitParameterConfiguration getConfiguration() {
         return configuration;
     }
@@ -172,61 +172,5 @@ public class OrbitManager {
             o.setOrbitConfiguration(this.configuration);
         }
         refresh();
-    }
-
-    public String exportTle(TleGenerationRequest tleGenerationRequest) {
-        // First, copy the orbit
-        Orbit toPropagate = tleGenerationRequest.getOrbit().copy();
-        AbsoluteDate startTime = TimeUtils.toAbsoluteDate(tleGenerationRequest.getStartTime());
-        Propagator p = toPropagate.getModel().getPropagator();
-        SpacecraftState firstState = p.propagate(startTime);
-
-        // Let's go for the TLE (https://forum.orekit.org/t/generation-of-tle/265/4)
-        // You need an initial TLE for the job... so let's build one
-        TLE initialTle = null;
-        if(toPropagate.getModel() instanceof TleOrbitModel) {
-            // Original orbit is a TLE
-            String tleFromModel = ((TleOrbitModel) toPropagate.getModel()).getTle();
-            String[] split = tleFromModel.split("\n", -1);
-            initialTle = new TLE(split[0], split[1]);
-        } else {
-            // Original orbit is not a TLE
-            initialTle = initialiseTleFromOem(toPropagate.getModel(), tleGenerationRequest);
-        }
-        // Now derive the TLE
-        TLE fitted = TLE.stateToTLE(firstState, initialTle);
-        return fitted.getLine1() + "\n" + fitted.getLine2();
-    }
-
-    private TLE initialiseTleFromOem(IOrbitModel model, TleGenerationRequest request) {
-        int satNumber = request.getSatNumber();
-        char classification = request.getClassification();
-        int launchYear = request.getLaunchYear();
-        int launchNumber = request.getLaunchNumber();
-        String launchPiece = request.getLaunchPiece();
-        int revolutionNumberAtEpoch = request.getRevolutionNumberAtEpoch();
-        Date epochDate = request.getEpoch();
-        AbsoluteDate epoch = TimeUtils.toAbsoluteDate(epochDate);
-        int elementNumber = request.getElementNumber();
-
-        // Set meanMotionFirstDerivative, meanMotionSecondDerivative, bStar to zero
-        double meanMotionFirstDerivative = 0;
-        double meanMotionSecondDerivative = 0;
-        double bStar = 0;
-
-        // Get the inner orbit and convert to Keplerian orbit if needed
-        KeplerianOrbit keplerianOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(model.getPropagator().getInitialState().getOrbit());
-        double e = keplerianOrbit.getE();
-        double i = keplerianOrbit.getI();
-        double meanMotion = keplerianOrbit.getKeplerianMeanMotion();
-        int ephemerisType = TLE.DEFAULT;
-
-        double pa = keplerianOrbit.getPerigeeArgument();
-        double raan = keplerianOrbit.getRightAscensionOfAscendingNode();
-        double meanAnomaly = keplerianOrbit.getMeanAnomaly();
-
-        return new TLE(satNumber, classification, launchYear, launchNumber, launchPiece, ephemerisType, elementNumber,
-                epoch, meanMotion, meanMotionFirstDerivative, meanMotionSecondDerivative, e, i, pa, raan, meanAnomaly, revolutionNumberAtEpoch,
-                bStar);
     }
 }
