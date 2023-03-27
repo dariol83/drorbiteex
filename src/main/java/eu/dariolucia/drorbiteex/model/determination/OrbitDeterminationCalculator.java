@@ -157,7 +157,7 @@ public class OrbitDeterminationCalculator {
             estimator.setMaxIterations(estimatorMaxIterations);
             estimator.setMaxEvaluations(estimatorMaxEvaluations);
             // Adding the measurements
-            ObservableSatellite os = new ObservableSatellite(1);
+            ObservableSatellite os = new ObservableSatellite(0);
             for(Measurement m : request.getMeasurementList()) {
                 estimator.addMeasurement(m.toOrekitMeasurement(os, eciOrbit.getFrame()));
             }
