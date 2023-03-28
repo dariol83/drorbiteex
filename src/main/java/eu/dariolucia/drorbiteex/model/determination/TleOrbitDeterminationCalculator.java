@@ -129,6 +129,7 @@ public class TleOrbitDeterminationCalculator {
             MatrixDecomposer matrixDecomposer = new QRDecomposer(1e-11);
             GaussNewtonOptimizer optimizer = new GaussNewtonOptimizer(matrixDecomposer, false);
             BatchLSEstimator estimator = new BatchLSEstimator(optimizer, propagatorBuilder);
+            // TODO: add estimator observer
             estimator.setParametersConvergenceThreshold(estimatorConvergenceThres);
             estimator.setMaxIterations(estimatorMaxIterations);
             estimator.setMaxEvaluations(estimatorMaxEvaluations);

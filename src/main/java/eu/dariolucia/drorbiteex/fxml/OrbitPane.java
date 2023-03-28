@@ -355,6 +355,7 @@ public class OrbitPane implements Initializable {
             Orbit orbit = originalOrbit.getOrbit();
             List<Orbit> orbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
             TleGenerationRequest tleGenerationRequest = ExportTleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, orbits);
+            // TODO: convert to monitored task
             if(tleGenerationRequest != null) {
                 BackgroundThread.runLater(() -> {
                     try {
