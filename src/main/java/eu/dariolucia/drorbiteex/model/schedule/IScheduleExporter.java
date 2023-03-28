@@ -20,8 +20,10 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Exporter implementation for CCSDS Simple Schedule files.
@@ -35,7 +37,7 @@ public interface IScheduleExporter {
      */
     String getName();
 
-    LinkedHashMap<String, String> getSimpleScheduleRootAttributes();
+    LinkedHashMap<String, String> getSimpleScheduleRootAttributes(GroundStation station);
 
     String getScheduledPackageIdFor(ScheduleGenerationRequest request, GroundStation station, Orbit orbit);
 
@@ -53,4 +55,13 @@ public interface IScheduleExporter {
 
     List<ScheduledActivityParameter> getScheduledActivityParameterFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow window, List<ServiceInfoRequest> requests, String scheduledPackageId, String scheduledActivityId);
 
+    Date getBeginningOfTrackFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId);
+
+    Date getEndOfTrackFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId);
+
+    Date getBeginningOfActivityFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId);
+
+    Date getEndOfActivityFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId);
+
+    ServiceInfoParameter getServiceInfoParameterFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId, ServiceInfoRequest serviceInfoRequest, int serviceIdx, int size, Map<Orbit, List<VisibilityWindow>> allPasses);
 }

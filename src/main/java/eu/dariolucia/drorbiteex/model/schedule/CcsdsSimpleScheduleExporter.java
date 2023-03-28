@@ -28,12 +28,13 @@ public class CcsdsSimpleScheduleExporter {
 
     private final PrintStream out;
     private final String file;
-
+    private final ScheduleGenerationRequest request;
     private final SimpleDateFormat timeFormatter = new SimpleDateFormat("yyyy-DDD'T'HH:mm:ss.SSS'Z'");
     private final IScheduleExporter exporter;
 
-    public CcsdsSimpleScheduleExporter(String file, IScheduleExporter exporter) throws IOException {
+    public CcsdsSimpleScheduleExporter(String file, IScheduleExporter exporter, ScheduleGenerationRequest request) throws IOException {
         this.file = file;
+        this.request = request;
         File theFile = new File(file);
         if(!theFile.exists()) {
             theFile.createNewFile();
@@ -46,7 +47,7 @@ public class CcsdsSimpleScheduleExporter {
 
     private void writeStart() {
         out.println("<?xml version=\"1.0\"?>");
-        LinkedHashMap<String, String> attribs = exporter.getSimpleScheduleRootAttributes();
+        LinkedHashMap<String, String> attribs = exporter.getSimpleScheduleRootAttributes(request.getGroundStation());
         out.print("<simpleSchedule");
         for(Map.Entry<String, String> e : attribs.entrySet()) {
             out.print(" " + e.getKey() + "=\"" + e.getValue() + "\"");
@@ -65,7 +66,7 @@ public class CcsdsSimpleScheduleExporter {
                 " endTime=\"" + timeFormatter.format(request.getEndTime())+ "\"/>");
     }
 
-    public void writeScheduledPackage(ScheduleGenerationRequest request, GroundStation station, Orbit orbit, List<VisibilityWindow> passes) {
+    public void writeScheduledPackage(ScheduleGenerationRequest request, GroundStation station, Orbit orbit, List<VisibilityWindow> passes, Map<Orbit, List<VisibilityWindow>> allPasses) {
         // Open Package - one per satellite
         String packageId = exporter.getScheduledPackageIdFor(request, station, orbit);
         String packageComment = exporter.getScheduledPackageCommentFor(request, station, orbit, packageId);
@@ -88,35 +89,64 @@ public class CcsdsSimpleScheduleExporter {
         }
         // Activities
         for(VisibilityWindow vw : passes) {
-            writeActivity(request, station, orbit, vw, request.getServiceInfoRequests(), packageId);
+            writeActivity(request, station, orbit, vw, request.getServiceInfoRequests(), packageId, allPasses);
         }
         // Close Package
         out.println("\t\t</scheduledPackage>");
     }
 
-    private void writeActivity(ScheduleGenerationRequest request, GroundStation station, Orbit orbit, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId) {
+    private void writeActivity(ScheduleGenerationRequest request, GroundStation station, Orbit orbit, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, Map<Orbit, List<VisibilityWindow>> allPasses) {
         // Activity
         String activityId = exporter.getScheduledActivityIdFor(request, station, vw);
         ActivityStatusEnum activityStatus = exporter.getScheduledActivityStatusFor(request, station, vw, services, packageId, activityId);
+        Date aos = exporter.getBeginningOfTrackFor(request, station, vw, services, packageId, activityId);
+        Date los = exporter.getEndOfTrackFor(request, station, vw, services, packageId, activityId);
         out.print("\t\t\t<scheduledActivity scheduledActivityId=\"" + activityId + "\"" +
                 " activityStatus=\"" + activityStatus.name() + "\"" +
                 " siteRef=\"" + station.getSite() + "\"" +
                 " apertureRef=\"" + station.getCode() + "\"\n" +
                 " \t\t\torbitNumber=\"" + vw.getOrbitNumber() + "\"" +
-                " beginningOfTrack=\"" + timeFormatter.format(vw.getAos()) + "\"" +
-                " endOfTrack=\"" + timeFormatter.format(vw.getLos()) + "\"");
+                " beginningOfTrack=\"" + timeFormatter.format(aos) + "\"" +
+                " endOfTrack=\"" + timeFormatter.format(los) + "\"");
         if(request.getStartEndActivityDeltaSeconds() >= 0) {
-            Date beginningOfActivity = new Date(vw.getAos().getTime() - (request.getStartEndActivityDeltaSeconds() * 1000L));
-            Date endOfActivity = new Date(vw.getLos().getTime() + (request.getStartEndActivityDeltaSeconds() * 1000L));
+            Date beginningOfActivity = new Date(aos.getTime() - (request.getStartEndActivityDeltaSeconds() * 1000L));
+            Date endOfActivity = new Date(los.getTime() + (request.getStartEndActivityDeltaSeconds() * 1000L));
             out.println("\n\t\t\t beginningOfActivity=\"" + timeFormatter.format(beginningOfActivity)+ "\"" +
                     " endOfActivity=\"" + timeFormatter.format(endOfActivity)+ "\">");
         } else {
+            // Check the default exporter
+            Date beginningOfActivity = exporter.getBeginningOfActivityFor(request, station, vw, services, packageId, activityId);
+            Date endOfActivity = exporter.getEndOfActivityFor(request, station, vw, services, packageId, activityId);
+            if(beginningOfActivity != null) {
+                out.print("\n\t\t\t beginningOfActivity=\"" + timeFormatter.format(beginningOfActivity)+ "\"");
+            }
+            if(endOfActivity != null) {
+                out.print("\n\t\t\t endOfActivity=\"" + timeFormatter.format(endOfActivity)+ "\"");
+            }
             out.println(">");
         }
         // Service info
+        int serviceIdx = 0;
         for(ServiceInfoRequest sir : services) {
-            out.println("\t\t\t\t<serviceInfo serviceType=\"" + sir.getService().getType() + "\"" +
-                    " frequencyBand=\"" + sir.getFrequency().getFrequencyBand() + "\" />");
+            ServiceInfoParameter serviceInfoData = exporter.getServiceInfoParameterFor(request, station, vw, services, packageId, activityId, sir, serviceIdx, services.size(), allPasses);
+            if(serviceInfoData == null) {
+                out.println("\t\t\t\t<serviceInfo serviceType=\"" + sir.getService().getType() + "\"" +
+                        " frequencyBand=\"" + sir.getFrequency().getFrequencyBand() + "\"/>");
+            } else {
+                out.println("\t\t\t\t<serviceInfo serviceType=\"" + sir.getService().getType() + "\"" +
+                        " frequencyBand=\"" + sir.getFrequency().getFrequencyBand() + "\">");
+                if(serviceInfoData.getName() != null) {
+                    out.println("\t\t\t\t\t<extendedParameter name=\"" + serviceInfoData.getName()+ "\">");
+                }
+                for (ScheduledActivityParameter p : serviceInfoData.getParameters()) {
+                    out.println("\t\t\t\t\t<" + p.getTagName() + " name=\"" + p.getParameterName() + "\" value=\"" + p.getParameterValue() + "\" />");
+                }
+                if(serviceInfoData.getName() != null) {
+                    out.println("\t\t\t\t\t</extendedParameter>");
+                }
+                out.println("\t\t\t\t</serviceInfo>");
+            }
+            ++serviceIdx;
         }
         // Extended activity parameters
         List<ScheduledActivityParameter> extendedParameters = exporter.getScheduledActivityParameterFor(request, station, vw, services, packageId, activityId);

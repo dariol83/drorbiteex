@@ -63,8 +63,8 @@ public class DrOrbiteex extends Application {
             substage.setAlwaysOnTop(true);
             Scene scene = new Scene(root);
             substage.setScene(scene);
-            substage.setWidth(400);
-            substage.setHeight(300);
+            substage.setWidth(640);
+            substage.setHeight(625);
             Image icon = new Image(DrOrbiteex.class.getResourceAsStream("/satellite-uplink_24.png"));
             substage.getIcons().add(icon);
             substage.show();

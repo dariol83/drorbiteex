@@ -21,6 +21,7 @@ import eu.dariolucia.drorbiteex.model.determination.OemImporter;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationRequest;
 import eu.dariolucia.drorbiteex.model.determination.TdmImporter;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -204,10 +205,21 @@ public class OrbitDeterminationDialog implements Initializable {
         if(lastUsedCd != null) {
             this.cdText.setText(String.valueOf(lastUsedCd));
         }
+        // If the orbit is TLE, we will use a TLEPropagator, without support for forces
+        if(gs.getModel() instanceof TleOrbitModel) {
+            this.useAtmosphericDragCheckbox.setDisable(true);
+            this.useSolarRadiationPressureCheckbox.setDisable(true);
+            this.useSunPerturbationCheckbox.setDisable(true);
+            this.useMoonPerturbationCheckbox.setDisable(true);
+            this.useRelativityCheckbox.setDisable(true);
+            this.useAtmosphericDragCheckbox.setSelected(false);
+            this.useSolarRadiationPressureCheckbox.setSelected(false);
+            this.useSunPerturbationCheckbox.setSelected(false);
+            this.useMoonPerturbationCheckbox.setSelected(false);
+            this.useRelativityCheckbox.setSelected(false);
+        }
         validate();
     }
-
-    // TODO: complete functionality for other buttons
 
     public void onTdmLoadAction(ActionEvent actionEvent) {
         FileChooser fc = new FileChooser();

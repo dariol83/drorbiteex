@@ -26,6 +26,7 @@ import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationCalculator;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationRequest;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationResult;
+import eu.dariolucia.drorbiteex.model.determination.TleOrbitDeterminationCalculator;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
 import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
@@ -374,7 +375,7 @@ public class OrbitPane implements Initializable {
         // Open menu
         ContextMenu menu = new ContextMenu();
         for(OrbitGraphics og : getOrbitGraphics()) {
-            CheckMenuItem menuItem = new CheckMenuItem(og.getOrbit().getCode());
+            CheckMenuItem menuItem = new CheckMenuItem(og.getOrbit().getName());
             menuItem.setSelected(this.selectedGroundStationOrbit != null && og.getOrbit().equals(this.selectedGroundStationOrbit.getOrbit()));
             menuItem.setOnAction(o -> updateSelectedOrbit(menuItem.isSelected() ? og : null));
             menu.getItems().add(menuItem);
@@ -393,6 +394,7 @@ public class OrbitPane implements Initializable {
         OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
             Orbit orbit = originalOrbit.getOrbit();
+            boolean isTle = originalOrbit.getOrbit().getModel() instanceof TleOrbitModel;
             OrbitDeterminationRequest request = OrbitDeterminationDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, manager.getGroundStationManager().getGroundStations());
             if(request != null) {
                 IMonitorableCallable<OrbitDeterminationResult> task = monitor -> {
@@ -408,7 +410,11 @@ public class OrbitPane implements Initializable {
                         }
                     };
                     try {
-                        return OrbitDeterminationCalculator.compute(request, monitorBridge);
+                        if(isTle) {
+                            return TleOrbitDeterminationCalculator.compute(request, monitorBridge);
+                        } else {
+                            return OrbitDeterminationCalculator.compute(request, monitorBridge);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                         throw e;

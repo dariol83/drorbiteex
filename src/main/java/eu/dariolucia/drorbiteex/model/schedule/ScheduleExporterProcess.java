@@ -28,8 +28,7 @@ import org.orekit.time.TimeScalesFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScheduleExporterProcess {
@@ -50,24 +49,30 @@ public class ScheduleExporterProcess {
         CcsdsSimpleScheduleExporter exporter = null;
         String generatedFile = null;
         if(request.getFilePath() != null) {
-            exporter = new CcsdsSimpleScheduleExporter(request.getFilePath(), externalExporter);
+            exporter = new CcsdsSimpleScheduleExporter(request.getFilePath(), externalExporter, request);
             generatedFile = request.getFilePath();
         } else {
             String folder = request.getFolderPath();
             IScheduleNameGenerator generator = ScheduleExporterRegistry.instance().getNameGenerator(request.getGeneratorToUse());
             folder += File.separator + generator.generateFileName(request, genDate);
-            exporter = new CcsdsSimpleScheduleExporter(folder, externalExporter);
+            exporter = new CcsdsSimpleScheduleExporter(folder, externalExporter, request);
             generatedFile = folder;
         }
         exporter.writeHeader(request, genDate);
-        // Go for passes
+        // Go for passes - Compute everything and put it in a map
+        Map<Orbit, List<VisibilityWindow>> orbit2passesMap = new LinkedHashMap<>();
         int progress = 0;
         for(Orbit o : request.getOrbits()) {
             List<VisibilityWindow> passes = computePasses(request.getGroundStation(), o, request.getStartTime(), request.getEndTime());
             if(monitor != null && monitor.isCancelled()) {
                 return null;
             }
-            exporter.writeScheduledPackage(request, request.getGroundStation(), o, passes);
+            orbit2passesMap.put(o, passes);
+        }
+        // Now write the file
+        for(Orbit o : request.getOrbits()) {
+            List<VisibilityWindow> passes = orbit2passesMap.get(o);
+            exporter.writeScheduledPackage(request, request.getGroundStation(), o, passes, Collections.unmodifiableMap(orbit2passesMap));
             ++progress;
             if(monitor != null) {
                 monitor.progress(progress, request.getOrbits().size(), "Processed " + o.getName());

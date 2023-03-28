@@ -31,6 +31,8 @@ import java.util.Date;
 public class TleUtils {
 
     public static String exportTle(TleGenerationRequest tleGenerationRequest) {
+        // TODO: this is suboptimal, check how OD is performed (TleOrbitDeterminationCalculator), starting from OEM
+        //  i.e. initial state, TLEBuilderPropagator with TLE fit, estimator based on original points (propagated)
         // First, copy the orbit
         Orbit toPropagate = tleGenerationRequest.getOrbit().copy();
         AbsoluteDate startTime = TimeUtils.toAbsoluteDate(tleGenerationRequest.getStartTime());

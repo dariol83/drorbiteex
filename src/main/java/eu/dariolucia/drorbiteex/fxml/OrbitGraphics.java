@@ -151,7 +151,7 @@ public class OrbitGraphics implements IOrbitListener {
         result = result.createConcatenation(new Rotate(Math.toDegrees(currentPosition.getLatLonHeight().getLongitude()), new Point3D(0, -1, 0)));
         this.textItem.getTransforms().clear();
         this.textItem.getTransforms().add(result);
-        this.textItem.setText(obj.getCode());
+        this.textItem.setText(obj.getName());
         this.textItem.setFill(Color.WHITE);
         this.textItem.setStroke(c);
     }
@@ -170,7 +170,7 @@ public class OrbitGraphics implements IOrbitListener {
         // Spacecraft object
         this.scItem = new Box(5,5,5);
         // Spacecraft text
-        this.textItem = new Text(0, 0, obj.getCode());
+        this.textItem = new Text(0, 0, obj.getName());
 
         return Arrays.asList(graphicItem, scItem, textItem);
     }
@@ -219,7 +219,7 @@ public class OrbitGraphics implements IOrbitListener {
                 } else {
                     gc.fillRect(scCenter[0] - 2, scCenter[1] - 2, 4, 4);
                 }
-                gc.fillText(obj.getCode(), scCenter[0], scCenter[1] - 5);
+                gc.fillText(obj.getName(), scCenter[0], scCenter[1] - 5);
             }
         }
     }
@@ -265,6 +265,6 @@ public class OrbitGraphics implements IOrbitListener {
 
     @Override
     public String toString() {
-        return this.obj.getCode();
+        return this.obj.getName();
     }
 }

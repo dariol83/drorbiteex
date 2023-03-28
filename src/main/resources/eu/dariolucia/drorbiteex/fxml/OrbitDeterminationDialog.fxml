@@ -76,8 +76,6 @@
                      <children>
                         <Button maxWidth="100" minWidth="100" onAction="#onTdmLoadAction" text="TDM..." />
                         <Button maxWidth="100" minWidth="100" onAction="#onOemLoadAction" text="OEM..." />
-                        <Button maxWidth="100" minWidth="100" text="Range..." />
-                        <Button maxWidth="100" minWidth="100" text="Position..." />
                         <Separator />
                         <Button maxWidth="100" minWidth="100" onAction="#onDeleteAction" text="Delete..." />
                      </children>

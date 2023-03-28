@@ -20,10 +20,7 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.station.VisibilityWindow;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DefaultExporter implements IScheduleExporter {
 
@@ -33,7 +30,7 @@ public class DefaultExporter implements IScheduleExporter {
     }
 
     @Override
-    public LinkedHashMap<String, String> getSimpleScheduleRootAttributes() {
+    public LinkedHashMap<String, String> getSimpleScheduleRootAttributes(GroundStation station) {
         return new LinkedHashMap<>(Map.of(
                 "xmlns", "urn:ccsds:schema:cssm:1.0.0",
                 "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance",
@@ -81,5 +78,30 @@ public class DefaultExporter implements IScheduleExporter {
     @Override
     public List<ScheduledActivityParameter> getScheduledActivityParameterFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow window, List<ServiceInfoRequest> requests, String scheduledPackageId, String scheduledActivityId) {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Date getBeginningOfTrackFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId) {
+        return vw.getAos();
+    }
+
+    @Override
+    public Date getEndOfTrackFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId) {
+        return vw.getLos();
+    }
+
+    @Override
+    public Date getBeginningOfActivityFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId) {
+        return null;
+    }
+
+    @Override
+    public Date getEndOfActivityFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId) {
+        return null;
+    }
+
+    @Override
+    public ServiceInfoParameter getServiceInfoParameterFor(ScheduleGenerationRequest request, GroundStation station, VisibilityWindow vw, List<ServiceInfoRequest> services, String packageId, String activityId, ServiceInfoRequest serviceInfoRequest, int serviceIdx, int size, Map<Orbit, List<VisibilityWindow>> allPasses) {
+        return null;
     }
 }
