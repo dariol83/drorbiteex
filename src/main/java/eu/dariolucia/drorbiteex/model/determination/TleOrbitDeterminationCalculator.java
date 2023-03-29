@@ -16,36 +16,20 @@
 
 package eu.dariolucia.drorbiteex.model.determination;
 
-import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
 import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
-import eu.dariolucia.drorbiteex.model.util.TimeUtils;
-import org.hipparchus.linear.MatrixDecomposer;
-import org.hipparchus.linear.QRDecomposer;
-import org.hipparchus.optim.nonlinear.vector.leastsquares.GaussNewtonOptimizer;
-import org.orekit.attitudes.NadirPointing;
-import org.orekit.estimation.leastsquares.BatchLSEstimator;
-import org.orekit.estimation.measurements.EstimatedMeasurement;
+import org.hipparchus.optim.nonlinear.vector.leastsquares.LeastSquaresProblem;
+import org.orekit.estimation.leastsquares.BatchLSObserver;
+import org.orekit.estimation.measurements.EstimationsProvider;
 import org.orekit.estimation.measurements.ObservableSatellite;
-import org.orekit.estimation.measurements.ObservedMeasurement;
-import org.orekit.frames.Frame;
-import org.orekit.frames.FramesFactory;
-import org.orekit.frames.ITRFVersion;
-import org.orekit.models.earth.ReferenceEllipsoid;
-import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.Propagator;
-import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.tle.SGP4;
+import org.orekit.orbits.Orbit;
 import org.orekit.propagation.analytical.tle.TLE;
-import org.orekit.propagation.analytical.tle.TLEPropagator;
-import org.orekit.propagation.conversion.TLEPropagatorBuilder;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.IERSConventions;
+import org.orekit.utils.ParameterDriversList;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -87,7 +71,7 @@ public class TleOrbitDeterminationCalculator {
         }
     }
 
-    private static class Worker implements Callable<OrbitDeterminationResult> {
+    private static class Worker implements Callable<OrbitDeterminationResult>, BatchLSObserver {
         private final ITaskProgressMonitor monitor;
         private final OrbitDeterminationRequest request;
 
@@ -98,69 +82,34 @@ public class TleOrbitDeterminationCalculator {
 
         @Override
         public OrbitDeterminationResult call() {
-            // Estimator parameters
-            double estimatorPositionScale = 1.0; // m
-            double estimatorConvergenceThres = 0.001;
-            int estimatorMaxIterations = 25;
-            int estimatorMaxEvaluations = 35;
-
-            // Credits: https://nbviewer.org/github/GorgiAstro/laser-orbit-determination/blob/6cafcef83dbc03a61d64417d0aeb0977caf0e064/02-orbit-determination-example.ipynb
-            // Credits: https://gitlab.orekit.org/orekit/orekit-tutorials/-/blob/master/src/main/java/org/orekit/tutorials/estimation/TLEBasedOrbitDetermination.java
-            // Credits: https://forum.orekit.org/t/issue-with-orbit-determination-from-oem-measurements/2410/3
-
-            // Prepare objects and properties for orbit determination
-            Frame gcrf = FramesFactory.getGCRF();
-            Frame itrf = FramesFactory.getITRF(ITRFVersion.ITRF_2014, IERSConventions.IERS_2010, false);
-            // Selecting frames to use for OD
-            ReferenceEllipsoid wgs84Ellipsoid = ReferenceEllipsoid.getWgs84(itrf);
             // ---------------------------------------------------
-            // Setting up propagator
+            // Compute required start objects
             // ---------------------------------------------------
             TLE startingTLE = ((TleOrbitModel) request.getOrbit().getModel()).getTleObject();
             AbsoluteDate theStartingTime = retrieveTimeFromMeasures(request.getMeasurementList());
-            NadirPointing nadirPointing = new NadirPointing(gcrf, wgs84Ellipsoid);
-            SGP4 sgp4Propagator = new SGP4(startingTLE, nadirPointing, request.getMass());
-            SpacecraftState initialState = sgp4Propagator.propagate(theStartingTime.shiftedBy(-1)); // Propagate to a date close to the first measurement
-            TLEPropagatorBuilder propagatorBuilder = new TLEPropagatorBuilder(TLE.stateToTLE(initialState, startingTLE), PositionAngle.MEAN, estimatorPositionScale);
-            propagatorBuilder.setAttitudeProvider(nadirPointing);
             // ---------------------------------------------------
-            // Setting up the estimator
+            // Allocate the estimator
             // ---------------------------------------------------
-            MatrixDecomposer matrixDecomposer = new QRDecomposer(1e-11);
-            GaussNewtonOptimizer optimizer = new GaussNewtonOptimizer(matrixDecomposer, false);
-            BatchLSEstimator estimator = new BatchLSEstimator(optimizer, propagatorBuilder);
-            // TODO: add estimator observer
-            estimator.setParametersConvergenceThreshold(estimatorConvergenceThres);
-            estimator.setMaxIterations(estimatorMaxIterations);
-            estimator.setMaxEvaluations(estimatorMaxEvaluations);
+            TleOrbitDetermination estimator = new TleOrbitDetermination(startingTLE, theStartingTime, request.getMass());
+            // Since we use a TLE propagator as input, the propagation will be done using SGP4 propagator, so the initial state can be null
+            estimator.initialise(null);
             // ---------------------------------------------------
-            // Adding the measurements
+            // Add the measurements
             // ---------------------------------------------------
-            ObservableSatellite os = new ObservableSatellite(0);
+            ObservableSatellite os = estimator.getObservableSatellite();
             for(Measurement m : request.getMeasurementList()) {
-                estimator.addMeasurement(m.toOrekitMeasurement(os, propagatorBuilder.getFrame()));
+                estimator.addMeasurements(Collections.singletonList(m.toOrekitMeasurement(os, estimator.getOrbitPropagatorFrame())));
             }
+            // ---------------------------------------------------
+            // Add the observer
+            // ---------------------------------------------------
+            estimator.setObserver(this);
             // ---------------------------------------------------
             // Starting the estimation
             // ---------------------------------------------------
             monitor.progress(-1, 0, "Estimating new orbit...");
-            Propagator[] propagators = estimator.estimate();
-            // Get the final data
-            TLEPropagator estimatedPropagator = (TLEPropagator) propagators[0]; // to return
-            // Generate TLE
-            TLE fitted = estimatedPropagator.getTLE();
-            String tleLines = fitted.getLine1() + "\n" + fitted.getLine2(); // to return
-            System.out.println(tleLines);
-            // Residuals
-            Map<ObservedMeasurement<?>, EstimatedMeasurement<?>> lastEstimations = estimator.getLastEstimations();
-            List<ErrorPoint> residuals = new ArrayList<>(); // to return
-            for(Map.Entry<ObservedMeasurement<?>, EstimatedMeasurement<?>> e : lastEstimations.entrySet()) {
-                double[] estimated = e.getValue().getEstimatedValue();
-                double[] observed = e.getValue().getObservedValue();
-                AbsoluteDate time = e.getValue().getDate();
-                residuals.add(new ErrorPoint(TimeUtils.toInstant(time), estimated[0], observed[0], observed[0] - estimated[0]));
-            }
-            return new OrbitDeterminationResult(request, estimatedPropagator, tleLines, residuals);
+            TleOrbitDetermination.Result result = estimator.estimate();
+            return new OrbitDeterminationResult(request, result.getPropagator(), result.getTle().getLine1() + "\n" + result.getTle().getLine2(), result.getResiduals());
         }
 
         private AbsoluteDate retrieveTimeFromMeasures(List<Measurement> measurementList) {
@@ -172,6 +121,15 @@ public class TleOrbitDeterminationCalculator {
                 }
             }
             return startingDate;
+        }
+
+        @Override
+        public void evaluationPerformed(int iterationsCount, int evaluationsCount, Orbit[] orbits, ParameterDriversList estimatedOrbitalParameters, ParameterDriversList estimatedPropagatorParameters, ParameterDriversList estimatedMeasurementsParameters, EstimationsProvider evaluationsProvider, LeastSquaresProblem.Evaluation lspEvaluation) {
+            String message = "Iterations: " + iterationsCount + "/" + TleOrbitDetermination.ESTIMATOR_MAX_ITERATIONS +
+                    " - Evaluations: " + evaluationsCount + "/" + TleOrbitDetermination.ESTIMATOR_MAX_EVALUATIONS +
+                    " - RMS:" + lspEvaluation.getRMS() +
+                    " - Nb: " + evaluationsProvider.getNumber();
+            monitor.progress(iterationsCount, TleOrbitDetermination.ESTIMATOR_MAX_ITERATIONS, message);
         }
     }
 }

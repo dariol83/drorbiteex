@@ -18,6 +18,7 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.orbit.OemOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -40,11 +41,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Date;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 public class OemOrbitDialog implements Initializable {
+
     public TextField codeText;
     public TextField nameText;
     public TextField filePathText;
@@ -54,7 +57,7 @@ public class OemOrbitDialog implements Initializable {
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     public ProgressIndicator oemProgress;
-
+    public Label validityLabel;
     private String oemString;
 
     private String error;
@@ -91,15 +94,20 @@ public class OemOrbitDialog implements Initializable {
         colorPicker.setValue(Color.valueOf(gs.getColor()));
         if(gs.getModel() instanceof OemOrbitModel) {
             oemString = ((OemOrbitModel) gs.getModel()).getOem();
-            updateTextAreaFromOemString();
+            updateTextAreaFromOemString(((OemOrbitModel) gs.getModel()).getStart(), ((OemOrbitModel) gs.getModel()).getEnd());
         }
     }
 
-    private void updateTextAreaFromOemString() {
+    private void updateTextAreaFromOemString(Date start, Date end) {
         if(oemString.length() > 5000) {
             oemTextArea.setText("-- OEM file too large to be displayed --");
         } else {
             oemTextArea.setText(oemString);
+        }
+        if(start != null && end != null) {
+            this.validityLabel.setText(TimeUtils.formatDate(start) + " - " + TimeUtils.formatDate(end));
+        } else {
+            this.validityLabel.setText("---");
         }
     }
 
@@ -165,7 +173,7 @@ public class OemOrbitDialog implements Initializable {
                     Platform.runLater(() -> {
                         if (newOem != null) {
                             oemString = newOem;
-                            updateTextAreaFromOemString();
+                            updateTextAreaFromOemString(null, null);
                         }
                         oemTextArea.setDisable(false);
                         oemProgress.setVisible(false);

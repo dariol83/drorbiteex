@@ -78,6 +78,22 @@ public class OemOrbitModel implements IOrbitModel {
         }
     }
 
+    public Date getStart() {
+        if(this.oemObject != null && !this.oemObject.getSegments().isEmpty()) {
+            return this.oemObject.getSegments().get(0).getStart().toDate(TimeScalesFactory.getUTC());
+        } else {
+            return null;
+        }
+    }
+
+    public Date getEnd() {
+        if(this.oemObject != null && !this.oemObject.getSegments().isEmpty()) {
+            return this.oemObject.getSegments().get(0).getStop().toDate(TimeScalesFactory.getUTC());
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public synchronized Propagator getPropagator() {
         if(this.oemPropagator == null) {

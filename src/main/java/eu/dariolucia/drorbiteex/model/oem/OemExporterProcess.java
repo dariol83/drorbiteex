@@ -18,6 +18,7 @@ package eu.dariolucia.drorbiteex.model.oem;
 
 import eu.dariolucia.drorbiteex.model.orbit.IOrbitModel;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
+import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.orekit.attitudes.Attitude;
 import org.orekit.bodies.CelestialBodyFactory;
@@ -35,6 +36,8 @@ import org.orekit.frames.Frame;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScales;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.AbsolutePVCoordinates;
 import org.orekit.utils.TimeStampedPVCoordinates;
 
@@ -46,7 +49,7 @@ import java.util.List;
 
 public class OemExporterProcess {
 
-    public String exportOem(OemGenerationRequest request) throws IOException {
+    public String exportOem(OemGenerationRequest request, ITaskProgressMonitor monitor) throws IOException {
         Orbit targetOrbit = request.getOrbit();
         if(targetOrbit == null) {
             throw new IllegalArgumentException("Orbit not set");
@@ -66,12 +69,34 @@ public class OemExporterProcess {
         SpacecraftState ss1 = p.propagate(startDate);
         states.add(convert(ss1, request.getFrame()));
 
-        // Move propagation by steps of periodSeconds
+        // Move propagation by steps of periodSeconds - compute progress
+        long totalProgress = 0;
+        {
+            AbsoluteDate currentDate = startDate;
+            while (currentDate.isBefore(endDate)) {
+                currentDate = currentDate.shiftedBy(request.getPeriodSeconds());
+                ++totalProgress;
+            }
+        }
+        totalProgress += 1; // for file generation
+        //
+        long progress = 0;
         AbsoluteDate currentDate = startDate;
         while(currentDate.isBefore(endDate)) {
             currentDate = currentDate.shiftedBy(request.getPeriodSeconds());
             SpacecraftState ss = p.propagate(currentDate);
             states.add(convert(ss, request.getFrame()));
+            if(monitor != null && monitor.isCancelled()) {
+                return null;
+            }
+            if(monitor != null) {
+                monitor.progress(progress, totalProgress, "Date: " + TimeUtils.formatDate(currentDate.toDate(TimeScalesFactory.getUTC())));
+            }
+            ++progress;
+        }
+
+        if(monitor != null && monitor.isCancelled()) {
+            return null;
         }
 
         Date generationDate = new Date();
@@ -114,6 +139,9 @@ public class OemExporterProcess {
             writer = new EphemerisWriter(new WriterBuilder().buildOemWriter(),
                     header, template, request.getFormat(), "dummy", 60);
         }
+        if(monitor != null && monitor.isCancelled()) {
+            return null;
+        }
         writer.write(generatedFile, ephemerisFile);
 
         // Post process
@@ -122,6 +150,9 @@ public class OemExporterProcess {
             if(processor != null) {
                 processor.postProcess(generatedFile, request, generationDate);
             }
+        }
+        if(monitor != null) {
+            monitor.progress(totalProgress, totalProgress, "File generated: " + generatedFile);
         }
 
         return generatedFile;

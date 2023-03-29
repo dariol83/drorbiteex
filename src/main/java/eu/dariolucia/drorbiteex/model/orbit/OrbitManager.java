@@ -154,14 +154,6 @@ public class OrbitManager {
         this.listeners.forEach(o -> o.endOrbitTimeUpdate(time, forceUpdate));
     }
 
-    public String exportOem(OemGenerationRequest request) throws IOException {
-        return new OemExporterProcess().exportOem(request);
-    }
-
-    public String exportTle(TleGenerationRequest request) {
-        return new TleExporterProcess().exportTle(request);
-    }
-
     public OrbitParameterConfiguration getConfiguration() {
         return configuration;
     }

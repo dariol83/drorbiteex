@@ -22,20 +22,17 @@ import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
 import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
-import eu.dariolucia.drorbiteex.model.collinearity.TrackingErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationCalculator;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationRequest;
 import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationResult;
 import eu.dariolucia.drorbiteex.model.determination.TleOrbitDeterminationCalculator;
+import eu.dariolucia.drorbiteex.model.oem.OemExporterProcess;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
 import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
-import eu.dariolucia.drorbiteex.model.tle.TleUtils;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
-import javafx.application.Platform;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
@@ -44,7 +41,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.util.StringConverter;
 
 import java.net.URL;
 import java.util.*;
@@ -230,20 +226,41 @@ public class OrbitPane implements Initializable {
     }
 
     public void onExportOemOrbitAction(ActionEvent actionEvent) {
+        final String taskName = "OEM Export";
         OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
             Orbit orbit = originalOrbit.getOrbit();
             OemGenerationRequest oemGenerationRequest = ExportOemOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit);
             if(oemGenerationRequest != null) {
-                BackgroundThread.runLater(() -> {
+                IMonitorableCallable<String> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress(taskName, current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
                     try {
-                        final String finalPath = manager.getOrbitManager().exportOem(oemGenerationRequest);
-                        Platform.runLater(() -> DialogUtils.info("OEM Export", "Orbit of " + orbit.getName() + " exported", "OEM file: " + finalPath));
+                        return new OemExporterProcess().exportOem(oemGenerationRequest, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        Platform.runLater(() -> DialogUtils.alert("OEM Export", "Orbit of " + orbit.getName() + " not exported", "Error: " + e.getMessage()));
+                        // e.printStackTrace();
+                        throw e;
                     }
-                });
+                };
+                ProgressDialog.Result<String> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), taskName, task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    DialogUtils.info("OEM Export", "Orbit of " + orbit.getName() + " exported", "OEM file: " + taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert(taskName, "OEM computation for " + originalOrbit.getOrbit().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert(taskName, "OEM computation for " + originalOrbit.getOrbit().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
             }
         }
     }
@@ -327,7 +344,7 @@ public class OrbitPane implements Initializable {
                     try {
                         return OrbitPVErrorAnalyser.analyse(sgr, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        // e.printStackTrace();
                         throw e;
                     }
                 };
@@ -350,24 +367,42 @@ public class OrbitPane implements Initializable {
     }
 
     public void onExportTleOrbitAction(ActionEvent actionEvent) {
+        final String taskName = "TLE Export";
         OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
             Orbit orbit = originalOrbit.getOrbit();
             List<Orbit> orbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).collect(Collectors.toList());
             TleGenerationRequest tleGenerationRequest = ExportTleOrbitDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, orbits);
-            // TODO: convert to monitored task
             if(tleGenerationRequest != null) {
-                BackgroundThread.runLater(() -> {
+                IMonitorableCallable<String> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress(taskName, current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
                     try {
-                        final String result = manager.getOrbitManager().exportTle(tleGenerationRequest);
-                        Platform.runLater(() -> {
-                            TleReportDialog.openDialog(orbitList.getScene().getWindow(), result, tleGenerationRequest, this);
-                        });
+                        return new TleExporterProcess().exportTle(tleGenerationRequest, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        Platform.runLater(() -> DialogUtils.alert("TLE Export", "Orbit of " + orbit.getName() + " not exported", "Error: " + e.getMessage()));
+                        // e.printStackTrace();
+                        throw e;
                     }
-                });
+                };
+                ProgressDialog.Result<String> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), taskName, task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    TleReportDialog.openDialog(orbitList.getScene().getWindow(), taskResult.getResult(), tleGenerationRequest, this);
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert(taskName, "TLE computation error for " + orbit.getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert(taskName, "TLE computation error for " + orbit.getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
             }
         }
     }
@@ -423,7 +458,7 @@ public class OrbitPane implements Initializable {
                 };
                 ProgressDialog.Result<OrbitDeterminationResult> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Determination", task);
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
-                    // TODO:
+                    // TODO: create report dialog
                     System.out.println(taskResult.getResult().getEstimatedTle());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert("Orbit Determination", "Orbit determination  computation for " + originalOrbit.getOrbit().getName(),

@@ -67,6 +67,12 @@
                   </StackPane>
                </children>
             </HBox>
+            <HBox VBox.vgrow="NEVER" spacing="5">
+               <children>
+                  <Label minWidth="150.0" prefWidth="150.0" text="Validity" />
+                  <Label fx:id="validityLabel" minWidth="420.0" prefWidth="420.0" text="---" />
+               </children>
+            </HBox>
             <Separator prefWidth="200.0" />
             <HBox>
                <children>
