@@ -68,11 +68,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+/**
+ * This class works with all Orbit objects.
+ */
 public class OrbitDeterminationCalculator {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
 
-    public static OrbitDeterminationResult compute(OrbitDeterminationRequest request, ITaskProgressMonitor monitor) throws IOException {
+    public static NumericalOrbitDeterminationResult compute(NumericalOrbitDeterminationRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
             monitor = DUMMY_MONITOR;
         }
@@ -85,12 +88,12 @@ public class OrbitDeterminationCalculator {
             return t;
         });
         // Add the job here
-        Future<OrbitDeterminationResult> resultFuture = service.submit(new Worker(request, monitor));
+        Future<NumericalOrbitDeterminationResult> resultFuture = service.submit(new Worker(request, monitor));
         // Shutdown the executor
         service.shutdown();
         // Get the results of the futures
         try {
-            OrbitDeterminationResult result = resultFuture.get();
+            NumericalOrbitDeterminationResult result = resultFuture.get();
             monitor.progress(1, 1, "Done");
             return result;
         } catch (Exception e) {
@@ -101,21 +104,21 @@ public class OrbitDeterminationCalculator {
         }
     }
 
-    private static class Worker implements Callable<OrbitDeterminationResult> {
+    private static class Worker implements Callable<NumericalOrbitDeterminationResult> {
         private final ITaskProgressMonitor monitor;
-        private final OrbitDeterminationRequest request;
+        private final NumericalOrbitDeterminationRequest request;
 
-        public Worker(OrbitDeterminationRequest request, ITaskProgressMonitor monitor) {
+        public Worker(NumericalOrbitDeterminationRequest request, ITaskProgressMonitor monitor) {
             this.monitor = monitor;
             this.request = request;
         }
 
         @Override
-        public OrbitDeterminationResult call() {
+        public NumericalOrbitDeterminationResult call() {
             // Orbit propagator parameters
             double propMinStep = 0.001; // s
             double propMaxStep = 300.0; // s
-            double propPositionError = 10.0; // m
+            double propPositionError = 1.0; // m
 
             // Estimator parameters
             double estimatorPositionScale = 1.0; // m
@@ -126,7 +129,6 @@ public class OrbitDeterminationCalculator {
             Orbit startingOrbit = request.getOrbit().copy();
             // Credits: https://nbviewer.org/github/GorgiAstro/laser-orbit-determination/blob/6cafcef83dbc03a61d64417d0aeb0977caf0e064/02-orbit-determination-example.ipynb
             // Prepare objects and properties for orbit determination
-            // Frame tod = FramesFactory.getTOD(IERSConventions.IERS_2010, false);// Taking tidal effects into account when interpolating EOP parameters
             Frame gcrf = FramesFactory.getGCRF();
             Frame itrf = FramesFactory.getITRF(ITRFVersion.ITRF_2014, IERSConventions.IERS_2010, false);
             // Selecting frames to use for OD
@@ -181,7 +183,8 @@ public class OrbitDeterminationCalculator {
                 AbsoluteDate time = e.getValue().getDate();
                 residuals.add(new ErrorPoint(TimeUtils.toInstant(time), estimated[0], observed[0], observed[0] - estimated[0]));
             }
-            return new OrbitDeterminationResult(request, estimatedPropagator, tleLines, residuals);
+            // return new TleOrbitDeterminationResult(request, estimatedPropagator, tleLines, residuals);
+            return null; // TODO: export OEM
         }
 
         private void addPerturbationForces(Frame ecef, ReferenceEllipsoid wgs84Ellipsoid, NumericalPropagatorBuilder propagatorBuilder) {

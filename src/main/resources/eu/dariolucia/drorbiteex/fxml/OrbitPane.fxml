@@ -87,7 +87,16 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
-                                <MenuItem fx:id="orbitDeterminationButton" mnemonicParsing="false" onAction="#onOrbitDeterminationButtonAction" text="Orbit determination...">
+                                <MenuItem fx:id="tleOrbitDeterminationButton" mnemonicParsing="false" onAction="#onTleOrbitDeterminationButtonAction" text="Orbit determination (TLE)...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/orbit.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                                <MenuItem fx:id="numericalOrbitDeterminationButton" mnemonicParsing="false" onAction="#onNumericalOrbitDeterminationButtonAction" text="Orbit determination (numerical)...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">
                                             <image>

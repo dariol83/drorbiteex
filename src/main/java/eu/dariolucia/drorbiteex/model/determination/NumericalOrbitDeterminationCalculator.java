@@ -16,14 +16,12 @@
 
 package eu.dariolucia.drorbiteex.model.determination;
 
-import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import org.hipparchus.optim.nonlinear.vector.leastsquares.LeastSquaresProblem;
 import org.orekit.estimation.leastsquares.BatchLSObserver;
 import org.orekit.estimation.measurements.EstimationsProvider;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.orbits.Orbit;
-import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.ParameterDriversList;
 
@@ -38,11 +36,11 @@ import java.util.concurrent.Future;
 /**
  * This class works only with Orbit objects using a TleObjectModel as orbit specification.
  */
-public class TleOrbitDeterminationCalculator {
+public class NumericalOrbitDeterminationCalculator {
 
     private static final ITaskProgressMonitor DUMMY_MONITOR = new ITaskProgressMonitor() { };
 
-    public static TleOrbitDeterminationResult compute(TleOrbitDeterminationRequest request, ITaskProgressMonitor monitor) throws IOException {
+    public static NumericalOrbitDeterminationResult compute(NumericalOrbitDeterminationRequest request, ITaskProgressMonitor monitor) throws IOException {
         if(monitor == null) {
             monitor = DUMMY_MONITOR;
         }
@@ -50,17 +48,17 @@ public class TleOrbitDeterminationCalculator {
             return null;
         }
         ExecutorService service = Executors.newFixedThreadPool(1, (r) -> {
-            Thread t = new Thread(r, "TLE Orbit Determination Task" + request.getOrbit().getName());
+            Thread t = new Thread(r, "Numerical Orbit Determination Task" + request.getOrbit().getName());
             t.setDaemon(true);
             return t;
         });
         // Add the job here
-        Future<TleOrbitDeterminationResult> resultFuture = service.submit(new Worker(request, monitor));
+        Future<NumericalOrbitDeterminationResult> resultFuture = service.submit(new Worker(request, monitor));
         // Shutdown the executor
         service.shutdown();
         // Get the results of the futures
         try {
-            TleOrbitDeterminationResult result = resultFuture.get();
+            NumericalOrbitDeterminationResult result = resultFuture.get();
             monitor.progress(1, 1, "Done");
             return result;
         } catch (Exception e) {
@@ -71,27 +69,27 @@ public class TleOrbitDeterminationCalculator {
         }
     }
 
-    private static class Worker implements Callable<TleOrbitDeterminationResult>, BatchLSObserver {
+    private static class Worker implements Callable<NumericalOrbitDeterminationResult>, BatchLSObserver {
         private final ITaskProgressMonitor monitor;
-        private final TleOrbitDeterminationRequest request;
+        private final NumericalOrbitDeterminationRequest request;
 
-        public Worker(TleOrbitDeterminationRequest request, ITaskProgressMonitor monitor) {
+        public Worker(NumericalOrbitDeterminationRequest request, ITaskProgressMonitor monitor) {
             this.monitor = monitor;
             this.request = request;
         }
 
         @Override
-        public TleOrbitDeterminationResult call() {
+        public NumericalOrbitDeterminationResult call() {
             // ---------------------------------------------------
             // Compute required start objects
             // ---------------------------------------------------
-            TLE startingTLE = ((TleOrbitModel) request.getOrbit().getModel()).getTleObject();
             AbsoluteDate theStartingTime = retrieveTimeFromMeasures(request.getMeasurementList());
             // ---------------------------------------------------
             // Allocate the estimator
             // ---------------------------------------------------
-            TleOrbitDetermination estimator = new TleOrbitDetermination(startingTLE, theStartingTime, request.getMass());
-            // Since we use a TLE propagator as input, the propagation will be done using SGP4 propagator, so the initial state can be null
+            NumericalOrbitDetermination estimator = new NumericalOrbitDetermination(request.getOrbit(), theStartingTime, request.getMass(),
+                    request.isUseMoon(), request.isUseSun(), request.isUseSolarPressure(), request.isUseAtmosphericDrag(), request.isUseRelativity(), request.getCrossSection(), request.getCr(), request.getCd());
+            // The propagation will be done using the propagator assigned to the orbit, so the initial state can be null
             estimator.initialise(null);
             // ---------------------------------------------------
             // Add the measurements
@@ -108,8 +106,8 @@ public class TleOrbitDeterminationCalculator {
             // Starting the estimation
             // ---------------------------------------------------
             monitor.progress(-1, 0, "Estimating new orbit...");
-            TleOrbitDetermination.Result result = estimator.estimate();
-            return new TleOrbitDeterminationResult(request, result.getPropagator(), result.getTle().getLine1() + "\n" + result.getTle().getLine2(), result.getResiduals());
+            NumericalOrbitDetermination.Result result = estimator.estimate();
+            return new NumericalOrbitDeterminationResult(request, result.getPropagator(), result.getFinalOrbit(), result.getResiduals());
         }
 
         private AbsoluteDate retrieveTimeFromMeasures(List<Measurement> measurementList) {
@@ -125,11 +123,11 @@ public class TleOrbitDeterminationCalculator {
 
         @Override
         public void evaluationPerformed(int iterationsCount, int evaluationsCount, Orbit[] orbits, ParameterDriversList estimatedOrbitalParameters, ParameterDriversList estimatedPropagatorParameters, ParameterDriversList estimatedMeasurementsParameters, EstimationsProvider evaluationsProvider, LeastSquaresProblem.Evaluation lspEvaluation) {
-            String message = "Iterations: " + iterationsCount + "/" + TleOrbitDetermination.ESTIMATOR_MAX_ITERATIONS +
-                    " - Evaluations: " + evaluationsCount + "/" + TleOrbitDetermination.ESTIMATOR_MAX_EVALUATIONS +
+            String message = "Iterations: " + iterationsCount + "/" + NumericalOrbitDetermination.ESTIMATOR_MAX_ITERATIONS +
+                    " - Evaluations: " + evaluationsCount + "/" + NumericalOrbitDetermination.ESTIMATOR_MAX_EVALUATIONS +
                     " - RMS:" + lspEvaluation.getRMS() +
                     " - Nb: " + evaluationsProvider.getNumber();
-            monitor.progress(iterationsCount, TleOrbitDetermination.ESTIMATOR_MAX_ITERATIONS, message);
+            monitor.progress(iterationsCount, NumericalOrbitDetermination.ESTIMATOR_MAX_ITERATIONS, message);
         }
     }
 }

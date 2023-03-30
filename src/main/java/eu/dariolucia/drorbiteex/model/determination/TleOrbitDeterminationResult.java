@@ -21,21 +21,21 @@ import org.orekit.propagation.Propagator;
 
 import java.util.List;
 
-public class OrbitDeterminationResult {
+public class TleOrbitDeterminationResult {
 
-    private final OrbitDeterminationRequest request;
+    private final TleOrbitDeterminationRequest request;
     private final Propagator estimatedPropagator;
     private final String estimatedTle;
     private final List<ErrorPoint> residuals;
 
-    public OrbitDeterminationResult(OrbitDeterminationRequest request, Propagator estimatedPropagator, String estimatedTle, List<ErrorPoint> residuals) {
+    public TleOrbitDeterminationResult(TleOrbitDeterminationRequest request, Propagator estimatedPropagator, String estimatedTle, List<ErrorPoint> residuals) {
         this.request = request;
         this.estimatedPropagator = estimatedPropagator;
         this.estimatedTle = estimatedTle;
         this.residuals = residuals;
     }
 
-    public OrbitDeterminationRequest getRequest() {
+    public TleOrbitDeterminationRequest getRequest() {
         return request;
     }
 

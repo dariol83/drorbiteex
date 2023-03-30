@@ -18,14 +18,12 @@ package eu.dariolucia.drorbiteex.fxml;
 
 import eu.dariolucia.drorbiteex.model.determination.Measurement;
 import eu.dariolucia.drorbiteex.model.determination.OemImporter;
-import eu.dariolucia.drorbiteex.model.determination.NumericalOrbitDeterminationRequest;
 import eu.dariolucia.drorbiteex.model.determination.TdmImporter;
+import eu.dariolucia.drorbiteex.model.determination.TleOrbitDeterminationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -48,23 +46,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-public class OrbitDeterminationDialog implements Initializable {
+public class TleOrbitDeterminationDialog implements Initializable {
 
     private static Double lastUsedMass = null;
-    private static Double lastUsedCrossSection = null;
-    private static Double lastUsedCr = 1.0;
-    private static Double lastUsedCd = 2.0;
 
     private final BooleanProperty validData = new SimpleBooleanProperty(false);
     public TextField massText;
-    public TextField crossSectionText;
-    public TextField crText;
-    public TextField cdText;
-    public CheckBox useSunPerturbationCheckbox;
-    public CheckBox useMoonPerturbationCheckbox;
-    public CheckBox useRelativityCheckbox;
-    public CheckBox useSolarRadiationPressureCheckbox;
-    public CheckBox useAtmosphericDragCheckbox;
     public TableView<Measurement> measurementTable;
     public TableColumn<Measurement, String> timeColumn;
     public TableColumn<Measurement, Measurement.Type> measureTypeColumn;
@@ -81,19 +68,9 @@ public class OrbitDeterminationDialog implements Initializable {
         measureInfoColumn.setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getInfo()));
         measurementTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        crText.disableProperty().bind(useSolarRadiationPressureCheckbox.selectedProperty().not());
-        cdText.disableProperty().bind(useAtmosphericDragCheckbox.selectedProperty().not());
-        crossSectionText.disableProperty().bind(Bindings.and(useSolarRadiationPressureCheckbox.selectedProperty().not(), useAtmosphericDragCheckbox.selectedProperty().not()));
-
         ChangeListener<Object> validationBroker =  (prop, oldVal, newVal) -> validate();
 
         massText.textProperty().addListener(validationBroker);
-        crossSectionText.textProperty().addListener(validationBroker);
-        crText.textProperty().addListener(validationBroker);
-        cdText.textProperty().addListener(validationBroker);
-        useSolarRadiationPressureCheckbox.selectedProperty().addListener(validationBroker);
-        useAtmosphericDragCheckbox.selectedProperty().addListener(validationBroker);
-
         measurementTable.getItems().addListener((ListChangeListener<Measurement>) change -> validate());
 
         validate();
@@ -104,29 +81,11 @@ public class OrbitDeterminationDialog implements Initializable {
             if(massText.getText().isBlank()) {
                 throw new IllegalStateException("Mass field is blank");
             }
-            if(crossSectionText.getText().isBlank() && !crossSectionText.isDisabled()) {
-                throw new IllegalStateException("Cross section field is blank");
-            }
-            if(crText.getText().isBlank() && !crText.isDisabled()) {
-                throw new IllegalStateException("Reflection coefficient field is blank");
-            }
-            if(cdText.getText().isBlank() && !cdText.isDisabled()) {
-                throw new IllegalStateException("Drag coefficient field is blank");
-            }
             if(measurementTable.getItems().isEmpty()) { // No measurements lead to exception
                 throw new IllegalStateException("No measurements");
             }
 
             Double.parseDouble(massText.getText());
-            if(!crossSectionText.isDisabled()) {
-                Double.parseDouble(crossSectionText.getText());
-            }
-            if(!crText.isDisabled()) {
-                Double.parseDouble(crText.getText());
-            }
-            if(!cdText.isDisabled()) {
-                Double.parseDouble(cdText.getText());
-            }
 
             error = null;
             validData.setValue(true);
@@ -136,37 +95,31 @@ public class OrbitDeterminationDialog implements Initializable {
         }
     }
 
-    public NumericalOrbitDeterminationRequest getResult() {
+    public TleOrbitDeterminationRequest getResult() {
         try {
             lastUsedMass = Double.parseDouble(massText.getText());
-            lastUsedCrossSection = crossSectionText.isDisabled() ? 0 : Double.parseDouble(crossSectionText.getText());
-            lastUsedCr = crText.isDisabled() ? 0 : Double.parseDouble(crText.getText());
-            lastUsedCd = cdText.isDisabled() ? 0 : Double.parseDouble(cdText.getText());
 
-            return new NumericalOrbitDeterminationRequest(referenceOrbit, lastUsedMass, List.copyOf(measurementTable.getItems()),
-                    lastUsedCrossSection, lastUsedCr, lastUsedCd,
-                    useMoonPerturbationCheckbox.isSelected(), useSunPerturbationCheckbox.isSelected(), useRelativityCheckbox.isSelected(),
-                    useSolarRadiationPressureCheckbox.isSelected(), useAtmosphericDragCheckbox.isSelected());
+            return new TleOrbitDeterminationRequest(referenceOrbit, lastUsedMass, List.copyOf(measurementTable.getItems()));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public static NumericalOrbitDeterminationRequest openDialog(Window owner, Orbit orbit, List<GroundStation> groundStations) {
+    public static TleOrbitDeterminationRequest openDialog(Window owner, Orbit orbit, List<GroundStation> groundStations) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Numerical Orbit determination for " + orbit.getName());
+            d.setTitle("Orbit determination for " + orbit.getName());
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = OrbitDeterminationDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/OrbitDeterminationDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = TleOrbitDeterminationDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/TleOrbitDeterminationDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
-            OrbitDeterminationDialog controller = loader.getController();
+            TleOrbitDeterminationDialog controller = loader.getController();
             controller.initialise(orbit, groundStations);
 
             d.getDialogPane().setContent(root);
@@ -192,15 +145,6 @@ public class OrbitDeterminationDialog implements Initializable {
         // set latest used values
         if(lastUsedMass != null) {
             this.massText.setText(String.valueOf(lastUsedMass));
-        }
-        if(lastUsedCrossSection != null) {
-            this.crossSectionText.setText(String.valueOf(lastUsedCrossSection));
-        }
-        if(lastUsedCr != null) {
-            this.crText.setText(String.valueOf(lastUsedCr));
-        }
-        if(lastUsedCd != null) {
-            this.cdText.setText(String.valueOf(lastUsedCd));
         }
         validate();
     }

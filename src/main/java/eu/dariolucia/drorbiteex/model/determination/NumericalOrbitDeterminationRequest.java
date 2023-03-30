@@ -20,11 +20,8 @@ import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 
 import java.util.List;
 
-public class OrbitDeterminationRequest {
+public class NumericalOrbitDeterminationRequest extends TleOrbitDeterminationRequest {
 
-    private final Orbit orbit;
-
-    private final double mass;
     private final Double crossSection;
     private final Double cr;
     private final Double cd;
@@ -35,11 +32,8 @@ public class OrbitDeterminationRequest {
     private final boolean useSolarPressure;
     private final boolean useAtmosphericDrag;
 
-    private final List<Measurement> measurementList;
-
-    public OrbitDeterminationRequest(Orbit orbit, double mass, Double crossSection, Double cr, Double cd, boolean useMoon, boolean useSun, boolean useRelativity, boolean useSolarPressure, boolean useAtmosphericDrag, List<Measurement> measurementList) {
-        this.orbit = orbit;
-        this.mass = mass;
+    public NumericalOrbitDeterminationRequest(Orbit orbit, double mass, List<Measurement> measurementList, Double crossSection, Double cr, Double cd, boolean useMoon, boolean useSun, boolean useRelativity, boolean useSolarPressure, boolean useAtmosphericDrag) {
+        super(orbit, mass, measurementList);
         this.crossSection = crossSection;
         this.cr = cr;
         this.cd = cd;
@@ -48,15 +42,6 @@ public class OrbitDeterminationRequest {
         this.useRelativity = useRelativity;
         this.useSolarPressure = useSolarPressure;
         this.useAtmosphericDrag = useAtmosphericDrag;
-        this.measurementList = measurementList;
-    }
-
-    public Orbit getOrbit() {
-        return orbit;
-    }
-
-    public double getMass() {
-        return mass;
     }
 
     public Double getCrossSection() {
@@ -89,9 +74,5 @@ public class OrbitDeterminationRequest {
 
     public boolean isUseAtmosphericDrag() {
         return useAtmosphericDrag;
-    }
-
-    public List<Measurement> getMeasurementList() {
-        return measurementList;
     }
 }

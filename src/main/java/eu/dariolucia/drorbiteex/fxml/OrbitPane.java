@@ -22,10 +22,7 @@ import eu.dariolucia.drorbiteex.model.ModelManager;
 import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
 import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalyser;
 import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
-import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationCalculator;
-import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationRequest;
-import eu.dariolucia.drorbiteex.model.determination.OrbitDeterminationResult;
-import eu.dariolucia.drorbiteex.model.determination.TleOrbitDeterminationCalculator;
+import eu.dariolucia.drorbiteex.model.determination.*;
 import eu.dariolucia.drorbiteex.model.oem.OemExporterProcess;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
@@ -33,6 +30,7 @@ import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
@@ -61,7 +59,8 @@ public class OrbitPane implements Initializable {
     public Button editOrbitButton;
     public Button deleteOrbitButton;
     public MenuItem orbitErrorAnalysisButton;
-    public MenuItem orbitDeterminationButton;
+    public MenuItem tleOrbitDeterminationButton;
+    public MenuItem numericalOrbitDeterminationButton;
     public MenuItem exportTleOrbitButton;
     public ToggleButton gsVisibilityButton;
     public Label gsOrbitLabel;
@@ -79,7 +78,11 @@ public class OrbitPane implements Initializable {
         exportOemOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         exportTleOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         orbitErrorAnalysisButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
-        orbitDeterminationButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        tleOrbitDeterminationButton.disableProperty().bind(Bindings.or(
+                orbitList.getSelectionModel().selectedItemProperty().isNull(),
+                Bindings.createBooleanBinding(() -> orbitList.getSelectionModel().getSelectedItem() == null || !(orbitList.getSelectionModel().getSelectedItem().getOrbit().getModel() instanceof TleOrbitModel),
+                        orbitList.getSelectionModel().selectedItemProperty())));
+        numericalOrbitDeterminationButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         editOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         deleteOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         satelliteAutotrackButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
@@ -107,7 +110,6 @@ public class OrbitPane implements Initializable {
         orbitList.getItems().add(graphics);
         return graphics;
     }
-
 
     public Optional<OrbitGraphics> getGraphicsOf(Orbit orbit) {
         return orbitList.getItems().stream().filter(o -> o.getOrbit().equals(orbit)).findFirst();
@@ -426,18 +428,17 @@ public class OrbitPane implements Initializable {
         this.visibilitySelectionHandler.run();
     }
 
-    public void onOrbitDeterminationButtonAction(ActionEvent actionEvent) {
+    public void onTleOrbitDeterminationButtonAction(ActionEvent actionEvent) {
         OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
         if(originalOrbit != null) {
             Orbit orbit = originalOrbit.getOrbit();
-            boolean isTle = originalOrbit.getOrbit().getModel() instanceof TleOrbitModel;
-            OrbitDeterminationRequest request = OrbitDeterminationDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, manager.getGroundStationManager().getGroundStations());
+            TleOrbitDeterminationRequest request = TleOrbitDeterminationDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, manager.getGroundStationManager().getGroundStations());
             if(request != null) {
-                IMonitorableCallable<OrbitDeterminationResult> task = monitor -> {
+                IMonitorableCallable<TleOrbitDeterminationResult> task = monitor -> {
                     ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
                         @Override
                         public void progress(long current, long total, String message) {
-                            monitor.progress("Orbit Determination", current, total, message);
+                            monitor.progress("Orbit Determination (TLE)", current, total, message);
                         }
 
                         @Override
@@ -446,25 +447,60 @@ public class OrbitPane implements Initializable {
                         }
                     };
                     try {
-                        if(isTle) {
-                            return TleOrbitDeterminationCalculator.compute(request, monitorBridge);
-                        } else {
-                            return OrbitDeterminationCalculator.compute(request, monitorBridge);
-                        }
+                        return TleOrbitDeterminationCalculator.compute(request, monitorBridge);
                     } catch (Exception e) {
                         e.printStackTrace();
                         throw e;
                     }
                 };
-                ProgressDialog.Result<OrbitDeterminationResult> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Determination", task);
+                ProgressDialog.Result<TleOrbitDeterminationResult> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Determination", task);
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
                     // TODO: create report dialog
                     System.out.println(taskResult.getResult().getEstimatedTle());
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
-                    DialogUtils.alert("Orbit Determination", "Orbit determination  computation for " + originalOrbit.getOrbit().getName(),
+                    DialogUtils.alert("Orbit Determination (TLE)", "Orbit determination (TLE) computation for " + originalOrbit.getOrbit().getName(),
                             "Task cancelled by user");
                 } else {
-                    DialogUtils.alert("Orbit Determination", "Orbit determination error computation for " + originalOrbit.getOrbit().getName(),
+                    DialogUtils.alert("Orbit Determination (TLE)", "Orbit determination (TLE) computation for " + originalOrbit.getOrbit().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
+        }
+    }
+
+    public void onNumericalOrbitDeterminationButtonAction(ActionEvent actionEvent) {
+        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        if(originalOrbit != null) {
+            Orbit orbit = originalOrbit.getOrbit();
+            NumericalOrbitDeterminationRequest request = OrbitDeterminationDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, manager.getGroundStationManager().getGroundStations());
+            if(request != null) {
+                IMonitorableCallable<NumericalOrbitDeterminationResult> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Orbit Determination (numerical)", current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return NumericalOrbitDeterminationCalculator.compute(request, monitorBridge);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<NumericalOrbitDeterminationResult> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Determination (numerical)", task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    // TODO: create report dialog
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Orbit Determination (numerical)", "Orbit determination (numerical) computation for " + originalOrbit.getOrbit().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("Orbit Determination (numerical)", "Orbit determination (numerical) computation for " + originalOrbit.getOrbit().getName(),
                             "Error: " + taskResult.getError().getMessage());
                 }
             }
