@@ -41,8 +41,12 @@ public class TdmImporter {
     }
 
     private static List<Measurement> convertSegment(Segment<TdmMetadata, ObservationsBlock> segment, Orbit satellite, List<GroundStation> stations) {
-        // TODO: if PARTICIPANT_2 is not equal to satellite code, skip
+        if(!segment.getMetadata().getParticipants().containsValue(satellite.getCode())) {
+            // TODO: log somehow
+            return Collections.emptyList();
+        }
         if(segment.getMetadata().getAngleType() != AngleType.AZEL) {
+            // TODO: log somehow
             return Collections.emptyList();
         }
         // Locate ground station using the PARTICIPANT_1

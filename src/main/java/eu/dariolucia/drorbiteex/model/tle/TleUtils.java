@@ -30,22 +30,7 @@ import java.util.Date;
 
 public class TleUtils {
 
-    // TODO: deprecated, to be removed?
-    public static String exportTle(TleGenerationRequest tleGenerationRequest) {
-        // Old code: inaccurate as hell
-        // First, copy the orbit
-        Orbit toPropagate = tleGenerationRequest.getOrbit().copy();
-        AbsoluteDate startTime = TimeUtils.toAbsoluteDate(tleGenerationRequest.getStartTime());
-        Propagator p = toPropagate.getModel().getPropagator();
-        SpacecraftState firstState = p.propagate(startTime);
-
-        // Let's go for the TLE (https://forum.orekit.org/t/generation-of-tle/265/4)
-        // You need an initial TLE for the job... so let's build one
-        TLE initialTle = TleUtils.getTleFrom(tleGenerationRequest, toPropagate);
-        // Now derive the TLE
-        TLE fitted = TLE.stateToTLE(firstState, initialTle);
-        return fitted.getLine1() + "\n" + fitted.getLine2();
-    }
+    // Deprecated: TLE fit as per https://forum.orekit.org/t/generation-of-tle/265/4
 
     public static TLE getTleFrom(TleGenerationRequest tleGenerationRequest, Orbit toPropagate) {
         TLE initialTle = null;

@@ -75,9 +75,9 @@ public class PositionMeasurement extends Measurement {
         Vector3D newPosition = referenceFrame.getTransformTo(orbitFrame, getAbsoluteDate()).transformPosition(getPosition());
         if(velocity != null) {
             Vector3D newVelocity = referenceFrame.getTransformTo(orbitFrame, getAbsoluteDate()).transformVector(velocity);
-            return new PV(getAbsoluteDate(), newPosition, newVelocity, 0.2, 0.2, 1.0, satellite);
+            return new PV(getAbsoluteDate(), newPosition, newVelocity, 0.1, 0.1, 1.0, satellite);
         } else {
-            return new Position(getAbsoluteDate(), newPosition, 0.2, 1.0, satellite);
+            return new Position(getAbsoluteDate(), newPosition, 0.1, 1.0, satellite);
         }
     }
 }

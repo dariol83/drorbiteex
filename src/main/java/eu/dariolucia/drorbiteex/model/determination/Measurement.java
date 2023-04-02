@@ -27,6 +27,7 @@ import java.util.Date;
 
 public abstract class Measurement {
 
+    // TODO: add sigma, weight
     private final Instant time;
 
     protected Measurement(Instant time) {

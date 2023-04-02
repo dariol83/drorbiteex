@@ -62,7 +62,7 @@ public class RangeMeasurement extends Measurement {
                 true,
                 getAbsoluteDate(),
                 range, // TODO: multiply by Constants.SPEED_OF_LIGHT?
-                0.2,
+                0.1,
                 1.0,
                 satellite);
     }
