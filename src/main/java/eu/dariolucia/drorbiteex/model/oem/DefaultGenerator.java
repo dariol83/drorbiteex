@@ -24,6 +24,7 @@ import java.util.TimeZone;
 
 public class DefaultGenerator implements IOemNameGenerator {
 
+    public static final String GENERATOR_NAME = "Default Generator";
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
     public DefaultGenerator() {
@@ -32,12 +33,12 @@ public class DefaultGenerator implements IOemNameGenerator {
 
     @Override
     public String getName() {
-        return "Default Generator";
+        return GENERATOR_NAME;
     }
 
     @Override
     public String generateFileName(OemGenerationRequest request, Date generationDate) {
         String suffix = request.getFormat() == FileFormat.XML ? "xml" : "txt";
-        return request.getOrbit().getCode() + "_OEM_" + dateFormatter.format(generationDate) + "_" + dateFormatter.format(request.getStartTime()) + "_" + dateFormatter.format(request.getEndTime()) + "." + suffix;
+        return request.getCode() + "_OEM_" + dateFormatter.format(generationDate) + "_" + dateFormatter.format(request.getStartTime()) + "_" + dateFormatter.format(request.getEndTime()) + "." + suffix;
     }
 }

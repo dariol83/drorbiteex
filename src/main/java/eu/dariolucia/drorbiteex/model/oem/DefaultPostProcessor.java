@@ -19,9 +19,12 @@ package eu.dariolucia.drorbiteex.model.oem;
 import java.util.Date;
 
 public class DefaultPostProcessor implements IOemPostProcessor {
+
+    public static final String POST_PROCESSOR_NAME = "No post-processing";
+
     @Override
     public String getName() {
-        return "No post-processing";
+        return POST_PROCESSOR_NAME;
     }
 
     @Override

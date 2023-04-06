@@ -182,7 +182,7 @@ public class ExportOemOrbitDialog implements Initializable {
             LAST_FOLDER = folderPathText.getText();
             LAST_FILE_SELECTED = filePathRadio.isSelected();
 
-            return new OemGenerationRequest(orbit, codeText.getText(), nameText.getText(), start, end, Integer.parseInt(periodText.getText()),
+            return new OemGenerationRequest(orbit.copy().getModel().getPropagator(), codeText.getText(), nameText.getText(), start, end, Integer.parseInt(periodText.getText()),
                     filePathRadio.isSelected() ? filePathText.getText() : null,
                     frame,
                     format,

@@ -50,17 +50,13 @@ import java.util.List;
 public class OemExporterProcess {
 
     public String exportOem(OemGenerationRequest request, ITaskProgressMonitor monitor) throws IOException {
-        Orbit targetOrbit = request.getOrbit();
-        if(targetOrbit == null) {
-            throw new IllegalArgumentException("Orbit not set");
+        Propagator p = request.getPropagator();
+        if(p == null) {
+            throw new IllegalArgumentException("No propagator");
         }
 
         AbsoluteDate startDate = TimeUtils.toAbsoluteDate(request.getStartTime());
         AbsoluteDate endDate = TimeUtils.toAbsoluteDate(request.getEndTime());
-
-        // Get copy of model propagator
-        IOrbitModel model = targetOrbit.getModel().copy();
-        Propagator p = model.getPropagator();
 
         // Check https://forum.orekit.org/t/spacececraftstate-in-wgs84/1813
 

@@ -494,7 +494,7 @@ public class OrbitPane implements Initializable {
                 };
                 ProgressDialog.Result<NumericalOrbitDeterminationResult> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Determination (numerical)", task);
                 if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
-                    // TODO: create report dialog
+                    NumericalOrbitDeterminationReportDialog.openDialog(this.orbitList.getScene().getWindow(), taskResult.getResult(), request, this);
                 } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
                     DialogUtils.alert("Orbit Determination (numerical)", "Orbit determination (numerical) computation for " + originalOrbit.getOrbit().getName(),
                             "Task cancelled by user");

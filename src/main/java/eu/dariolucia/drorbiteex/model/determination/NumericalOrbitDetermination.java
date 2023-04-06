@@ -73,8 +73,8 @@ public class NumericalOrbitDetermination {
     private final double mass; // kg
 
     // Estimator parameters
-    public static final double ESTIMATOR_POSITION_SCALE = 0.1; // m
-    public static final double ESTIMATOR_CONVERGENCE_THRES = 0.0001;
+    public static final double ESTIMATOR_POSITION_SCALE = 1.0; // m
+    public static final double ESTIMATOR_CONVERGENCE_THRES = 0.01;
     public static final int ESTIMATOR_MAX_ITERATIONS = 25;
     public static final int ESTIMATOR_MAX_EVALUATIONS = 35;
     private BatchLSObserver observer;
@@ -154,7 +154,7 @@ public class NumericalOrbitDetermination {
         // Setting up the estimator
         MatrixDecomposer matrixDecomposer = new QRDecomposer(1e-11);
         GaussNewtonOptimizer optimizer = new GaussNewtonOptimizer(matrixDecomposer, false);
-        BatchLSEstimator estimator = new BatchLSEstimator(optimizer, propagatorBuilder);
+        this.estimator = new BatchLSEstimator(optimizer, propagatorBuilder);
         estimator.setParametersConvergenceThreshold(ESTIMATOR_CONVERGENCE_THRES);
         estimator.setMaxIterations(ESTIMATOR_MAX_ITERATIONS);
         estimator.setMaxEvaluations(ESTIMATOR_MAX_EVALUATIONS);

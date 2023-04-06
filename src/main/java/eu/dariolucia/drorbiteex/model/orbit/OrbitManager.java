@@ -145,11 +145,11 @@ public class OrbitManager {
         for(Orbit ob : this.orbits.values()) {
             try {
                 ob.updateOrbitTime(time, forceUpdate);
-                long currentProgress = currentStep.incrementAndGet();
-                this.listeners.forEach(o -> o.progressOrbitTimeUpdate(time, forceUpdate, currentProgress, totalSteps));
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Error when propagating orbit for " + ob.getName(), e);
             }
+            long currentProgress = currentStep.incrementAndGet();
+            this.listeners.forEach(o -> o.progressOrbitTimeUpdate(time, forceUpdate, currentProgress, totalSteps));
         }
         this.listeners.forEach(o -> o.endOrbitTimeUpdate(time, forceUpdate));
     }

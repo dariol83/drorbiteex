@@ -16,9 +16,9 @@
 
 package eu.dariolucia.drorbiteex.model.oem;
 
-import eu.dariolucia.drorbiteex.model.orbit.Orbit;
 import org.orekit.files.ccsds.utils.FileFormat;
 import org.orekit.frames.Frame;
+import org.orekit.propagation.Propagator;
 
 import java.util.Date;
 
@@ -40,10 +40,10 @@ public class OemGenerationRequest {
 
     private final String postProcessor;
 
-    private final Orbit orbit;
+    private final Propagator propagator;
 
-    public OemGenerationRequest(Orbit orbit, String code, String name, Date startTime, Date endTime, int periodSeconds, String file, Frame frame, FileFormat format, String folder, String nameGenerator, String postProcessor) {
-        this.orbit = orbit;
+    public OemGenerationRequest(Propagator propagator, String code, String name, Date startTime, Date endTime, int periodSeconds, String file, Frame frame, FileFormat format, String folder, String nameGenerator, String postProcessor) {
+        this.propagator = propagator;
         this.code = code;
         this.name = name;
         this.startTime = startTime;
@@ -57,8 +57,8 @@ public class OemGenerationRequest {
         this.postProcessor = postProcessor;
     }
 
-    public Orbit getOrbit() {
-        return orbit;
+    public Propagator getPropagator() {
+        return propagator;
     }
 
     public String getCode() {
