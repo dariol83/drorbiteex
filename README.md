@@ -18,6 +18,9 @@ interest
 CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
 - Detect collinearity events with reference to a specific satellite/orbit
 - Calculate sky coverage maps for a given ground station/point of interest, with reference to a selectable set of satellites/orbits
+- Compute position/velocity error among two or more orbits
+- Compute elevation/azimuth/angular error between a reference orbit and other orbits with respect to a reference ground station
+- Compute orbit determination (using TLE propagator and numerical propagator) from a set of measurements (supported file formats: CCSDS TDM and CCSDS OEM).
 
 ![AND](img/drorbiteex1.png "Dr. Orbiteex main window")
 ![AND](img/drorbiteex2.png "Dr. Orbiteex map view")
