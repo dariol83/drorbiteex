@@ -27,9 +27,13 @@ import org.orekit.time.TimeScalesFactory;
 import java.io.FileInputStream;
 import java.time.Instant;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class TdmImporter {
+
+    private static final Logger LOG = Logger.getLogger(TdmImporter.class.getName());
     public static List<Measurement> load(String absolutePath, Orbit satellite, List<GroundStation> stations) {
         List<Measurement> measurements = new LinkedList<>();
         TdmParser parser = new ParserBuilder().buildTdmParser();
@@ -42,11 +46,11 @@ public class TdmImporter {
 
     private static List<Measurement> convertSegment(Segment<TdmMetadata, ObservationsBlock> segment, Orbit satellite, List<GroundStation> stations) {
         if(!segment.getMetadata().getParticipants().containsValue(satellite.getCode())) {
-            // TODO: log somehow
+            LOG.log(Level.WARNING, "Segment participants do not contain satellite code '" + satellite.getCode() + "': " + segment.getMetadata().getParticipants());
             return Collections.emptyList();
         }
         if(segment.getMetadata().getAngleType() != AngleType.AZEL) {
-            // TODO: log somehow
+            LOG.log(Level.WARNING, "Segment angle type is not AZEL: " + segment.getMetadata().getAngleType());
             return Collections.emptyList();
         }
         // Locate ground station using the PARTICIPANT_1
@@ -54,7 +58,7 @@ public class TdmImporter {
         Optional<GroundStation> gs = stations.stream().filter(o -> o.getCode().equals(gsCode)).findFirst();
         GroundStation station = gs.orElse(null);
         if(station == null) {
-            // TODO: log somehow
+            LOG.log(Level.WARNING, "Segment participant 2 not matching any ground station code: " + gsCode);
             return Collections.emptyList();
         }
         // First scan, look for ANGLE_1 (AZ) and ANGLE_2 (EL) and build a correspondence for a given time
@@ -139,10 +143,10 @@ public class TdmImporter {
         public List<Measurement> toMeasurements(GroundStation station) {
             List<Measurement> measurements = new LinkedList<>();
             if(range != -1) {
-                measurements.add(new RangeMeasurement(time, station, range));
+                measurements.add(new RangeMeasurement(time, 0.1, 1.0, station, range));
             }
             if(azimuth != -1 && elevation != -1) {
-                measurements.add(new AzimuthElevationMeasurement(time, station, azimuth, elevation));
+                measurements.add(new AzimuthElevationMeasurement(time, 0.1, 1.0, station, azimuth, elevation));
             }
             return measurements;
         }

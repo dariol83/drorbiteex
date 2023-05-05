@@ -27,7 +27,7 @@
          <children>
             <SplitPane dividerPositions="0.15" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
               <items>
-                  <TabPane fx:id="accordion" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" tabDragPolicy="FIXED" side="LEFT">
+                  <TabPane fx:id="accordion" side="LEFT" tabClosingPolicy="UNAVAILABLE" tabDragPolicy="FIXED" VBox.vgrow="ALWAYS">
                       <tabs>
                           <fx:include fx:id="groundStationPane" source="GroundStationPane.fxml" />
                           <fx:include fx:id="orbitPane" source="OrbitPane.fxml" />
@@ -188,14 +188,14 @@
                                       </tooltip>
                                   </ToggleButton>
                                   <Separator orientation="VERTICAL" />
-                                  <StackPane style="-fx-border-color: #b9b9b9;" maxHeight="32" maxWidth="80" minHeight="32" minWidth="80" prefWidth="80">
+                                  <StackPane maxHeight="32" maxWidth="80" minHeight="32" minWidth="80" prefWidth="80" style="-fx-border-color: #b9b9b9;">
                                       <children>
-                                          <ProgressBar fx:id="processingProgressBar" visible="false" maxHeight="32" maxWidth="80" minHeight="32" minWidth="80" prefWidth="80">
+                                          <ProgressBar fx:id="processingProgressBar" maxHeight="32" maxWidth="80" minHeight="32" minWidth="80" prefWidth="80" visible="false">
                                               <tooltip>
                                                   <Tooltip text="Processing status" />
                                               </tooltip>
                                           </ProgressBar>
-                                          <Label fx:id="processingLabel" text="IDLE" textAlignment="CENTER" alignment="CENTER" />
+                                          <Label fx:id="processingLabel" alignment="CENTER" text="IDLE" textAlignment="CENTER" />
                                       </children>
                                   </StackPane>
                                   <Separator orientation="VERTICAL" />
@@ -227,7 +227,7 @@
                                       <children>
                                           <AnchorPane fx:id="miniPane" maxHeight="300" maxWidth="600" minHeight="300" minWidth="600" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
                                               <children>
-                                                  <fx:include fx:id="scene2d" source="Scene2D.fxml"  />
+                                                  <fx:include fx:id="scene2d" source="Scene2D.fxml" />
                                               </children>
                                           </AnchorPane>
                                       </children>
@@ -255,6 +255,12 @@
             </SplitPane>
          </children>
       </AnchorPane>
+      <ToolBar prefHeight="24.0" VBox.vgrow="NEVER">
+         <items>
+            <TextField fx:id="logText" editable="false" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
+            <Button mnemonicParsing="false" onAction="#onOpenLogAction" />
+         </items>
+      </ToolBar>
 
    </children>
 </VBox>

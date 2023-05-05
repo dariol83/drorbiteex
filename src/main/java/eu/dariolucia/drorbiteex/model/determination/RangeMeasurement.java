@@ -23,6 +23,7 @@ import org.orekit.estimation.measurements.AbstractMeasurement;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.Range;
 import org.orekit.frames.Frame;
+import org.orekit.utils.Constants;
 
 import java.time.Instant;
 import java.util.Date;
@@ -32,8 +33,8 @@ public class RangeMeasurement extends Measurement {
     private final GroundStation station;
     private final double range; // in seconds
 
-    public RangeMeasurement(Instant time, GroundStation station, double range) {
-        super(time);
+    public RangeMeasurement(Instant time, double sigma, double weight, GroundStation station, double range) {
+        super(time, sigma, weight);
         this.range = range;
         this.station = station;
     }
@@ -61,9 +62,9 @@ public class RangeMeasurement extends Measurement {
         return new Range(getStation().toOrekitGroundStation(),
                 true,
                 getAbsoluteDate(),
-                range, // TODO: multiply by Constants.SPEED_OF_LIGHT?
-                0.1,
-                1.0,
+                range * Constants.SPEED_OF_LIGHT,
+                getSigma(),
+                getWeight(),
                 satellite);
     }
 }

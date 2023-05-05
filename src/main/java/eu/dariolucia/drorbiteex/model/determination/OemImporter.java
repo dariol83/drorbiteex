@@ -42,7 +42,7 @@ public class OemImporter {
         Oem oemObject = new ParserBuilder().buildOemParser().parseMessage(new DataSource("oem", () -> new FileInputStream(absolutePath)));
         return oemObject.getSegments().stream().filter(seg -> seg.getMetadata().getObjectID().equals(satellite.getCode()))
                 .map(seg -> seg.getCoordinates().stream().map(o ->
-                                new PositionMeasurement(TimeUtils.toInstant(o.getDate()), o.getPosition(), o.getVelocity(), seg.getFrame()))
+                                new PositionMeasurement(TimeUtils.toInstant(o.getDate()), 0.1, 1.0, o.getPosition(), o.getVelocity(), seg.getFrame()))
                 .collect(Collectors.toList()))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());

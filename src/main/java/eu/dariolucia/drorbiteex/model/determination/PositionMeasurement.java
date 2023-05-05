@@ -31,8 +31,8 @@ public class PositionMeasurement extends Measurement {
     private final Vector3D velocity; // in meter/sec, can be null, the measurement must be in the orbit propagation frame
     private final Frame referenceFrame; // reference frame of the position
 
-    public PositionMeasurement(Instant time, Vector3D position, Vector3D velocity, Frame referenceFrame) {
-        super(time);
+    public PositionMeasurement(Instant time, double sigma, double weight, Vector3D position, Vector3D velocity, Frame referenceFrame) {
+        super(time, sigma, weight);
         if(position == null) {
             throw new NullPointerException("Argument 'position' is null");
         }
@@ -75,9 +75,9 @@ public class PositionMeasurement extends Measurement {
         Vector3D newPosition = referenceFrame.getTransformTo(orbitFrame, getAbsoluteDate()).transformPosition(getPosition());
         if(velocity != null) {
             Vector3D newVelocity = referenceFrame.getTransformTo(orbitFrame, getAbsoluteDate()).transformVector(velocity);
-            return new PV(getAbsoluteDate(), newPosition, newVelocity, 0.1, 0.1, 1.0, satellite);
+            return new PV(getAbsoluteDate(), newPosition, newVelocity, getSigma(), getSigma(), getWeight(), satellite);
         } else {
-            return new Position(getAbsoluteDate(), newPosition, 0.1, 1.0, satellite);
+            return new Position(getAbsoluteDate(), newPosition, getSigma(), getWeight(), satellite);
         }
     }
 }

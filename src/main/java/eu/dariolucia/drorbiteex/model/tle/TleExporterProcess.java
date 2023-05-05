@@ -16,16 +16,12 @@
 
 package eu.dariolucia.drorbiteex.model.tle;
 
-import eu.dariolucia.drorbiteex.model.determination.Measurement;
 import eu.dariolucia.drorbiteex.model.determination.TleOrbitDetermination;
 import eu.dariolucia.drorbiteex.model.orbit.Orbit;
-import eu.dariolucia.drorbiteex.model.orbit.TleOrbitModel;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
-import org.hipparchus.optim.nonlinear.vector.leastsquares.LeastSquaresProblem;
 import org.orekit.estimation.leastsquares.BatchLSObserver;
-import org.orekit.estimation.measurements.EstimationsProvider;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.PV;
 import org.orekit.frames.Frame;
@@ -33,11 +29,15 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.ParameterDriversList;
+import org.orekit.time.TimeScalesFactory;
 
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TleExporterProcess {
+    private final static Logger LOG = Logger.getLogger(TleExporterProcess.class.getName());
+
     public String exportTle(TleGenerationRequest request, ITaskProgressMonitor monitor) {
         // ---------------------------------------------------
         // Compute required start objects
@@ -74,6 +74,7 @@ public class TleExporterProcess {
                 currentTime = currentTime.shiftedBy(60);
             } catch (Exception e) {
                 // Stop propagation
+                LOG.log(Level.SEVERE, "TLE export for '" + request.getOrbit().getName() + "' raised error at time " + TimeUtils.formatDate(currentTime.toDate(TimeScalesFactory.getUTC())) + ": " + e.getMessage(), e);
             }
         }
         // ---------------------------------------------------

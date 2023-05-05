@@ -43,9 +43,13 @@ import javafx.scene.input.MouseEvent;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class OrbitPane implements Initializable {
+
+    private static final Logger LOG = Logger.getLogger(OrbitPane.class.getName());
 
     public ListView<OrbitGraphics> orbitList;
 
@@ -249,7 +253,7 @@ public class OrbitPane implements Initializable {
                     try {
                         return new OemExporterProcess().exportOem(oemGenerationRequest, monitorBridge);
                     } catch (Exception e) {
-                        // e.printStackTrace();
+                        LOG.log(Level.SEVERE, "OEM export of '" + originalOrbit.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -346,7 +350,7 @@ public class OrbitPane implements Initializable {
                     try {
                         return OrbitPVErrorAnalyser.analyse(sgr, monitorBridge);
                     } catch (Exception e) {
-                        // e.printStackTrace();
+                        LOG.log(Level.SEVERE, "OEM error analysis of '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -391,7 +395,7 @@ public class OrbitPane implements Initializable {
                     try {
                         return new TleExporterProcess().exportTle(tleGenerationRequest, monitorBridge);
                     } catch (Exception e) {
-                        // e.printStackTrace();
+                        LOG.log(Level.SEVERE, "TLE exporter of '" + originalOrbit.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -449,7 +453,7 @@ public class OrbitPane implements Initializable {
                     try {
                         return TleOrbitDeterminationCalculator.compute(request, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "TLE orbit determination of '" + originalOrbit.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -488,7 +492,7 @@ public class OrbitPane implements Initializable {
                     try {
                         return NumericalOrbitDeterminationCalculator.compute(request, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "Numerical orbit determination of '" + originalOrbit.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };

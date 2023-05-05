@@ -41,6 +41,9 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Main implements Initializable, IOrbitListener, IGroundStationListener {
@@ -74,6 +77,8 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
     public ToggleButton replay4SpeedTrackingButton;
     public Button editReplayDateTimeButton;
     public TabPane accordion;
+    public TextField logText;
+    public LogViewer logViewer = new LogViewer();
 
     private TimerTask timerTask = null;
 
@@ -156,6 +161,28 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
         );
 
         orbitPaneController.registerVisibilitySelectionHandler(this::update2Dscene);
+
+        // Register to logs
+        Logger.getLogger("eu.dariolucia.drorbiteex").addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                addLogLine(TimeUtils.formatDate(record.getInstant()), record.getMessage());
+            }
+
+            @Override
+            public void flush() { }
+
+            @Override
+            public void close() throws SecurityException { }
+        });
+    }
+
+    private void addLogLine(String time, String message) {
+        Platform.runLater(() -> {
+            logText.setText(time + "  " + message);
+            logViewer.addMessage(time, message);
+        });
+
     }
 
     private void handleOrbitTracking(OrbitGraphics o) {
@@ -534,5 +561,9 @@ public class Main implements Initializable, IOrbitListener, IGroundStationListen
             this.replayPanelEditStage.close();
             this.replayPanelEditStage = null;
         }
+    }
+
+    public void onOpenLogAction(ActionEvent actionEvent) {
+        this.logViewer.open(this.logText.getScene().getWindow());
     }
 }

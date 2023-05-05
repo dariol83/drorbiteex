@@ -32,8 +32,8 @@ public class AzimuthElevationMeasurement extends Measurement {
     private final double azimuth; // in degrees
     private final double elevation; // in degrees
 
-    public AzimuthElevationMeasurement(Instant time, GroundStation station, double azimuth, double elevation) {
-        super(time);
+    public AzimuthElevationMeasurement(Instant time, double sigma, double weight, GroundStation station, double azimuth, double elevation) {
+        super(time, sigma, weight);
         this.station = station;
         this.azimuth = azimuth;
         this.elevation = elevation;
@@ -64,6 +64,6 @@ public class AzimuthElevationMeasurement extends Measurement {
     @Override
     public AbstractMeasurement<?> toOrekitMeasurement(ObservableSatellite satellite, Frame orbitFrame) {
         return new AngularAzEl(getStation().toOrekitGroundStation(), getAbsoluteDate(),
-                new double[] {Math.toRadians(azimuth), Math.toRadians(elevation)}, new double[] {0.2, 0.2}, new double[] {1.0, 1.0}, satellite);
+                new double[] {Math.toRadians(azimuth), Math.toRadians(elevation)}, new double[] {getSigma(), getSigma()}, new double[] {getWeight(), getWeight()}, satellite);
     }
 }

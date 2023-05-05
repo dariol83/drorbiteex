@@ -146,7 +146,7 @@ public class OrbitManager {
             try {
                 ob.updateOrbitTime(time, forceUpdate);
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error when propagating orbit for " + ob.getName(), e);
+                LOGGER.log(Level.SEVERE, "Error when propagating orbit for " + ob.getName() + ": " + e.getMessage(), e);
             }
             long currentProgress = currentStep.incrementAndGet();
             this.listeners.forEach(o -> o.progressOrbitTimeUpdate(time, forceUpdate, currentProgress, totalSteps));

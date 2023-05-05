@@ -27,16 +27,28 @@ import java.util.Date;
 
 public abstract class Measurement {
 
-    // TODO: add sigma, weight
     private final Instant time;
 
-    protected Measurement(Instant time) {
+    private final double sigma;
+    private final double weight;
+
+    protected Measurement(Instant time, double sigma, double weight) {
         this.time = time;
+        this.sigma = sigma;
+        this.weight = weight;
     }
 
     public abstract String getInfo();
 
     public abstract Type getType();
+
+    public double getSigma() {
+        return sigma;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
 
     public Instant getTime() {
         return time;

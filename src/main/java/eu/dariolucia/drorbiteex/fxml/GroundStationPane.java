@@ -42,6 +42,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import org.orekit.time.TimeScalesFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -50,10 +51,14 @@ import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
 public class GroundStationPane implements Initializable {
+
+    private static final Logger LOG = Logger.getLogger(GroundStationPane.class.getName());
 
     public ListView<GroundStationGraphics> groundStationList;
 
@@ -262,7 +267,7 @@ public class GroundStationPane implements Initializable {
                     try {
                         return manager.exportSchedule(sgr, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "Schedule export for '" + sgr.getGroundStation().getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -402,7 +407,7 @@ public class GroundStationPane implements Initializable {
                         manager.getGroundStationManager().exportVisibilityPasses(gsId, fs, filteredOrbits);
                         Platform.runLater(() -> DialogUtils.info("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "Visibility windows export of '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
                     }
                 });
@@ -432,7 +437,7 @@ public class GroundStationPane implements Initializable {
                     try {
                         return CollinearityAnalyser.analyse(sgr, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "Collinearity analysis on '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -480,7 +485,7 @@ public class GroundStationPane implements Initializable {
                             selected.createNewFile();
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "CSV ground track export of '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "Cannot create file: " + e.getMessage()));
                         return;
                     }
@@ -488,7 +493,7 @@ public class GroundStationPane implements Initializable {
                         manager.getGroundStationManager().exportTrackingInfo(gsId, fs, orbitId, vwId);
                         Platform.runLater(() -> DialogUtils.info("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "CSV ground track export of '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
                     }
                 });
@@ -530,7 +535,7 @@ public class GroundStationPane implements Initializable {
                     try {
                         return SkyCoverageAnalyser.analyse(sgr, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "Sky coverage analysis on '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };
@@ -571,7 +576,7 @@ public class GroundStationPane implements Initializable {
                     try {
                         return TrackingErrorAnalyser.analyse(sgr, monitorBridge);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOG.log(Level.SEVERE, "Tracking error analysis on '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         throw e;
                     }
                 };

@@ -54,7 +54,7 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
             try {
                 this.orbitManager.initialise(new FileInputStream(orbitFileStorage));
             } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Cannot initialise orbit manager", e);
+                LOGGER.log(Level.WARNING, "Cannot initialise orbit manager with file " + orbitFileStorage + ":" + e.getMessage(), e);
             }
         }
         this.groundStationManager = new GroundStationManager();
@@ -63,7 +63,7 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
             try {
                 this.groundStationManager.initialise(new FileInputStream(groundStationFileStorage));
             } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Cannot initialise ground station manager", e);
+                LOGGER.log(Level.WARNING, "Cannot initialise ground station manager with file " + groundStationFileStorage + ":" + e.getMessage(), e);
             }
         }
         // Add all ground stations as listeners to the orbits
@@ -117,7 +117,7 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
             }
             this.orbitManager.persist(new FileOutputStream(orbitFile));
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Cannot save orbit manager", e);
+            LOGGER.log(Level.WARNING, "Cannot save orbit manager: " + e.getMessage(), e);
         }
     }
 
@@ -159,7 +159,7 @@ public class ModelManager implements IOrbitListener, IGroundStationListener {
             }
             this.groundStationManager.persist(new FileOutputStream(stationFile));
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Cannot save ground station manager", e);
+            LOGGER.log(Level.WARNING, "Cannot save ground station manager: " + e.getMessage(), e);
         }
     }
 
