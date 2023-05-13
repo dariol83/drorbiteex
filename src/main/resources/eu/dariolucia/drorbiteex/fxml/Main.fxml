@@ -258,7 +258,18 @@
       <ToolBar prefHeight="24.0" VBox.vgrow="NEVER">
          <items>
             <TextField fx:id="logText" editable="false" HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308" />
-            <Button mnemonicParsing="false" onAction="#onOpenLogAction" />
+            <Button mnemonicParsing="false" onAction="#onOpenLogAction">
+                <graphic>
+                    <ImageView pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@/message-reply-text-outline.png" />
+                        </image>
+                    </ImageView>
+                </graphic>
+                <tooltip>
+                    <Tooltip text="Open messages window..." />
+                </tooltip>
+            </Button>
          </items>
       </ToolBar>
 
