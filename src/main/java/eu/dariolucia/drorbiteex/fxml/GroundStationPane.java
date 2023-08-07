@@ -75,6 +75,7 @@ public class GroundStationPane implements Initializable {
     public SplitMenuButton generateScheduleButton;
     public MenuItem exportVisibilityButton;
     public MenuItem exportGroundTrackButton;
+    public MenuItem showDopplerButton;
     public MenuItem collinearityAnalysisButton;
     public MenuItem skyCoverageAnalysisButton;
     public MenuItem trackingErrorAnalysisButton;
@@ -118,6 +119,7 @@ public class GroundStationPane implements Initializable {
         deleteGroundStationButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         exportVisibilityButton.disableProperty().bind(groundStationList.getSelectionModel().selectedItemProperty().isNull());
         exportGroundTrackButton.disableProperty().bind(passTable.getSelectionModel().selectedItemProperty().isNull());
+        showDopplerButton.disableProperty().bind(passTable.getSelectionModel().selectedItemProperty().isNull());
 
         polarPlotController.setIgnoreVisibility(true);
     }
@@ -411,6 +413,51 @@ public class GroundStationPane implements Initializable {
                         Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
                     }
                 });
+            }
+        }
+    }
+
+    public void onShowDopplerAction(ActionEvent actionEvent) {
+        final String taskName = "Doppler Information";
+        GroundStationGraphics gs = this.groundStationList.getSelectionModel().getSelectedItem();
+        VisibilityWindow vw = this.passTable.getSelectionModel().getSelectedItem();
+        if(gs != null && vw != null) {
+            // open dialog
+            DopplerAnalysisRequest sgr = DopplerAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), vw);
+            if(sgr != null) {
+                IMonitorableCallable<Map<String, List<ErrorPoint>>> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress(taskName, current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return DopplerAnalyser.analyse(sgr, monitorBridge);
+                    } catch (Exception e) {
+                        LOG.log(Level.SEVERE, "Doppler information on '" + gs.getName() + "' raised error: " + e.getMessage(), e);
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<Map<String, List<ErrorPoint>>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), taskName, task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    ErrorReportDialog.openDialog(groundStationList.getScene().getWindow(),
+                            "Doppler information for " + vw.getOrbit().getName() + " on ground station " + gs.getName(),
+                            TimeUtils.formatDate(sgr.getStartTime()) + " - " + TimeUtils.formatDate(sgr.getEndTime()) + " - Orbit: " + sgr.getOrbitName(),
+                            new String[] {"Velocity (m/s)", "Range (m)", "Doppler (kHz)"},
+                            taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert(taskName, "Doppler information for " + vw.getOrbit().getName() + " on ground station " + gs.getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert(taskName, "Doppler information for " + vw.getOrbit().getName() + " on ground station " + gs.getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
             }
         }
     }

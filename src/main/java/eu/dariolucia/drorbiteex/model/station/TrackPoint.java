@@ -17,6 +17,9 @@
 package eu.dariolucia.drorbiteex.model.station;
 
 import eu.dariolucia.drorbiteex.model.orbit.SpacecraftPosition;
+import org.hipparchus.geometry.euclidean.threed.Vector3D;
+import org.orekit.estimation.measurements.PV;
+import org.orekit.utils.PVCoordinates;
 
 import java.util.Date;
 
@@ -28,6 +31,8 @@ public class TrackPoint {
     private final GroundStation station;
     private final double elevation;
     private final double azimuth;
+    private final double range; // m
+    private final double doppler; // m/s
 
     public TrackPoint(Date time, SpacecraftPosition spacecraftPosition, GroundStation station, double azimuth, double elevation) {
         this.time = time;
@@ -36,6 +41,11 @@ public class TrackPoint {
         this.station = station;
         this.elevation = elevation;
         this.azimuth = azimuth;
+        // Compute doppler
+        PVCoordinates pvInert = spacecraftPosition.getSpacecraftState().getPVCoordinates();
+        PVCoordinates pvStation = spacecraftPosition.getSpacecraftState().getFrame().getTransformTo(station.getStationFrame(), spacecraftPosition.getSpacecraftState().getDate()).transformPVCoordinates(pvInert);
+        this.range = pvStation.getPosition().getNorm();
+        this.doppler = Vector3D.dotProduct(pvStation.getPosition(), pvStation.getVelocity()) / this.range;
     }
 
     public Date getTime() {
@@ -60,5 +70,13 @@ public class TrackPoint {
 
     public double getAzimuth() {
         return azimuth;
+    }
+
+    public double getDoppler() {
+        return doppler;
+    }
+
+    public double getRange() {
+        return range;
     }
 }

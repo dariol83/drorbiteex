@@ -219,14 +219,16 @@ public class VisibilityWindow implements Comparable<VisibilityWindow> {
 
     public void exportGroundTrackingInfoTo(OutputStream outputStream) throws IOException {
         StringBuilder sb = new StringBuilder();
-        // CVS format: gs code, orbit code, orbit number, Time, EL, AZ
+        // CVS format: gs code, orbit code, orbit number, Time, EL, AZ, doppler
         for(int i = 0; i < getGroundTrack().size(); ++i) {
             sb.append(station.getCode().replace(',', '_')).append(",");
             sb.append(orbit.getCode().replace(',', '_')).append(",");
             sb.append(orbitNumber).append(",");
             sb.append(TimeUtils.formatDate(getGroundTrack().get(i).getTime())).append(",");
             sb.append(getGroundTrack().get(i).getElevation()).append(",");
-            sb.append(getGroundTrack().get(i).getAzimuth());
+            sb.append(getGroundTrack().get(i).getAzimuth()).append(",");
+            sb.append(getGroundTrack().get(i).getRange()).append(",");
+            sb.append(getGroundTrack().get(i).getDoppler());
             sb.append("\n");
         }
         outputStream.write(sb.toString().getBytes(StandardCharsets.UTF_8));

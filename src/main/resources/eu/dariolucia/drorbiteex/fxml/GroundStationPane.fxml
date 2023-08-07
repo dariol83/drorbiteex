@@ -58,7 +58,16 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
-                                <MenuItem fx:id="exportGroundTrackButton" mnemonicParsing="false" onAction="#onExportGroundTrackAction" text="Export ground track......">
+                                <MenuItem fx:id="exportGroundTrackButton" mnemonicParsing="false" onAction="#onExportGroundTrackAction" text="Export ground track...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/radar.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
+                                <MenuItem fx:id="showDopplerButton" mnemonicParsing="false" onAction="#onShowDopplerAction" text="Show Doppler Information...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">
                                             <image>

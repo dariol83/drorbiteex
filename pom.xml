@@ -22,7 +22,7 @@
 
     <groupId>eu.dariolucia.drorbiteex</groupId>
     <artifactId>eu.dariolucia.drorbiteex</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1-SNAPSHOT</version>
 
     <properties>
         <!-- Encoding -->

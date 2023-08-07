@@ -42,7 +42,7 @@ import java.util.Optional;
 public class DrOrbiteex extends Application {
 
     public static final String APPLICATION_NAME = "Dr. Orbiteex";
-    public static final String VERSION = "1.1.0";
+    public static final String VERSION = "1.1.1";
 
     private static final String DEFAULT_CONFIG_FOLDER = System.getProperty("user.home") + File.separator + "drorbiteex";
     private static final String DEFAULT_ORBIT_CONFIG_FILE_NAME = "orbits.xml";
