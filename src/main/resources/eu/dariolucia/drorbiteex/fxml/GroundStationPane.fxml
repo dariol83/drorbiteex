@@ -67,11 +67,11 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
-                                <MenuItem fx:id="showDopplerButton" mnemonicParsing="false" onAction="#onShowDopplerAction" text="Show Doppler Information...">
+                                <MenuItem fx:id="showDopplerButton" mnemonicParsing="false" onAction="#onShowDopplerAction" text="Plot Doppler data...">
                                     <graphic>
                                         <ImageView pickOnBounds="true" preserveRatio="true">
                                             <image>
-                                                <Image url="@/radar.png" />
+                                                <Image url="@/sine-wave-custom.png" />
                                             </image>
                                         </ImageView>
                                     </graphic>

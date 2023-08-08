@@ -529,6 +529,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
                 for(VisibilityWindow vw : entry.getValue()) {
                     if(vw.getId().equals(visibilityWindowId)) {
                         vw.exportGroundTrackingInfoTo(outputStream);
+                        return;
                     }
                 }
             }
