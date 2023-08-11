@@ -270,6 +270,7 @@ public class ExportOemOrbitDialog implements Initializable {
             folderPathText.setText(LAST_FOLDER);
         }
         filePathRadio.setSelected(LAST_FILE_SELECTED);
+        folderPathRadio.setSelected(!LAST_FILE_SELECTED);
     }
 
     private void selectCombo(ComboBox<String> combo, String value) {
