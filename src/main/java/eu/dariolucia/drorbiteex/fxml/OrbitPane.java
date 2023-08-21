@@ -161,6 +161,8 @@ public class OrbitPane implements Initializable {
     }
 
     public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
+        // TODO: this operation can take a while: wrap it in a separate class and introduce a progress window and ITaskProgressMonitor
+        //  with the possibility to cancel the refresh, and a message log when the refresh is successfully completed
         //
         for(OrbitGraphics ao : orbitList.getItems()) {
             if (ao.getOrbit().getModel() instanceof CelestrakTleOrbitModel) {
