@@ -26,6 +26,7 @@ import eu.dariolucia.drorbiteex.model.determination.*;
 import eu.dariolucia.drorbiteex.model.oem.OemExporterProcess;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
 import eu.dariolucia.drorbiteex.model.orbit.*;
+import eu.dariolucia.drorbiteex.model.tle.CelestrakTleRefresher;
 import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
@@ -161,20 +162,37 @@ public class OrbitPane implements Initializable {
     }
 
     public void onRefreshCelestrakOrbitAction(ActionEvent actionEvent) {
-        // TODO: this operation can take a while: wrap it in a separate class and introduce a progress window and ITaskProgressMonitor
-        //  with the possibility to cancel the refresh, and a message log when the refresh is successfully completed
-        //
-        for(OrbitGraphics ao : orbitList.getItems()) {
-            if (ao.getOrbit().getModel() instanceof CelestrakTleOrbitModel) {
-                final Orbit orbit = ao.getOrbit();
-                final CelestrakTleOrbitModel theOrbit = (CelestrakTleOrbitModel) orbit.getModel();
-                BackgroundThread.runLater(() -> {
-                    String newTle = CelestrakTleData.retrieveUpdatedTle(theOrbit.getGroup(), orbit.getName());
-                    if(newTle != null) {
-                        CelestrakTleOrbitModel model = new CelestrakTleOrbitModel(theOrbit.getGroup(), theOrbit.getCelestrakName(), newTle);
-                        orbit.update(new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), model));
+        final String taskName = "Celestrak TLE Refresh";
+        List<Orbit> cltskOrbits = orbitList.getItems().stream().map(OrbitGraphics::getOrbit).filter(o -> o.getModel() instanceof CelestrakTleOrbitModel).collect(Collectors.toList());
+        if(!cltskOrbits.isEmpty()) {
+            IMonitorableCallable<Boolean> task = monitor -> {
+                ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                    @Override
+                    public void progress(long current, long total, String message) {
+                        monitor.progress(taskName, current, total, message);
                     }
-                });
+
+                    @Override
+                    public boolean isCancelled() {
+                        return monitor.isCancelled();
+                    }
+                };
+                try {
+                    return new CelestrakTleRefresher().refresh(cltskOrbits, monitorBridge);
+                } catch (Exception e) {
+                    LOG.log(Level.SEVERE, "Celestrak TLE refresh raised an error: " + e.getMessage(), e);
+                    throw e;
+                }
+            };
+            ProgressDialog.Result<Boolean> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), taskName, task);
+            if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                DialogUtils.info(taskName, taskName, "Celestrak TLEs have been refreshed");
+            } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                DialogUtils.alert(taskName, taskName,
+                        "Task cancelled by user");
+            } else {
+                DialogUtils.alert(taskName, taskName,
+                        "Error: " + taskResult.getError().getMessage());
             }
         }
     }
