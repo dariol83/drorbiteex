@@ -27,7 +27,7 @@ CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
 ![AND](img/drorbiteex3.png "Dr. Orbiteex sky coverage")
 ![AND](img/drorbiteex4.png "Dr. Orbiteex orbit error analysis")
 
-The main development is completed (latest version: 1.1.0). Please report bug and feature requests using the GitHub issue tracker.
+The main development is completed (latest version branch: 1.1.x). Please report bug and feature requests using the GitHub issue tracker.
 
 ## Getting started
 Make sure you have Java >= 11 and Apache Maven installed.
