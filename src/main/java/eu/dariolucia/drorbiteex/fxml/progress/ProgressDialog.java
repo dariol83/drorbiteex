@@ -166,7 +166,7 @@ public class ProgressDialog implements Initializable, IProgressMonitor {
                 } else if (minutes > 0) {
                     sb.append(minutes).append(" minutes, ");
                     sb.append(seconds).append(" seconds");
-                } else if (seconds > 5) {
+                } else if (seconds > 0) {
                     sb.append(seconds).append(" seconds");
                 } else {
                     sb.append("almost done");

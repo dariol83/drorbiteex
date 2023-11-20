@@ -3,10 +3,10 @@ package eu.dariolucia.drorbiteex.fxml;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
 import java.util.List;
 
@@ -65,6 +65,38 @@ public class PolarPlotPainter {
         gc.fillRect(0, 0, width, height);
     }
 
+    public void drawMask(Color backgroundColor, Color maskColor, double[][] azElMap) {
+        // Draw the circle, as for drawPlot
+        gc.setStroke(maskColor);
+        gc.setFill(maskColor);
+        Point2D xyRadius = new Point2D(width/2, height/2);
+        double[][] convertedAzElMap = convertAzElMap(azElMap);
+        // Draw the circle (fill)
+        gc.fillOval(xyRadius.getX() - xyRadius.getX() * MAX_RADIUS_FACTOR,
+                xyRadius.getY() - xyRadius.getY() * MAX_RADIUS_FACTOR,
+                width * MAX_RADIUS_FACTOR,
+                height * MAX_RADIUS_FACTOR);
+
+        // Draw the inner poligon
+        gc.setStroke(backgroundColor);
+        gc.setFill(backgroundColor);
+        gc.fillPolygon(convertedAzElMap[0], convertedAzElMap[1], convertedAzElMap[0].length);
+    }
+
+    private double[][] convertAzElMap(double[][] azElMap) {
+        double[][] toReturn = new double[2][];
+        toReturn[0] = new double[azElMap[0].length];
+        toReturn[1] = new double[azElMap[0].length];
+        for(int i = 0; i < azElMap[0].length; ++i) {
+            double az = azElMap[0][i];
+            double el = azElMap[1][i];
+            Point2D point2D = toScreenPoint(az, el, width, height);
+            toReturn[0][i] = point2D.getX();
+            toReturn[1][i] = point2D.getY();
+        }
+        return toReturn;
+    }
+
     public void drawPlot(Color foregroundColor) {
         gc.setStroke(foregroundColor);
         gc.setFill(foregroundColor);
@@ -99,6 +131,7 @@ public class PolarPlotPainter {
         gc.strokeText("180", xyRadius.getX() - 10, xyRadius.getY() * 2 - 5);
         gc.strokeText("270", 3, xyRadius.getY() + 3);
     }
+
 
     public void drawAngleText(Color color, PolarPlot.PlotPosition position, String text) {
         Font previous = gc.getFont();

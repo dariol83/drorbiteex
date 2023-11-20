@@ -59,6 +59,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     private volatile double longitude;
     private volatile double height;
 
+    private volatile GroundStationMask mask;
+
     // Fields for visibility window computation
     private transient final Map<Orbit, List<VisibilityWindow>> visibilityWindows = new ConcurrentHashMap<>();
     private transient final Map<Orbit, TrackPoint> currentVisibilityMap = new ConcurrentHashMap<>();
@@ -71,7 +73,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     private transient final List<WeakReference<IGroundStationListener>> listeners = new CopyOnWriteArrayList<>();
 
     // To record the update state on visibility process
-    private boolean visibilityUpdateInProgress = false;
+    private volatile transient boolean visibilityUpdateInProgress = false;
 
     private transient volatile GroundStationParameterConfiguration configuration;
 
@@ -81,7 +83,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         //
     }
 
-    public GroundStation(UUID id, String code, String name, String site, String description, String color, boolean visible, double latitude, double longitude, double height) {
+    public GroundStation(UUID id, String code, String name, String site, String description, String color, boolean visible, double latitude, double longitude, double height, GroundStationMask mask) {
         this.id = id;
         this.code = code;
         this.name = name;
@@ -92,6 +94,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.latitude = latitude;
         this.longitude = longitude;
         this.height = height;
+        this.mask = mask;
     }
 
     public void setReducedProcessing() {
@@ -225,6 +228,16 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         notifyGroundStationUpdated();
     }
 
+    @XmlElement
+    public synchronized GroundStationMask getMask() {
+        return this.mask;
+    }
+
+    private synchronized void setMask(GroundStationMask mask) {
+        this.mask = mask;
+        notifyGroundStationUpdated();
+    }
+
     @Override
     public synchronized String toString() {
         return this.code + " - " + this.name + "[" + this.latitude + ", " + this.longitude + ", " + this.height + "] - " + (visible ? "visible" : "hidden");
@@ -239,6 +252,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
         this.latitude = gs.getLatitude();
         this.longitude = gs.getLongitude();
         this.height = gs.getHeight();
+        this.mask = gs.getMask();
 
         recomputeData(true);
     }
@@ -537,7 +551,7 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     }
 
     public GroundStation copy() {
-        GroundStation gs = new GroundStation(getId(), getCode(), getName(), getSite(), getDescription(), getColor(), isVisible(), getLatitude(), getLongitude(), getHeight());
+        GroundStation gs = new GroundStation(getId(), getCode(), getName(), getSite(), getDescription(), getColor(), isVisible(), getLatitude(), getLongitude(), getHeight(), getMask().copy());
         gs.setConfiguration(getConfiguration().copy());
         return gs;
     }

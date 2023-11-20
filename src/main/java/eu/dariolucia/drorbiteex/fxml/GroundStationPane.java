@@ -42,7 +42,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
-import org.orekit.time.TimeScalesFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -141,6 +140,8 @@ public class GroundStationPane implements Initializable {
         // Clear the ground station polar plot
         groundStationPolarPlot.clear();
         if(b != null) {
+            polarPlotController.selectGroundStation(b);
+            groundStationPolarPlot.selectGroundStation(b);
             Map<Orbit, List<VisibilityWindow>> windows = b.getGroundStation().getAllVisibilityWindows();
             List<VisibilityWindow> vw = new LinkedList<>();
             windows.values().forEach(vw::addAll);
@@ -199,7 +200,7 @@ public class GroundStationPane implements Initializable {
         // Register the ground station to the manager: the callbacks will do the rest
         if(gs != null) {
             BackgroundThread.runLater(() -> manager.getGroundStationManager().newGroundStation(
-                    gs.getCode(), gs.getName(), gs.getSite(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight()
+                    gs.getCode(), gs.getName(), gs.getSite(), gs.getDescription(), gs.getColor(), gs.isVisible(), gs.getLatitude(), gs.getLongitude(), gs.getHeight(), gs.getMask()
             ));
         }
     }

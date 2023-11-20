@@ -16,21 +16,30 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
+import eu.dariolucia.drorbiteex.model.determination.Measurement;
+import eu.dariolucia.drorbiteex.model.determination.TdmImporter;
 import eu.dariolucia.drorbiteex.model.station.GroundStation;
+import eu.dariolucia.drorbiteex.model.station.GroundStationMask;
+import eu.dariolucia.drorbiteex.model.station.MaskEntry;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.logging.Level;
 
 public class GroundStationDialog implements Initializable {
     public TextField codeText;
@@ -42,8 +51,14 @@ public class GroundStationDialog implements Initializable {
     public TextField altitudeText;
     public ColorPicker colorPicker;
 
-    private final BooleanProperty validData = new SimpleBooleanProperty(false);
+    public TextField maskAzimuthText;
+    public TextField maskElevationText;
+    public Button addMaskEntryButton;
+    public Button removeMaskEntryButton;
+    public Button importMaskButton;
+    public ListView<MaskEntry> maskList;
 
+    private final BooleanProperty validData = new SimpleBooleanProperty(false);
     private String error;
 
     @Override
@@ -54,7 +69,14 @@ public class GroundStationDialog implements Initializable {
         longitudeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
         altitudeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
+        maskList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        maskList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updateMaskCells(b));
         validate();
+    }
+
+    private void updateMaskCells(MaskEntry entry) {
+        maskAzimuthText.setText(String.valueOf(entry.getAzimuth()));
+        maskElevationText.setText(String.valueOf(entry.getElevation()));
     }
 
     private void validate() {
@@ -85,11 +107,33 @@ public class GroundStationDialog implements Initializable {
         longitudeText.setText(String.valueOf(gs.getLongitude()));
         altitudeText.setText(String.valueOf(gs.getHeight()));
         colorPicker.setValue(Color.valueOf(gs.getColor()));
+        setMask(gs);
+    }
+
+    private void setMask(GroundStation gs) {
+        maskList.getItems().clear();
+        if(gs.getMask() != null && !gs.getMask().getEntries().isEmpty()) {
+            for (MaskEntry me : gs.getMask().getEntries()) {
+                maskList.getItems().add(me);
+            }
+        }
     }
 
     public GroundStation getResult() {
         return new GroundStation(UUID.randomUUID(), codeText.getText(), nameText.getText(), siteText.getText(), descriptionTextArea.getText(),colorPicker.getValue().toString(), true,
-                Double.parseDouble(latitudeText.getText()), Double.parseDouble(longitudeText.getText()), Double.parseDouble(altitudeText.getText()));
+                Double.parseDouble(latitudeText.getText()), Double.parseDouble(longitudeText.getText()), Double.parseDouble(altitudeText.getText()), toMask(maskList));
+    }
+
+    private GroundStationMask toMask(ListView<MaskEntry> maskList) {
+        if(maskList.getItems().isEmpty()) {
+            return null;
+        } else {
+            GroundStationMask gsm = new GroundStationMask();
+            List<MaskEntry> entries = new LinkedList<>(maskList.getItems());
+            Collections.sort(entries);
+            gsm.setEntries(entries);
+            return gsm;
+        }
     }
 
     public static GroundStation openDialog(Window owner) {
@@ -128,6 +172,83 @@ public class GroundStationDialog implements Initializable {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public void onAddMaskEntryAction(ActionEvent actionEvent) {
+        MaskEntry me = createMaskEntryFromValues();
+        if(me != null) {
+            // Add to list, replace azimuth value if one is identical
+            MaskEntry toReplace = null;
+            for(MaskEntry entry : maskList.getItems()) {
+                if(entry.getAzimuth() == me.getAzimuth()) {
+                    toReplace = entry;
+                    break;
+                }
+            }
+            if(toReplace != null) {
+                maskList.getItems().remove(toReplace);
+            }
+            maskList.getItems().add(me);
+            Collections.sort(maskList.getItems());
+        }
+    }
+
+    private MaskEntry createMaskEntryFromValues() {
+        try {
+            double az = Double.parseDouble(maskAzimuthText.getText());
+            double el = Double.parseDouble(maskElevationText.getText());
+            // Clear text
+            maskElevationText.setText("");
+            maskAzimuthText.setText("");
+            maskAzimuthText.requestFocus();
+            return new MaskEntry(az, el);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public void onRemoveMaskEntryAction(ActionEvent actionEvent) {
+        if(maskList.getSelectionModel().getSelectedItem() != null) {
+            maskList.getItems().remove(maskList.getSelectionModel().getSelectedItem());
+        }
+    }
+
+    public void onImportMaskEntryAction(ActionEvent actionEvent) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Select mask file");
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
+        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("All Files","*.*"));
+
+        File selected = fc.showOpenDialog(maskList.getScene().getWindow());
+        if(selected != null) {
+            // Read contents
+            try {
+                List<String> lines = Files.readAllLines(selected.toPath());
+                List<MaskEntry> entries = new LinkedList<>();
+                for(String l : lines) {
+                    l = l.trim();
+                    if(l.isBlank() || l.startsWith(";") || l.startsWith("//") || l.startsWith("#")) {
+                        continue;
+                    }
+                    l = l.replace(";", " ").replace(":", " ").replace("|", " ").replace(",", " ")
+                            .replace("\t", " ");
+                    String[] split = l.split(" ", -1);
+                    if(split.length >= 2) {
+                        double az = Double.parseDouble(split[0]);
+                        double el = Double.parseDouble(split[1]);
+                        entries.add(new MaskEntry(az, el));
+                    }
+                }
+                Collections.sort(entries);
+                if(!entries.isEmpty()) {
+                    maskList.getItems().clear();
+                    maskList.getItems().addAll(entries);
+                }
+            } catch (IOException e) {
+                // No update
+                e.printStackTrace();
+            }
         }
     }
 }

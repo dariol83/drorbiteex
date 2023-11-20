@@ -38,7 +38,7 @@ public class DrawingUtils {
     public static final double EARTH_SCALE_FACTOR = (double) EARTH_RADIUS / (double) REAL_EARTH_RADIUS_METERS;
 
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color) {
-        return createConnection(origin, target, color, 1.0);
+        return createConnection(origin, target, color, 0.4);
     }
 
     public static Cylinder createConnection(Point3D origin, Point3D target, Color color, double size) {

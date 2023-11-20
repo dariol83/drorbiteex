@@ -59,6 +59,7 @@ public class PolarPlot implements Initializable {
     private ChangeListener<Object> refresher;
 
     private boolean ignoreVisibility = false;
+    private double[][] currentMask;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -136,7 +137,8 @@ public class PolarPlot implements Initializable {
             SpacecraftTrack st = new SpacecraftTrack(track);
             this.trackMap.put(track.getOrbit().getId(), st);
             this.colorMap.put(track.getOrbit().getId(), Color.valueOf(track.getOrbit().getColor()));
-
+            // At this stage, set the ground station mask if available
+            this.currentMask = track.getStation().getMask() != null ? track.getStation().getMask().getAzElMap() : null;
             refresh();
         }
     }
@@ -175,7 +177,7 @@ public class PolarPlot implements Initializable {
         this.positionMap.clear();
         this.colorMap.clear();
         this.textMap.clear();
-
+        this.currentMask = null;
         refresh();
     }
 
@@ -183,10 +185,17 @@ public class PolarPlot implements Initializable {
         GraphicsContext gc = this.canvas.getGraphicsContext2D();
         PolarPlotPainter painter = new PolarPlotPainter(gc, canvas.getWidth(), canvas.getHeight());
         drawBackground(painter);
+        drawMask(painter);
         drawPlot(painter);
         drawPass(painter);
         drawSpacecraftLocation(painter);
         drawAngleText(painter);
+    }
+
+    private void drawMask(PolarPlotPainter painter) {
+        if(this.currentMask != null) {
+            painter.drawMask(backgroundColor.get(), foregroundColor.get().brighter().deriveColor(1.0, 1.0, 1.0, 0.5), this.currentMask);
+        }
     }
 
     private void drawAngleText(PolarPlotPainter painter) {
@@ -292,6 +301,11 @@ public class PolarPlot implements Initializable {
         if(this.trackMap.remove(id) != null) {
             refresh();
         }
+    }
+
+    public void selectGroundStation(GroundStationGraphics b) {
+        this.currentMask = b.getGroundStation().getMask() != null ? b.getGroundStation().getMask().getAzElMap() : null;
+        refresh();
     }
 
     public interface ISpacecraftDrawStrategy {
