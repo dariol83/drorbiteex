@@ -70,13 +70,15 @@ public class GroundStationDialog implements Initializable {
         altitudeText.textProperty().addListener((prop, oldVal, newVal) -> validate());
 
         maskList.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        maskList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updateMaskCells(b));
+        maskList.getSelectionModel().selectedItemProperty().addListener((a,b,c) -> updateMaskCells(c));
         validate();
     }
 
     private void updateMaskCells(MaskEntry entry) {
-        maskAzimuthText.setText(String.valueOf(entry.getAzimuth()));
-        maskElevationText.setText(String.valueOf(entry.getElevation()));
+        if(entry != null) {
+            maskAzimuthText.setText(String.valueOf(entry.getAzimuth()));
+            maskElevationText.setText(String.valueOf(entry.getElevation()));
+        }
     }
 
     private void validate() {
@@ -222,33 +224,40 @@ public class GroundStationDialog implements Initializable {
 
         File selected = fc.showOpenDialog(maskList.getScene().getWindow());
         if(selected != null) {
-            // Read contents
-            try {
-                List<String> lines = Files.readAllLines(selected.toPath());
-                List<MaskEntry> entries = new LinkedList<>();
-                for(String l : lines) {
-                    l = l.trim();
-                    if(l.isBlank() || l.startsWith(";") || l.startsWith("//") || l.startsWith("#")) {
-                        continue;
-                    }
-                    l = l.replace(";", " ").replace(":", " ").replace("|", " ").replace(",", " ")
-                            .replace("\t", " ");
-                    String[] split = l.split(" ", -1);
-                    if(split.length >= 2) {
-                        double az = Double.parseDouble(split[0]);
-                        double el = Double.parseDouble(split[1]);
+            importMaskFile(selected);
+        }
+    }
+
+    private void importMaskFile(File selected) {
+        // Read contents
+        try {
+            List<String> lines = Files.readAllLines(selected.toPath());
+            List<MaskEntry> entries = new LinkedList<>();
+            for(String l : lines) {
+                l = l.trim();
+                if(l.isBlank() || l.startsWith(";") || l.startsWith("//") || l.startsWith("#")) {
+                    continue;
+                }
+                l = l.replace(";", " ").replace(":", " ").replace("|", " ").replace(",", " ")
+                        .replace("\t", " ");
+                String[] split = l.split(" ", -1);
+                if(split.length >= 2) {
+                    double az = Double.parseDouble(split[0]);
+                    double el = Double.parseDouble(split[1]);
+                    // Import only valid values
+                    if(az >= 0 && az <= 360 && el >= 0 && el <= 90) {
                         entries.add(new MaskEntry(az, el));
                     }
                 }
-                Collections.sort(entries);
-                if(!entries.isEmpty()) {
-                    maskList.getItems().clear();
-                    maskList.getItems().addAll(entries);
-                }
-            } catch (IOException e) {
-                // No update
-                e.printStackTrace();
             }
+            Collections.sort(entries);
+            if(!entries.isEmpty()) {
+                maskList.getItems().clear();
+                maskList.getItems().addAll(entries);
+            }
+        } catch (IOException e) {
+            // No update
+            e.printStackTrace();
         }
     }
 }

@@ -41,10 +41,61 @@ public class GroundStationMask {
 
     private synchronized void updateAzElMap() {
         azElMap = new double[2][];
-        azElMap[0] = new double[entries.size()];
-        azElMap[1] = new double[entries.size()];
-        for(int i = 0; i < entries.size(); ++i) {
-            MaskEntry e = entries.get(i);
+        // Build dense, min 1deg AZ list, with 0 and 360
+        List<MaskEntry> entryList = new LinkedList<>();
+        MaskEntry previousEntry = null;
+        // Add 0 degree: take the last entry in the original list
+        if(getEntries().get(0).getAzimuth() > 0) {
+            MaskEntry zeroDegEntry = new MaskEntry(0, getEntries().get(getEntries().size() - 1).getElevation());
+            entryList.add(zeroDegEntry);
+            previousEntry = zeroDegEntry;
+        }
+        // Check if you have to add anything from 0 deg to the first entry
+        if(previousEntry != null) {
+            double difference = getEntries().get(0).getAzimuth() - previousEntry.getAzimuth();
+            double startingAzimuth = previousEntry.getAzimuth();
+            while(difference > 1.0) {
+                startingAzimuth += 1.0;
+                previousEntry = new MaskEntry(startingAzimuth, previousEntry.getElevation());
+                entryList.add(previousEntry);
+                difference -= 1.0;
+            }
+        }
+        // Now add the data you have
+        for(MaskEntry e: getEntries()) {
+            if(previousEntry != null && e.getAzimuth() - previousEntry.getAzimuth() > 1.0) {
+                // Add intermediates
+                double difference = e.getAzimuth() - previousEntry.getAzimuth();
+                double startingAzimuth = previousEntry.getAzimuth();
+                while(difference > 1.0) {
+                    startingAzimuth += 1.0;
+                    entryList.add(new MaskEntry(startingAzimuth, previousEntry.getElevation()));
+                    difference -= 1.0;
+                }
+            }
+            // Add current
+            entryList.add(e);
+            previousEntry = e;
+        }
+        // Check if you have to add anything from previous entry to 360 deg
+        if(previousEntry != null) {
+            double difference = 360 - previousEntry.getAzimuth();
+            double startingAzimuth = previousEntry.getAzimuth();
+            while(difference > 0.0) {
+                startingAzimuth += 1.0;
+                if(startingAzimuth > 360.0) {
+                    startingAzimuth = 360.0;
+                }
+                previousEntry = new MaskEntry(startingAzimuth, previousEntry.getElevation());
+                entryList.add(previousEntry);
+                difference -= 1.0;
+            }
+        }
+        // Construct array
+        azElMap[0] = new double[entryList.size()];
+        azElMap[1] = new double[entryList.size()];
+        for(int i = 0; i < entryList.size(); ++i) {
+            MaskEntry e = entryList.get(i);
             azElMap[0][i] = e.getAzimuth();
             azElMap[1][i] = e.getElevation();
         }
