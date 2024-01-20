@@ -87,7 +87,8 @@ public class ScheduleExporterProcess {
         Orbit clonedOrbit = new Orbit(orbit.getId(), orbit.getCode(), orbit.getName(), orbit.getColor(), orbit.isVisible(), orbit.getModel().copy());
         clonedOrbit.setOrbitConfiguration(this.configuration);
         GroundStation clonedStation = new GroundStation(groundStation.getId(), groundStation.getCode(), groundStation.getName(), groundStation.getSite(), groundStation.getDescription(), groundStation.getColor(),
-                groundStation.isVisible(), groundStation.getLatitude(), groundStation.getLongitude(), groundStation.getHeight(), groundStation.getMask().copy());
+                groundStation.isVisible(), groundStation.getLatitude(), groundStation.getLongitude(), groundStation.getHeight(),
+                groundStation.getMask() != null ? groundStation.getMask().copy() : null);
         clonedStation.setConfiguration(groundStation.getConfiguration());
         // Perform the propagation
         AbsoluteDate startDate = TimeUtils.toAbsoluteDate(startTime);

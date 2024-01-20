@@ -551,7 +551,8 @@ public class GroundStation implements EventHandler<ElevationDetector>, IOrbitVis
     }
 
     public GroundStation copy() {
-        GroundStation gs = new GroundStation(getId(), getCode(), getName(), getSite(), getDescription(), getColor(), isVisible(), getLatitude(), getLongitude(), getHeight(), getMask().copy());
+        GroundStation gs = new GroundStation(getId(), getCode(), getName(), getSite(), getDescription(), getColor(), isVisible(), getLatitude(), getLongitude(), getHeight(),
+                getMask() != null ? getMask().copy() : null);
         gs.setConfiguration(getConfiguration().copy());
         return gs;
     }
