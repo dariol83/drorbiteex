@@ -16,9 +16,9 @@
 
 package eu.dariolucia.drorbiteex.fxml;
 
-import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalyser;
-import eu.dariolucia.drorbiteex.model.collinearity.CollinearityAnalysisRequest;
-import eu.dariolucia.drorbiteex.model.collinearity.CollinearityEvent;
+import eu.dariolucia.drorbiteex.model.collinearity.VisibilityConeAnalyser;
+import eu.dariolucia.drorbiteex.model.collinearity.VisibilityConeEvent;
+import eu.dariolucia.drorbiteex.model.collinearity.VisibilityConeAnalysisRequest;
 import eu.dariolucia.drorbiteex.model.station.TrackPoint;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
 import javafx.application.Platform;
@@ -46,14 +46,14 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
-public class CollinearityReportDialog implements Initializable {
+public class VisibilityConeReportDialog implements Initializable {
 
     private static String lastExportFolder = null;
 
     private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     public Label titleLabel;
     public TextField filterText;
-    public TableView<CollinearityEvent> table;
+    public TableView<VisibilityConeEvent> table;
     public PolarPlot polarPlotController;
     public Label referenceElAzLabel;
     public Label targetElAzLabel;
@@ -61,9 +61,9 @@ public class CollinearityReportDialog implements Initializable {
     public Label nbEventsLabel;
     public VBox polarPlotParent;
 
-    private CollinearityAnalysisRequest request;
-    private FilteredList<CollinearityEvent> filteredList;
-    private SortedList<CollinearityEvent> sortedList;
+    private VisibilityConeAnalysisRequest request;
+    private FilteredList<VisibilityConeEvent> filteredList;
+    private SortedList<VisibilityConeEvent> sortedList;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -77,9 +77,9 @@ public class CollinearityReportDialog implements Initializable {
         filterText.textProperty().addListener((w, o, n) -> applyFilter(n));
         table.getSelectionModel().selectedItemProperty().addListener((w,o,n) -> selectEvent(n));
 
-        ((TableColumn<CollinearityEvent, String>) table.getColumns().get(0)).setCellValueFactory(o -> new ReadOnlyStringWrapper(TimeUtils.formatDate(o.getValue().getTime())));
-        ((TableColumn<CollinearityEvent, String>) table.getColumns().get(1)).setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getTargetOrbit().getName()));
-        ((TableColumn<CollinearityEvent, String>) table.getColumns().get(2)).setCellValueFactory(o -> new ReadOnlyStringWrapper(formatDouble(o.getValue().getAngularSeparation(), 3)));
+        ((TableColumn<VisibilityConeEvent, String>) table.getColumns().get(0)).setCellValueFactory(o -> new ReadOnlyStringWrapper(TimeUtils.formatDate(o.getValue().getTime())));
+        ((TableColumn<VisibilityConeEvent, String>) table.getColumns().get(1)).setCellValueFactory(o -> new ReadOnlyStringWrapper(o.getValue().getTargetOrbit().getName()));
+        ((TableColumn<VisibilityConeEvent, String>) table.getColumns().get(2)).setCellValueFactory(o -> new ReadOnlyStringWrapper(formatDouble(o.getValue().getAngularSeparation(), 3)));
     }
 
     private void updatePolarPlotSize() {
@@ -90,33 +90,21 @@ public class CollinearityReportDialog implements Initializable {
     }
 
     private void drawSpacecraft(GraphicsContext gc, Color color, Point2D p1, String orbitName) {
-        if(orbitName.equals(request.getReferenceOrbit().getName())) {
-            // Reference orbit
-            gc.setLineWidth(1.5);
-            gc.setFill(Color.WHITE);
-            gc.fillOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
-            gc.setStroke(Color.LIMEGREEN);
-            gc.strokeOval(p1.getX() - 5, p1.getY() - 5, 10, 10);
-            gc.setFill(color);
-            gc.setStroke(color);
-        } else {
-            // Target orbit
-            gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
-        }
+        // Target orbit
+        gc.fillOval(p1.getX() - 3, p1.getY() - 3, 6, 6);
     }
 
-    private void selectEvent(CollinearityEvent event) {
+    private void selectEvent(VisibilityConeEvent event) {
         polarPlotController.clear();
         if(event == null) {
             referenceElAzLabel.setText("---");
             targetElAzLabel.setText("---");
             angularSeparationLabel.setText("---");
         } else {
-            referenceElAzLabel.setText(formatElAz(event.getReferencePoint()));
+            referenceElAzLabel.setText(formatElAz(request.getReferenceElevation(), request.getReferenceAzimuth()));
             targetElAzLabel.setText(formatElAz(event.getTargetPoint()));
             angularSeparationLabel.setText(formatDouble(event.getAngularSeparation(), 3));
 
-            polarPlotController.setSpacecraftPosition(event.getReferenceOrbit(), event.getReferenceOrbit().getName(), toPoint(event.getReferencePoint()), Color.valueOf(event.getReferenceOrbit().getColor()));
             polarPlotController.setSpacecraftPosition(event.getTargetOrbit(), event.getTargetOrbit().getName(), toPoint(event.getTargetPoint()), Color.valueOf(event.getTargetOrbit().getColor()));
         }
     }
@@ -125,12 +113,16 @@ public class CollinearityReportDialog implements Initializable {
         return new Point2D(currentLocation.getAzimuth(), currentLocation.getElevation());
     }
 
-    private String formatDouble(double value, int places) {
+    private static String formatDouble(double value, int places) {
         return String.format("%." + places + "f", value);
     }
 
     private String formatElAz(TrackPoint referencePoint) {
         return formatDouble(referencePoint.getElevation(),2) + " | " + formatDouble(referencePoint.getAzimuth(), 2);
+    }
+
+    private static String formatElAz(double el, double az) {
+        return formatDouble(el,2) + " | " + formatDouble(az, 2);
     }
 
     private void applyFilter(String orbitText) {
@@ -142,21 +134,22 @@ public class CollinearityReportDialog implements Initializable {
         nbEventsLabel.setText(String.valueOf(filteredList.size()));
     }
 
-    public static void openDialog(Window owner, CollinearityAnalysisRequest request, List<CollinearityEvent> events) {
+    public static void openDialog(Window owner, VisibilityConeAnalysisRequest request, List<VisibilityConeEvent> events) {
         try {
             // Create the popup
             Dialog<ButtonType> d = new Dialog<>();
-            d.setTitle("Collinearity results of " + request.getReferenceOrbit().getName() + " for " + request.getGroundStation().getName() + " - Period: " +
+            d.setTitle("Visibility results for " + request.getGroundStation().getName() + " with pointing " +
+                    formatElAz(request.getReferenceElevation(), request.getReferenceAzimuth()) + " - Period: " +
                     TimeUtils.formatDate(request.getStartTime()) + " - " + TimeUtils.formatDate(request.getEndTime()));
             d.initModality(Modality.APPLICATION_MODAL);
             d.initOwner(owner);
             d.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
 
-            URL dataSelectionDialogFxmlUrl = CollinearityReportDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/CollinearityReportDialog.fxml");
+            URL dataSelectionDialogFxmlUrl = VisibilityConeReportDialog.class.getResource("/eu/dariolucia/drorbiteex/fxml/VisibilityConeReportDialog.fxml");
             FXMLLoader loader = new FXMLLoader(dataSelectionDialogFxmlUrl);
             AnchorPane root = loader.load();
             CssHolder.applyTo(root);
-            CollinearityReportDialog controller = loader.getController();
+            VisibilityConeReportDialog controller = loader.getController();
             controller.configure(request, events);
 
             d.getDialogPane().setContent(root);
@@ -168,13 +161,13 @@ public class CollinearityReportDialog implements Initializable {
         }
     }
 
-    private void configure(CollinearityAnalysisRequest request, List<CollinearityEvent> events) {
+    private void configure(VisibilityConeAnalysisRequest request, List<VisibilityConeEvent> events) {
         this.request = request;
         this.filteredList = new FilteredList<>(FXCollections.observableList(events), e -> true);
         this.sortedList = new SortedList<>(this.filteredList);
         this.table.setItems(this.sortedList);
         this.sortedList.comparatorProperty().bind(this.table.comparatorProperty());
-        this.titleLabel.setText("Ground Station: " + request.getGroundStation().getName() + " - Reference Orbit: " + request.getReferenceOrbit().getName() + " - Period: "
+        this.titleLabel.setText("Ground Station: " + request.getGroundStation().getName() + " - Period: "
             + TimeUtils.formatDate(request.getStartTime()) + " - " + TimeUtils.formatDate(request.getEndTime()));
         this.nbEventsLabel.setText(String.valueOf(this.filteredList.size()));
     }
@@ -182,14 +175,15 @@ public class CollinearityReportDialog implements Initializable {
     public void onExportButtonAction(ActionEvent actionEvent) {
         // open file dialog
         FileChooser fc = new FileChooser();
-        fc.setTitle("Save CSV collinearity events for " + request.getGroundStation().getName());
+        fc.setTitle("Save CSV visibility events for " + request.getGroundStation().getName());
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files","*.*"));
         fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("CSV file","*.csv", "*.txt"));
         if(lastExportFolder != null) {
             fc.setInitialDirectory(new File(lastExportFolder));
         }
-        fc.setInitialFileName("CollinearityEvents_" + request.getGroundStation().getCode() + "_" + request.getReferenceOrbit().getName() + "_"
+        fc.setInitialFileName("VisibilityEvents_" + request.getGroundStation().getCode() + "_"
+                + formatElAz(request.getReferenceElevation(), request.getReferenceAzimuth()).replace('|', '_').replace('.','_').replace(" ", "") + "_"
                 + TimeUtils.formatDate(request.getStartTime()).replace(" ","_").replace(".","").replace(":","") + "_"
                 + TimeUtils.formatDate(request.getEndTime()).replace(" ","_").replace(".","").replace(":","")
                 + ".csv" );
@@ -198,11 +192,13 @@ public class CollinearityReportDialog implements Initializable {
             lastExportFolder = selected.getParentFile().getAbsolutePath();
             // Export
             try {
-                CollinearityAnalyser.generateCSV(selected.getAbsolutePath(), this.table.getItems());
-                Platform.runLater(() -> DialogUtils.info("CSV collinearity events", "Collinearity events of " + request.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
+                VisibilityConeAnalyser.generateCSV(selected.getAbsolutePath(), this.table.getItems());
+                Platform.runLater(() -> DialogUtils.info("CSV visibility events", "Visibility events of " + request.getGroundStation().getName() +
+                        " exported", "File: " + selected.getAbsolutePath()));
             } catch (Exception e) {
                 e.printStackTrace();
-                Platform.runLater(() -> DialogUtils.alert("CSV collinearity events", "Collinearity events of " + request.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
+                Platform.runLater(() -> DialogUtils.alert("CSV visibility events", "Visibility events of " + request.getGroundStation().getName() +
+                        " not exported", "I/O Error: " + e.getMessage()));
             }
         }
     }

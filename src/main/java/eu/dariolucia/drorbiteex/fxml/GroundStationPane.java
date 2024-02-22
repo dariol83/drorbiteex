@@ -503,6 +503,46 @@ public class GroundStationPane implements Initializable {
         }
     }
 
+    public void onVisibilityConeAnalysisAction(ActionEvent actionEvent) {
+        GroundStationGraphics gs = groundStationList.getSelectionModel().getSelectedItem();
+        if(gs != null) {
+            List<Orbit> orbits = orbitSupplier.get(); //
+            // open dialog
+            VisibilityConeAnalysisRequest sgr = VisibilityConeAnalysisDialog.openDialog(groundStationList.getScene().getWindow(), gs.getGroundStation(), orbits);
+            if(sgr != null) {
+                IMonitorableCallable<List<VisibilityConeEvent>> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Visibility Cone Analysis", current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return VisibilityConeAnalyser.analyse(sgr, monitorBridge);
+                    } catch (Exception e) {
+                        LOG.log(Level.SEVERE, "Visibility cone analysis on '" + gs.getName() + "' raised error: " + e.getMessage(), e);
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<List<VisibilityConeEvent>> taskResult = ProgressDialog.openProgress(groundStationList.getScene().getWindow(), "Visibility Cone Analysis", task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    VisibilityConeReportDialog.openDialog(groundStationList.getScene().getWindow(), sgr, taskResult.getResult());
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Visibility Cone Analysis", "Visibility events for " + gs.getGroundStation().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("Visibility Cone Analysis", "Visibility events for " + gs.getGroundStation().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
+        }
+    }
+
     public void onExportGroundTrackAction(ActionEvent actionEvent) {
         GroundStationGraphics gs = this.groundStationList.getSelectionModel().getSelectedItem();
         VisibilityWindow vw = this.passTable.getSelectionModel().getSelectedItem();

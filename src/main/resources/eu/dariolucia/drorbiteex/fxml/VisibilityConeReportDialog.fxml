@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+  ~ Copyright (c) 2022 Dario Lucia (https://www.dariolucia.eu)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<AnchorPane maxHeight="1.7976931348623157E308" prefHeight="600.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.dariolucia.drorbiteex.fxml.VisibilityConeReportDialog">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox>
+               <children>
+                  <Label fx:id="titleLabel" text="---" />
+                  <Region minHeight="0.0" prefHeight="0.0" HBox.hgrow="ALWAYS" />
+                  <Button mnemonicParsing="false" prefWidth="80.0" text="Export..." onAction="#onExportButtonAction"/>
+               </children>
+            </HBox>
+            <Label text="Filter Orbit">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin></Label>
+            <TextField fx:id="filterText" maxWidth="400.0" minWidth="400.0">
+               <VBox.margin>
+                  <Insets bottom="5.0" />
+               </VBox.margin></TextField>
+            <HBox spacing="5" VBox.vgrow="NEVER">
+               <children>
+                  <TableView fx:id="table" maxWidth="400.0" minWidth="400.0" prefWidth="400.0">
+                     <columns>
+                        <TableColumn maxWidth="120.0" minWidth="120.0" prefWidth="120.0" text="Time" />
+                        <TableColumn maxWidth="150.0" minWidth="150.0" prefWidth="150.0" text="Orbit" />
+                        <TableColumn maxWidth="100.0" minWidth="100.0" prefWidth="100.0" text="Angular Sep." />
+                     </columns>
+                  </TableView>
+                  <VBox fx:id="polarPlotParent" maxWidth="400.0" minWidth="400.0" spacing="5">
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                     <children>
+                        <fx:include fx:id="polarPlot" source="PolarPlot.fxml" VBox.vgrow="NEVER" />
+                        <HBox>
+                           <children>
+                              <Label maxWidth="140.0" minWidth="140" text="Reference Orbit EL/AZ" />
+                              <Label fx:id="referenceElAzLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="1.7976931348623157E308" text="---" textAlignment="RIGHT" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
+                        <HBox>
+                           <children>
+                              <Label maxWidth="140" minWidth="140" text="Target Orbit EL/AZ" />
+                              <Label fx:id="targetElAzLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="1.7976931348623157E308" text="---" textAlignment="RIGHT" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
+                        <HBox>
+                           <children>
+                              <Label maxWidth="140" minWidth="140" text="Angular Separation" />
+                              <Label fx:id="angularSeparationLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="1.7976931348623157E308" text="---" textAlignment="RIGHT" HBox.hgrow="ALWAYS" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+            <HBox>
+               <children>
+                  <Label prefHeight="24.0" text="Number of visibility events (filtered)  " />
+                  <Label fx:id="nbEventsLabel" maxWidth="100.0" prefHeight="24.0" text="---" HBox.hgrow="ALWAYS" />
+               </children>
+               <VBox.margin>
+                  <Insets bottom="5.0" top="5.0" />
+               </VBox.margin>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
