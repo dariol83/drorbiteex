@@ -406,8 +406,10 @@ public class GroundStationPane implements Initializable {
                         Platform.runLater(() -> DialogUtils.alert("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " not exported", "Cannot create file: " + e.getMessage()));
                         return;
                     }
-                    try(FileOutputStream fs = new FileOutputStream(selected)) {
+                    try {
+                        FileOutputStream fs = new FileOutputStream(selected);
                         manager.getGroundStationManager().exportVisibilityPasses(gsId, fs, filteredOrbits);
+                        fs.close();
                         Platform.runLater(() -> DialogUtils.info("CSV visibility windows", "Visibility windows of " + gs.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
                     } catch (Exception e) {
                         LOG.log(Level.SEVERE, "Visibility windows export of '" + gs.getName() + "' raised error: " + e.getMessage(), e);
@@ -577,9 +579,11 @@ public class GroundStationPane implements Initializable {
                         Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "Cannot create file: " + e.getMessage()));
                         return;
                     }
-                    try(FileOutputStream fs = new FileOutputStream(selected)) {
+                    try {
+                        FileOutputStream fs = new FileOutputStream(selected);
                         manager.getGroundStationManager().exportTrackingInfo(gsId, fs, orbitId, vwId);
                         Platform.runLater(() -> DialogUtils.info("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " exported", "File: " + selected.getAbsolutePath()));
+                        fs.close();
                     } catch (Exception e) {
                         LOG.log(Level.SEVERE, "CSV ground track export of '" + gs.getName() + "' raised error: " + e.getMessage(), e);
                         Platform.runLater(() -> DialogUtils.alert("CSV ground track", "Ground track of " + gs.getGroundStation().getName() + " not exported", "I/O Error: " + e.getMessage()));
