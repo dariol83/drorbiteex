@@ -114,6 +114,15 @@
                                         </ImageView>
                                     </graphic>
                                 </MenuItem>
+                                <MenuItem fx:id="exportOrbitVisibilityButton" mnemonicParsing="false" onAction="#onExportOrbitVisibilityAction" text="Export orbit visibility...">
+                                    <graphic>
+                                        <ImageView pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@/calendar-text-outline.png" />
+                                            </image>
+                                        </ImageView>
+                                    </graphic>
+                                </MenuItem>
                             </items>
                             <tooltip>
                                 <Tooltip text="Export OEM..." />

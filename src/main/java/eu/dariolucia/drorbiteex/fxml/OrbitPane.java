@@ -19,9 +19,7 @@ package eu.dariolucia.drorbiteex.fxml;
 import eu.dariolucia.drorbiteex.fxml.progress.IMonitorableCallable;
 import eu.dariolucia.drorbiteex.fxml.progress.ProgressDialog;
 import eu.dariolucia.drorbiteex.model.ModelManager;
-import eu.dariolucia.drorbiteex.model.collinearity.ErrorPoint;
-import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalyser;
-import eu.dariolucia.drorbiteex.model.collinearity.OrbitPVErrorAnalysisRequest;
+import eu.dariolucia.drorbiteex.model.collinearity.*;
 import eu.dariolucia.drorbiteex.model.determination.*;
 import eu.dariolucia.drorbiteex.model.oem.OemExporterProcess;
 import eu.dariolucia.drorbiteex.model.oem.OemGenerationRequest;
@@ -31,6 +29,7 @@ import eu.dariolucia.drorbiteex.model.tle.TleExporterProcess;
 import eu.dariolucia.drorbiteex.model.tle.TleGenerationRequest;
 import eu.dariolucia.drorbiteex.model.util.ITaskProgressMonitor;
 import eu.dariolucia.drorbiteex.model.util.TimeUtils;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -67,6 +66,7 @@ public class OrbitPane implements Initializable {
     public MenuItem tleOrbitDeterminationButton;
     public MenuItem numericalOrbitDeterminationButton;
     public MenuItem exportTleOrbitButton;
+    public MenuItem exportOrbitVisibilityButton;
     public ToggleButton gsVisibilityButton;
     public Label gsOrbitLabel;
 
@@ -82,6 +82,7 @@ public class OrbitPane implements Initializable {
         // Button enablement
         exportOemOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         exportTleOrbitButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
+        exportOrbitVisibilityButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         orbitErrorAnalysisButton.disableProperty().bind(orbitList.getSelectionModel().selectedItemProperty().isNull());
         tleOrbitDeterminationButton.disableProperty().bind(Bindings.or(
                 orbitList.getSelectionModel().selectedItemProperty().isNull(),
@@ -524,6 +525,45 @@ public class OrbitPane implements Initializable {
                             "Task cancelled by user");
                 } else {
                     DialogUtils.alert("Orbit Determination (numerical)", "Orbit determination (numerical) computation for " + originalOrbit.getOrbit().getName(),
+                            "Error: " + taskResult.getError().getMessage());
+                }
+            }
+        }
+    }
+
+    public void onExportOrbitVisibilityAction(ActionEvent actionEvent) {
+        OrbitGraphics originalOrbit = orbitList.getSelectionModel().getSelectedItem();
+        if(originalOrbit != null) {
+            Orbit orbit = originalOrbit.getOrbit();
+            OrbitVisibilityAnalysisRequest request = OrbitVisibilityAnalysisDialog.openDialog(orbitList.getParent().getScene().getWindow(), orbit, manager.getGroundStationManager().getGroundStations());
+            if(request != null) {
+                IMonitorableCallable<String> task = monitor -> {
+                    ITaskProgressMonitor monitorBridge = new ITaskProgressMonitor() {
+                        @Override
+                        public void progress(long current, long total, String message) {
+                            monitor.progress("Orbit Visibility", current, total, message);
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return monitor.isCancelled();
+                        }
+                    };
+                    try {
+                        return OrbitVisibilityAnalyser.analyse(request, monitorBridge);
+                    } catch (Exception e) {
+                        LOG.log(Level.SEVERE, "Orbit visibility computation of '" + originalOrbit.getName() + "' raised error: " + e.getMessage(), e);
+                        throw e;
+                    }
+                };
+                ProgressDialog.Result<String> taskResult = ProgressDialog.openProgress(orbitList.getScene().getWindow(), "Orbit Visibility", task);
+                if(taskResult.getStatus() == ProgressDialog.TaskStatus.COMPLETED) {
+                    Platform.runLater(() -> DialogUtils.info("CSV visibility windows", "Visibility windows of " + orbit.getName() + " exported", "File: " + taskResult.getResult()));
+                } else if(taskResult.getStatus() == ProgressDialog.TaskStatus.CANCELLED) {
+                    DialogUtils.alert("Orbit Visibility", "Orbit visibility computation for " + originalOrbit.getOrbit().getName(),
+                            "Task cancelled by user");
+                } else {
+                    DialogUtils.alert("Orbit Visibility", "Orbit visibility computation for " + originalOrbit.getOrbit().getName(),
                             "Error: " + taskResult.getError().getMessage());
                 }
             }
