@@ -16,11 +16,15 @@
 
 package eu.dariolucia.drorbiteex.model.orbit;
 
+import eu.dariolucia.drorbiteex.model.util.EarthReferenceUtils;
 import org.orekit.orbits.Orbit;
 import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
-import org.orekit.time.AbsoluteDate;
+import org.orekit.propagation.events.EventDetector;
+import org.orekit.propagation.events.EventsLogger;
+import org.orekit.propagation.events.NodeDetector;
 import org.orekit.time.TimeScalesFactory;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -36,6 +40,8 @@ public class TleOrbitModel implements IOrbitModel {
 
     private transient TLEPropagator tlePropagator;
     private transient TLE tleObject;
+    private transient Date firstCrossTime; // Time of right ascension node crossing after epoch
+    private transient int orbitAtCrossTime;
 
     public TleOrbitModel() {
         //
@@ -52,6 +58,15 @@ public class TleOrbitModel implements IOrbitModel {
     private void initialiseTle() {
         this.tleObject = new TLE(this.tle.substring(0, this.tle.indexOf("\n")).trim(), this.tle.substring(this.tle.indexOf("\n")).trim());
         this.tlePropagator = TLEPropagator.selectExtrapolator(tleObject);
+        // Get the initial position
+        SpacecraftState initialSpacecraftState = this.tlePropagator.getInitialState();
+        // Get the keplerian period
+        Orbit o = initialSpacecraftState.getOrbit();
+        double period = o.getKeplerianPeriod();
+        long periodSec = Math.round(period);
+        // Compute the time the spacecraft crosses the right ascension node (first time after epoch time)
+        firstCrossTime = computeCrossRightAscensionNodeAfter(initialSpacecraftState, periodSec);
+        orbitAtCrossTime = this.tleObject.getRevolutionNumberAtEpoch() + 1;
     }
 
     @XmlElement
@@ -101,22 +116,41 @@ public class TleOrbitModel implements IOrbitModel {
     @Override
     public synchronized int computeOrbitNumberAt(Date time) {
         if(this.tleObject != null) {
-            // Get the reference orbit
+            // Get the keplerian period
             Orbit o = this.tlePropagator.getInitialState().getOrbit();
             double period = o.getKeplerianPeriod();
-            long orbitsAtEpoch = this.tleObject.getRevolutionNumberAtEpoch();
-            AbsoluteDate epochTime = this.tleObject.getDate();
-            // If you know how many orbits - orbitsAtEpoch - it had at epochTime, then you have to check the difference in
-            // seconds between the epoch time and the time and, knowing the period, compute the orbit accordingly.
-            long timeDifferenceSec = (time.getTime() - epochTime.toDate(TimeScalesFactory.getUTC()).getTime())/1000;
-            long periodSec = Math.round(period);
+            // If you know how many orbits - orbitsAtFirstCross - it had at firstCrossTime, then you have to check the difference in
+            // seconds between the firstCrossTime and the time and, knowing the period, compute the orbit accordingly.
+            long timeDifferenceSec = (time.getTime() - firstCrossTime.getTime())/1000;
             // Number of orbits in the time difference (integral number)
             // Obviously, if the time difference is negative, the number of orbits will be negatives
-            long orbits = timeDifferenceSec/periodSec;
-            return (int) (orbitsAtEpoch + orbits);
+            double orbits = timeDifferenceSec/period;
+            return (int) Math.floor(orbitAtCrossTime + orbits);
         } else {
             return -1;
         }
+    }
+
+    private Date computeCrossRightAscensionNodeAfter(SpacecraftState initialSpacecraftState, long keplerianPeriodSec) {
+        this.tlePropagator.resetInitialState(initialSpacecraftState);
+        NodeDetector detector = new NodeDetector(0.001, initialSpacecraftState.getOrbit(), EarthReferenceUtils.getITRF());
+        EventsLogger el = new EventsLogger();
+        EventDetector ed = el.monitorDetector(detector);
+        this.tlePropagator.addEventDetector(ed);
+        this.tlePropagator.propagate(initialSpacecraftState.getDate().shiftedBy(2 * keplerianPeriodSec));
+        Date found = null;
+        if(!el.getLoggedEvents().isEmpty()) {
+            // Get the latest event, it should be the right one
+            for(int i = el.getLoggedEvents().size() - 1; i >= 0; i--) {
+                if(el.getLoggedEvents().get(i).isIncreasing()) {
+                    found = el.getLoggedEvents().get(i).getDate().toDate(TimeScalesFactory.getUTC());
+                    break;
+                }
+            }
+        }
+        this.tlePropagator.clearEventsDetectors();
+        this.tlePropagator.resetInitialState(initialSpacecraftState);
+        return found;
     }
 
     @Override

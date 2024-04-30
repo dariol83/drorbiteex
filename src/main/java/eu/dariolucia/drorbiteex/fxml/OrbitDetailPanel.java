@@ -36,6 +36,7 @@ public class OrbitDetailPanel implements Initializable {
     public Label refFrameLabel;
     public Label periodLabel;
     public Label positionLabel;
+    public Label orbitNumLabel;
 
     private Orbit currentOrbit;
 
@@ -55,6 +56,7 @@ public class OrbitDetailPanel implements Initializable {
             orbitTypeLabel.setText(String.valueOf(sp.getSpacecraftState().getOrbit().getType()));
             refFrameLabel.setText(String.valueOf(sp.getSpacecraftState().getOrbit().getFrame()));
             periodLabel.setText(toPeriodString(sp.getSpacecraftState().getOrbit().getKeplerianPeriod()));
+            orbitNumLabel.setText(String.valueOf(sp.getOrbitNumber()));
             GeodeticPoint position = sp.getLatLonHeight();
             positionLabel.setText(String.format("%.4f,%.4f,%d", Math.toDegrees(position.getLatitude()), Math.toDegrees(position.getLongitude()), (int) position.getAltitude()));
         }
@@ -64,6 +66,7 @@ public class OrbitDetailPanel implements Initializable {
         if(Objects.equals(this.currentOrbit, o) && sp != null) {
             GeodeticPoint position = sp.getLatLonHeight();
             positionLabel.setText(String.format("%.4f,%.4f,%d", Math.toDegrees(position.getLatitude()), Math.toDegrees(position.getLongitude()), (int) position.getAltitude()));
+            orbitNumLabel.setText(String.valueOf(sp.getOrbitNumber()));
         }
     }
 
@@ -102,6 +105,7 @@ public class OrbitDetailPanel implements Initializable {
         orbitTypeLabel.setText("---");
         refFrameLabel.setText("---");
         periodLabel.setText("---");
+        orbitNumLabel.setText("---");
         positionLabel.setText("---");
     }
 }
