@@ -19,6 +19,8 @@ package eu.dariolucia.drorbiteex.model.orbit;
 import javafx.beans.property.SimpleBooleanProperty;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
@@ -66,32 +68,52 @@ public class CelestrakTleData {
 
     public static List<CelestrakTleData> retrieveSpacecraftList(String group) {
         try {
-            List<CelestrakTleData> list = new LinkedList<>();
             URL url = new URL(CELESTRAK_PATH.replace("<group>", group));
             URLConnection conn = url.openConnection();
             BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String read;
-            String satelliteId = null;
-            String tle1 = null;
-            String tle2 = null;
-            int state = 0;
-            while((read = br.readLine()) != null) {
-                switch (state) {
-                    case 0:
-                        satelliteId = read.trim();
-                        state = 1;
-                        break;
-                    case 1:
-                        tle1 = read.trim();
-                        state = 2;
-                        break;
-                    case 2:
-                        tle2 = read.trim();
-                        state = 0;
-                        list.add(new CelestrakTleData(satelliteId, group, tle1 + "\n" + tle2));
-                        break;
-                }
+            List<CelestrakTleData> list = extractData(group, br);
+            br.close();
+            return list;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static List<CelestrakTleData> extractData(String group, BufferedReader br) throws IOException {
+        List<CelestrakTleData> list = new LinkedList<>();
+        String read;
+        String satelliteId = null;
+        String tle1 = null;
+        String tle2 = null;
+        int state = 0;
+        while((read = br.readLine()) != null) {
+            if(read.isBlank()) {
+                continue;
             }
+            switch (state) {
+                case 0:
+                    satelliteId = read.trim();
+                    state = 1;
+                    break;
+                case 1:
+                    tle1 = read.trim();
+                    state = 2;
+                    break;
+                case 2:
+                    tle2 = read.trim();
+                    state = 0;
+                    list.add(new CelestrakTleData(satelliteId, group, tle1 + "\n" + tle2));
+                    break;
+            }
+        }
+        return list;
+    }
+
+    public static List<CelestrakTleData> processCelestrakFile(String group, String file) {
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            List<CelestrakTleData> list = extractData(group, br);
             br.close();
             return list;
         } catch (Exception e) {

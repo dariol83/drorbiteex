@@ -132,7 +132,6 @@ public class TleOrbitModel implements IOrbitModel {
     }
 
     private Date computeCrossRightAscensionNodeAfter(SpacecraftState initialSpacecraftState, long keplerianPeriodSec) {
-        this.tlePropagator.resetInitialState(initialSpacecraftState);
         NodeDetector detector = new NodeDetector(0.001, initialSpacecraftState.getOrbit(), EarthReferenceUtils.getITRF());
         EventsLogger el = new EventsLogger();
         EventDetector ed = el.monitorDetector(detector);
@@ -149,7 +148,8 @@ public class TleOrbitModel implements IOrbitModel {
             }
         }
         this.tlePropagator.clearEventsDetectors();
-        this.tlePropagator.resetInitialState(initialSpacecraftState);
+        // Move to initial date
+        this.tlePropagator.propagate(initialSpacecraftState.getDate());
         return found;
     }
 

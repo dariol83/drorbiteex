@@ -16,11 +16,13 @@ open module eu.dariolucia.drorbiteex {
     requires hipparchus.optim;
     requires hipparchus.core;
 
+
     exports eu.dariolucia.drorbiteex.fxml;
     exports eu.dariolucia.drorbiteex.fxml.progress;
     exports eu.dariolucia.drorbiteex.fxml.range;
     exports eu.dariolucia.drorbiteex.fxml.canvas;
     exports eu.dariolucia.drorbiteex.application;
+    exports eu.dariolucia.drorbiteex.application.conf;
     exports eu.dariolucia.drorbiteex.model;
     exports eu.dariolucia.drorbiteex.model.orbit;
     exports eu.dariolucia.drorbiteex.model.station;
