@@ -4,6 +4,8 @@ Dr. Orbiteex is a Java application that leverages the functionalities provided
 by the Orekit library (https://www.orekit.org/) to provide a visual orbit 
 visualisation platform.
 
+**The main development is completed (last version: 1.2.0). No further versions are planned.**
+
 Dr. Orbiteex allows you to:
 - Define the location of your ground stations/points of interest on Earth
 - Import orbital data in the form of TLE (https://en.wikipedia.org/wiki/Two-line_element_set) 
@@ -30,8 +32,6 @@ ground station
 ![AND](img/drorbiteex2.png "Dr. Orbiteex map view")
 ![AND](img/drorbiteex3.png "Dr. Orbiteex sky coverage")
 ![AND](img/drorbiteex4.png "Dr. Orbiteex orbit error analysis")
-
-The main development is completed (last version: 1.2.0).
 
 ## Getting started
 Make sure you have Java >= 11 and Apache Maven installed.
