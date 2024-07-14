@@ -3,31 +3,35 @@
 Dr. Orbiteex is a Java application that leverages the functionalities provided 
 by the Orekit library (https://www.orekit.org/) to provide a visual orbit 
 visualisation platform.
+
 Dr. Orbiteex allows you to:
 - Define the location of your ground stations/points of interest on Earth
-- Import orbital data in the form of TLE (https://en.wikipedia.org/wiki/Two-line_element_set) or CCSDS OEM files (https://public.ccsds.org/Pubs/502x0b2c1e2.pdf), with a direct import
+- Import orbital data in the form of TLE (https://en.wikipedia.org/wiki/Two-line_element_set) 
+or CCSDS OEM files (https://public.ccsds.org/Pubs/502x0b2c1e2.pdf), with a direct import
 function from the Celestrak TLE website (https://celestrak.org/NORAD/elements/)
-- Show the path of each orbit on a 3D view and a 2D view and the current/specified location of each 
-satellite
+- Show the path of each orbit on a 3D view and a 2D view and the current/specified location of each satellite
 - Show the visibility windows over the defined ground stations/points of interest, export such data as CSV
-- Show the visibility circles from the defined ground stations by selecting an orbit of 
-interest
+- Show the visibility circles from the defined ground stations by selecting an orbit of interest
 - Show the tracking data (azimuth/elevation) related to a visibility window, export such data as CSV
 - Export a TLE-based orbit to CCSDS OEM file (KVN and XML)
 - For a ground station/point of interest, export a set of visibility windows in the form of
 CCSDS Simple Schedule file (https://public.ccsds.org/Pubs/902x1b1c1.pdf)
 - Detect collinearity events with reference to a specific satellite/orbit
-- Calculate sky coverage maps for a given ground station/point of interest, with reference to a selectable set of satellites/orbits
+- Calculate sky coverage maps for a given ground station/point of interest, with reference to a selectable set of 
+satellites/orbits
 - Compute position/velocity error among two or more orbits
-- Compute elevation/azimuth/angular error between a reference orbit and other orbits with respect to a reference ground station
-- Compute orbit determination (using TLE propagator and numerical propagator) from a set of measurements (supported file formats: CCSDS TDM and CCSDS OEM).
+- Compute elevation/azimuth/angular error between a reference orbit and other orbits with respect to a reference 
+ground station
+- Compute orbit determination (using TLE propagator and numerical propagator) from a set of measurements 
+(supported file formats: CCSDS TDM and CCSDS OEM)
+- Batch execution of collinearity analysis
 
 ![AND](img/drorbiteex1.png "Dr. Orbiteex main window")
 ![AND](img/drorbiteex2.png "Dr. Orbiteex map view")
 ![AND](img/drorbiteex3.png "Dr. Orbiteex sky coverage")
 ![AND](img/drorbiteex4.png "Dr. Orbiteex orbit error analysis")
 
-The main development is completed (latest version branch: 1.1.x). Please report bug and feature requests using the GitHub issue tracker.
+The main development is completed (last version: 1.2.0).
 
 ## Getting started
 Make sure you have Java >= 11 and Apache Maven installed.
@@ -36,7 +40,8 @@ In order to have Dr. Orbiteex up and running from scratch, run the following ste
 1. Download the Orekit Data from https://gitlab.orekit.org/orekit/orekit-data/-/archive/master/orekit-data-master.zip
 2. Extract the contents
 3. Rename the extracted folder from "orekit-data-master" to "orekit-data"
-4. Create a folder named "drorbiteex" inside your home folder (e.g. "C:\Users\<your username>\drorbiteex" on Windows or "/home/<your username>/drorbiteex" on Linux)
+4. Create a folder named "drorbiteex" inside your home folder (e.g. "C:\Users\<your username>\drorbiteex" on Windows or 
+"/home/<your username>/drorbiteex" on Linux)
 5. Copy the "orekit-data" folder inside the "drorbiteex" folder created in step 4
 
 Now, obtain the Dr. Orbiteex binaries:
@@ -48,7 +53,6 @@ or:
 3. In the "target" folder, zip and tar.gz files will be generated for Windows, Linux, Mac
 
 Finally, decompress the zip/tar.gz file anywhere on your filesystem, and run the start.bat (Windows) or start.sh (Linux/Mac) inside
-
 
 ## Extensions
 Dr. Orbiteex can export CCSDS OEM files and CCSDS Simple Schedule Files. There is a way to customise some aspects of this 
